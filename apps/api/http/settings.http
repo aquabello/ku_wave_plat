@@ -1,0 +1,76 @@
+### 1. 시스템 설정 조회
+GET http://localhost:8000/api/v1/settings/system
+
+### 2. 시스템 설정 수정 (JSON)
+PUT http://localhost:8000/api/v1/settings/system
+Content-Type: application/json
+
+{
+  "apiTime": "05",
+  "playerTime": "01",
+  "screenStart": "08:00",
+  "screenEnd": "20:00",
+  "playerVer": "1.0.0",
+  "playerLink": "KUDIDPlayer.exe",
+  "watcherVer": "1.0.0",
+  "watcherLink": "konkuk_did_watcher.exe",
+  "noticeLink": "campus_map.jpg",
+  "introLink": "intro.png"
+}
+
+### 3. 시스템 설정 수정 - 필수 필드만
+PUT http://localhost:8000/api/v1/settings/system
+Content-Type: application/json
+
+{
+  "apiTime": "10",
+  "playerTime": "05",
+  "screenStart": "09:00",
+  "screenEnd": "18:00"
+}
+
+### 4. 시스템 설정 + 이미지 업로드 (multipart) - 원자적 저장
+PUT http://localhost:8000/api/v1/settings/system
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="apiTime"
+
+05
+--boundary
+Content-Disposition: form-data; name="playerTime"
+
+01
+--boundary
+Content-Disposition: form-data; name="screenStart"
+
+08:00
+--boundary
+Content-Disposition: form-data; name="screenEnd"
+
+20:00
+--boundary
+Content-Disposition: form-data; name="file"; filename="default-image.jpg"
+Content-Type: image/jpeg
+
+< ./test-image.jpg
+--boundary--
+
+### 5. [ERROR] 스크린 세이버 시간 형식 오류 → 400
+PUT http://localhost:8000/api/v1/settings/system
+Content-Type: application/json
+
+{
+  "apiTime": "10",
+  "playerTime": "01",
+  "screenStart": "9:00",
+  "screenEnd": "20:00"
+}
+
+### 6. [ERROR] 필수 필드 누락 → 400
+PUT http://localhost:8000/api/v1/settings/system
+Content-Type: application/json
+
+{
+  "apiTime": "10"
+}

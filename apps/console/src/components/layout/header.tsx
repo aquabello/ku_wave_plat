@@ -83,7 +83,7 @@ export function Header() {
             <LayoutDashboard className="h-5 w-5" />
           </div>
           <span className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-lg font-bold tracking-tight">
-            KU Console
+            KU Wave Plat
           </span>
         </Link>
       </div>

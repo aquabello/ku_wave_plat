@@ -17,7 +17,7 @@ Enterprise-grade admin system for Konkuk University Wave Platform built with Nes
 
 ### Backend (apps/api)
 - **Framework**: NestJS 10.3+
-- **Database**: MariaDB 11.2 via Docker
+- **Database**: MariaDB 11.2 (External Development DB)
 - **ORM**: TypeORM 0.3.19+
 - **Auth**: Passport + JWT (Access Token 15min, Refresh Token 7d)
 - **Validation**: class-validator + class-transformer
@@ -49,35 +49,27 @@ Enterprise-grade admin system for Konkuk University Wave Platform built with Nes
 # Install dependencies (required first step)
 pnpm install
 
-# Start development (auto-starts MariaDB + both apps)
+# Configure .env file (required before first run)
+cp .env.example .env
+# Edit .env with your development DB connection info:
+# - DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_DATABASE
+
+# Start development servers
 pnpm dev
-
-# Start development without DB check (force mode)
-pnpm dev:force
-
-# Start development with manual DB verification
-pnpm dev:manual
 
 # Development URLs:
 # - Console: http://localhost:3000
-# - API: http://localhost:4000
-# - Swagger: http://localhost:4000/api/v1/docs
+# - API: http://localhost:8000
+# - Swagger: http://localhost:8000/api/v1/docs
 ```
 
 ### Database Management
 
 ```bash
-# Start MariaDB container
-pnpm db:start
-
-# Stop MariaDB container
-pnpm db:stop
-
-# Restart MariaDB container
-pnpm db:restart
-
-# View MariaDB logs
-pnpm db:logs
+# Create database schema (first time only on development DB)
+CREATE DATABASE ku_wave_plat
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
 
 # TypeORM migrations (from apps/api)
 pnpm --filter @ku/api migration:generate src/database/migrations/MigrationName
@@ -330,6 +322,126 @@ This project includes specialized Claude Code agents in `.claude/agents/`:
 
 These agents are activated automatically based on context or can be invoked via Task tool.
 
+## Frontend (apps/console) Development Rules - MANDATORY
+
+### API Specification Reference (REQUIRED)
+**Before writing ANY frontend code that calls an API, you MUST:**
+1. Read the corresponding API spec file in `docs/api/` folder (e.g., `docs/api/settings.api.md`)
+2. Verify endpoint URL, HTTP method, request/response schemas match the spec
+3. **Echo confirmation**: After reading the API spec, ALWAYS output:
+   ```
+   [API Spec Verified] docs/api/{filename}.api.md - {endpoint} ({method})
+   ```
+4. If no API spec exists in `docs/api/`, ask the user before proceeding
+
+### Shared Types Usage (REQUIRED)
+**All frontend code MUST use types from `@ku/types` package:**
+1. Check `packages/types/src/` for existing type definitions before creating local types
+2. Import shared types: `import { TypeName } from '@ku/types'`
+3. **NEVER** create duplicate type definitions in `apps/console/src/types/` if they already exist in `@ku/types`
+4. If a new type is needed, add it to `packages/types/src/` and export from `packages/types/src/index.ts`
+5. **Echo confirmation**: After importing types, ALWAYS output:
+   ```
+   [Types Reference] @ku/types/{filename} - {TypeName}
+   ```
+
+### FE Known Issues - 공통 주의사항 (REQUIRED)
+
+**1. apiClient FormData 전송 시 Content-Type 명시 필수** (`lib/api/client.ts`)
+- `apiClient`의 기본 헤더가 `Content-Type: application/json`으로 고정되어 있음
+- 파일 업로드(FormData) 전송 시 반드시 Content-Type을 명시적으로 override해야 함
+- **위반 시**: File 객체가 `{}` 빈 객체로 JSON 직렬화되어 BE에서 400 에러 발생
+```typescript
+// WRONG - FormData가 JSON으로 전송됨
+await apiClient.put('/endpoint', formData);
+
+// CORRECT - multipart/form-data 명시
+await apiClient.put('/endpoint', formData, {
+  headers: { 'Content-Type': 'multipart/form-data' },
+});
+```
+
+**2. next/image 대신 img 태그 사용** (개발환경 localhost)
+- Next.js 16이 private IP(localhost/127.0.0.1)로의 이미지 프록시를 차단함
+- 에러: `upstream image resolved to private ip`
+- BE에서 서빙하는 이미지를 표시할 때 `next/image` 대신 일반 `<img>` 태그 사용
+```tsx
+// WRONG - localhost에서 이미지 프록시 차단됨
+<Image src={imageUrl} alt="..." fill />
+
+// CORRECT - 직접 로드
+<img src={imageUrl} alt="..." className="object-contain" />
+```
+
+**3. BE 정적 파일 URL 생성 시 API prefix 제거** (`lib/api/settings.ts`)
+- `NEXT_PUBLIC_API_URL`에 `/api/v1` prefix가 포함되어 있음
+- 정적 파일(이미지, 첨부파일)은 API prefix 없이 서빙되므로 origin만 추출하여 사용
+```typescript
+// WRONG - http://localhost:8000/api/v1/uploads/file.jpg (404)
+const url = `${process.env.NEXT_PUBLIC_API_URL}/${path}`;
+
+// CORRECT - http://localhost:8000/uploads/file.jpg
+const origin = new URL(process.env.NEXT_PUBLIC_API_URL).origin;
+const url = `${origin}/${path}`;
+```
+
+**4. React Hook Form + 비동기 데이터 로딩 패턴**
+- `useEffect` + `form.reset()`으로 비동기 데이터를 동기화하면 Radix UI 컴포넌트(Select 등)와 validation state 불일치 발생
+- **반드시 자식 컴포넌트 패턴 사용**: 데이터 로드 완료 후 form 컴포넌트를 렌더링하여 `defaultValues`에 실제 데이터 주입
+```tsx
+// WRONG - form.reset()으로 동기화 시 validation 깨짐
+function Page() {
+  const { data } = useQuery({...});
+  const form = useForm({ defaultValues: { field: '' } });
+  useEffect(() => { if (data) form.reset(data); }, [data]);
+}
+
+// CORRECT - 데이터 로드 후 자식 컴포넌트에서 form 초기화
+function Page() {
+  const { data, isLoading } = useQuery({...});
+  if (isLoading) return <Loading />;
+  return <FormChild key={data.id} data={data} />;
+}
+function FormChild({ data }) {
+  const form = useForm({ defaultValues: data }); // 정확한 값으로 초기화
+}
+```
+
+### Violation of these rules is NOT acceptable. These are blocking requirements.
+
+## CRITICAL RULES - 절대 위반 금지
+
+### 1. DB 테이블 생성 금지
+- **사용자가 명시적으로 "테이블을 만들어라"고 요청하기 전까지 절대로 새 테이블을 생성하지 마라.**
+- migration 파일 생성, `CREATE TABLE`, `synchronize: true` 모두 금지.
+- `synchronize`는 항상 `false`로 유지한다.
+
+### 2. 기존 DB 테이블 우선 확인 (필수)
+- **API 개발 전에 반드시 `docs/init_database.sql`과 실제 DB를 조회하여 기존 테이블이 있는지 확인하라.**
+- 기존 테이블이 존재하면 해당 테이블을 그대로 사용한다. 중복 테이블을 만들지 마라.
+- Entity는 기존 테이블의 컬럼명, 타입, 제약조건을 정확히 매핑해야 한다.
+- DB 확인 명령어 예시:
+  ```sql
+  SHOW TABLES;
+  DESCRIBE tb_table_name;
+  SELECT * FROM tb_table_name LIMIT 5;
+  ```
+
+### 3. 페이지 단위 API 단일 호출
+- **하나의 페이지에서 저장 버튼을 누르면 API를 한 번만 호출한다.**
+- 설정값 + 파일 업로드 등 여러 데이터를 저장할 때 별도 API로 분리하지 말고, 하나의 엔드포인트에서 `multipart/form-data`로 원자적으로 처리한다.
+- 하나라도 실패하면 전체 롤백되어야 한다.
+
+### 지침 확인 프로토콜
+- **새 세션 시작 시 또는 개발 작업 착수 전에 반드시 이 CRITICAL RULES를 확인하고, 아래와 같이 echo 출력하여 사용자에게 인지시켜라:**
+  ```
+  [CRITICAL RULES 확인 완료] 1.테이블생성금지 2.기존DB우선확인 3.페이지단위API단일호출
+  ```
+
+### 이 규칙을 위반하면 안 됩니다. 모든 개발 작업에 우선 적용됩니다.
+
+---
+
 ## Important Notes
 
 ### TypeScript Strict Mode
@@ -348,11 +460,12 @@ These agents are activated automatically based on context or can be invoked via 
 
 ### Port Configuration
 - Console frontend: `3000`
-- API backend: `4000`
-- MariaDB: `3306` (Docker container)
+- API backend: `8000`
+- MariaDB: `3306` (External Development DB)
 
 ### Environment Variables
 - Copy `.env.example` to `.env` before first run
+- Configure DB connection: `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_DATABASE`
 - Never commit `.env` files
 - Required variables documented in `.env.example`
 
@@ -370,9 +483,10 @@ These agents are activated automatically based on context or can be invoked via 
 ## Common Issues & Solutions
 
 ### Database connection fails
-- Ensure Docker is running: `docker ps`
-- Start MariaDB: `pnpm db:start`
-- Check logs: `pnpm db:logs`
+- Check .env file has correct DB connection info
+- Verify `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_DATABASE` values
+- Ensure database `ku_wave_plat` exists on development DB server
+- Test connection manually: `mysql -h DB_HOST -u DB_USERNAME -p`
 
 ### pnpm install fails
 - Verify pnpm version: `pnpm --version` (should be 10.21.0+)

@@ -18,3 +18,6 @@ export * from './api.types';
 
 // Dashboard Types
 export * from './dashboard.types';
+
+// Settings Types
+export * from './settings.types';

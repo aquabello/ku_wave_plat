@@ -27,7 +27,7 @@ ku-wave-plat/
 │   ├── types/        # @ku/types (공유 타입)
 │   ├── ui/           # @ku/ui (shadcn/ui)
 │   └── config/       # @ku/config (ESLint/TS)
-└── docker-compose.yml # MariaDB
+└── .env              # 환경 변수 (개발 DB 연결 정보)
 ```
 
 ### 기술 스택
@@ -65,7 +65,7 @@ ku-wave-plat/
 
 - Node.js >= 20.0.0
 - pnpm >= 8.0.0
-- Docker Desktop (MariaDB)
+- MariaDB 개발 DB 접속 정보
 
 ### 설치
 
@@ -83,34 +83,33 @@ pnpm install
 # 환경 변수 파일 생성
 cp .env.example .env
 
-# 필요한 경우 .env 파일을 편집하여 설정 값 변경
+# .env 파일을 편집하여 개발 DB 연결 정보 설정
 vi .env
 ```
 
-### 데이터베이스 시작
+**.env 파일 필수 설정:**
+```bash
+DB_HOST=개발DB호스트주소
+DB_PORT=3306
+DB_USERNAME=ku_user
+DB_PASSWORD=실제비밀번호
+DB_DATABASE=ku_wave_plat
+```
+
+### 데이터베이스 준비
 
 ```bash
-# Docker 컨테이너 시작 (MariaDB)
-pnpm db:start
-
-# 데이터베이스 연결 확인
-pnpm db:logs
-
-# 데이터베이스 중지
-pnpm db:stop
-
-# 데이터베이스 재시작
-pnpm db:restart
+# 개발 DB에 스키마 생성 (처음 한 번만)
+CREATE DATABASE ku_wave_plat
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
 ```
 
 ### 개발 서버 실행
 
 ```bash
-# 자동으로 데이터베이스를 시작하고 개발 서버 실행
+# 개발 서버 시작
 pnpm dev
-
-# 또는 수동으로 실행
-pnpm dev:manual
 ```
 
 개발 서버가 시작되면:
@@ -127,9 +126,7 @@ pnpm dev:manual
 ### 개발
 
 ```bash
-pnpm dev              # 개발 서버 시작 (자동 DB 시작)
-pnpm dev:force        # DB 확인 없이 강제 시작
-pnpm dev:manual       # DB 확인 후 수동 시작
+pnpm dev              # 개발 서버 시작
 ```
 
 ### 빌드
@@ -156,15 +153,6 @@ pnpm test:coverage    # 테스트 커버리지
 pnpm lint             # ESLint 검사
 pnpm format           # Prettier 포맷팅
 pnpm typecheck        # TypeScript 타입 체크
-```
-
-### 데이터베이스
-
-```bash
-pnpm db:start         # 데이터베이스 시작
-pnpm db:stop          # 데이터베이스 중지
-pnpm db:restart       # 데이터베이스 재시작
-pnpm db:logs          # 데이터베이스 로그 확인
 ```
 
 ### 정리
@@ -254,7 +242,7 @@ packages/
 
 API 문서는 Swagger로 자동 생성됩니다:
 
-- **로컬**: http://localhost:4000/api/v1/docs
+- **로컬**: http://localhost:8000/api/v1/docs
 - **인증**: Bearer Token 필요
 
 ### 주요 엔드포인트

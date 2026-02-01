@@ -14,7 +14,6 @@ import {
   Users,
   Shield,
   Activity,
-  Bell,
   Wrench,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -28,19 +27,19 @@ const LNB_MENU_CONFIG: Record<GNBMenuItem, LNBMenuItem[]> = {
     {
       id: 'controller-list',
       name: '목록',
-      href: '/dashboard/controller',
+      href: '/controller',
       icon: List,
     },
     {
       id: 'controller-register',
       name: '등록',
-      href: '/dashboard/controller/register',
+      href: '/controller/register',
       icon: PlusCircle,
     },
     {
       id: 'controller-settings',
       name: '설정',
-      href: '/dashboard/controller/settings',
+      href: '/controller/settings',
       icon: SettingsIcon,
     },
   ],
@@ -48,19 +47,19 @@ const LNB_MENU_CONFIG: Record<GNBMenuItem, LNBMenuItem[]> = {
     {
       id: 'rfid-tag',
       name: '태그 관리',
-      href: '/dashboard/rfid/tags',
+      href: '/rfid/tags',
       icon: Tag,
     },
     {
       id: 'rfid-reader',
       name: '리더기 관리',
-      href: '/dashboard/rfid/readers',
+      href: '/rfid/readers',
       icon: Cpu,
     },
     {
       id: 'rfid-log',
       name: '로그',
-      href: '/dashboard/rfid/logs',
+      href: '/rfid/logs',
       icon: FileText,
     },
   ],
@@ -68,13 +67,13 @@ const LNB_MENU_CONFIG: Record<GNBMenuItem, LNBMenuItem[]> = {
     {
       id: 'screen-session',
       name: '세션 목록',
-      href: '/dashboard/screen-share/sessions',
+      href: '/screen-share/sessions',
       icon: MonitorPlay,
     },
     {
       id: 'screen-settings',
       name: '공유 설정',
-      href: '/dashboard/screen-share/settings',
+      href: '/screen-share/settings',
       icon: SlidersHorizontal,
     },
   ],
@@ -82,36 +81,28 @@ const LNB_MENU_CONFIG: Record<GNBMenuItem, LNBMenuItem[]> = {
     {
       id: 'member-list',
       name: '사용자 목록',
-      href: '/dashboard/members',
+      href: '/members',
       icon: Users,
     },
     {
       id: 'member-permissions',
       name: '권한 관리',
-      href: '/dashboard/members/permissions',
+      href: '/members/permissions',
       icon: Shield,
     },
     {
       id: 'member-activity',
       name: '활동 로그',
-      href: '/dashboard/members/activity',
+      href: '/members/activity',
       icon: Activity,
     },
   ],
-  settings: [
-    {
-      id: 'settings-system',
-      name: '시스템 설정',
-      href: '/dashboard/settings',
-      icon: Wrench,
-    },
-    {
-      id: 'settings-notifications',
-      name: '알림 설정',
-      href: '/dashboard/settings/notifications',
-      icon: Bell,
-    },
-  ],
+  settings: [{
+    id: 'settings-system',
+    name: '시스템 설정',
+    href: '/settings',
+    icon: Wrench,
+  }],
 };
 
 /**

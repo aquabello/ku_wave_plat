@@ -6,7 +6,7 @@ import { Providers } from '@/components/providers';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'KU Console - 관리자 대시보드',
+  title: 'KU Wave Plat - 관리자',
   description: '한국 커머스 플랫폼 관리자 시스템',
 };
 

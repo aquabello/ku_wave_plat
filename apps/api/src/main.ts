@@ -1,16 +1,30 @@
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
+import { join } from 'path';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const configService = app.get(ConfigService);
 
   // Security headers
-  app.use(helmet());
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          imgSrc: ["'self'", 'data:', 'http://localhost:3000'],
+          scriptSrc: ["'self'"],
+          styleSrc: ["'self'", 'https:', "'unsafe-inline'"],
+        },
+      },
+    }),
+  );
 
   // CORS configuration
   const allowedOrigins = configService.get<string>('ALLOWED_ORIGINS')?.split(',') || [];
@@ -18,6 +32,11 @@ async function bootstrap() {
     origin: allowedOrigins.length > 0 ? allowedOrigins : true,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  });
+
+  // Static file serving (uploads directory)
+  app.useStaticAssets(join(process.cwd(), 'uploads'), {
+    prefix: '/uploads/',
   });
 
   // Global prefix
@@ -59,7 +78,7 @@ async function bootstrap() {
     },
   });
 
-  const port = configService.get<number>('PORT') || 4000;
+  const port = configService.get<number>('PORT') || 8000;
   await app.listen(port);
 
   console.log(`Application is running on: http://localhost:${port}/${apiPrefix}`);

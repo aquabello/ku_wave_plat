@@ -4,9 +4,7 @@
   "private": true,
   "description": "KU AI CTL - 한국 커머스 플랫폼 관리자 시스템 (Next.js + NestJS)",
   "scripts": {
-    "dev": "node scripts/dev-wrapper.js",
-    "dev:force": "turbo run dev",
-    "dev:manual": "node scripts/check-db.js && turbo run dev",
+    "dev": "turbo run dev",
     "build": "turbo run build",
     "test": "turbo run test",
     "test:unit": "turbo run test:unit",
@@ -17,10 +15,6 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "typecheck": "turbo run typecheck",
     "clean": "turbo run clean && rm -rf node_modules",
-    "db:start": "docker compose up -d mariadb",
-    "db:stop": "docker compose stop mariadb",
-    "db:restart": "docker compose restart mariadb",
-    "db:logs": "docker compose logs -f mariadb",
     "prepare": "husky"
   },
   "devDependencies": {
