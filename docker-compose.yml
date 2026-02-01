@@ -1,0 +1,47 @@
+services:
+  mariadb:
+    image: mariadb:11.2
+    container_name: ku-mariadb
+    restart: unless-stopped
+    ports:
+      - '3306:3306'
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: ku_commerce
+      MYSQL_USER: ku_user
+      MYSQL_PASSWORD: password
+      MARIADB_CHARACTER_SET_SERVER: utf8mb4
+      MARIADB_COLLATE_SERVER: utf8mb4_unicode_ci
+    volumes:
+      - mariadb-data:/var/lib/mysql
+    networks:
+      - ku_default
+    healthcheck:
+      test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '1'
+          memory: 512M
+    stop_grace_period: 30s
+    stop_signal: SIGTERM
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --max_connections=200
+      - --innodb_buffer_pool_size=512M
+
+networks:
+  ku_default:
+    name: ku_default
+    driver: bridge
+
+volumes:
+  mariadb-data:

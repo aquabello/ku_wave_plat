@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+test-results/
+playwright-report/
+*.lcov
+
+# Next.js
+.next/
+out/
+build/
+dist/
+
+# Production
+*.log
+*.tsbuildinfo
+
+# Environment
+.env
+.env*.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Turbo
+.turbo/
+
+# TypeScript
+*.tsbuildinfo
+
+# Misc
+*.pem
