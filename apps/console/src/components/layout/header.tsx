@@ -1,12 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { Bell, LayoutDashboard } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import {
   Cpu,
   Radio,
   Monitor,
   Zap,
+  TvMinimalPlay,
   Users,
   Settings,
 } from 'lucide-react';
@@ -28,7 +29,7 @@ const GNB_MENUS: GNBMenuConfig[] = [
   {
     id: 'controller',
     name: '컨트롤러',
-    icon: Cpu,
+    icon: Zap,
   },
   {
     id: 'rfid',
@@ -43,7 +44,12 @@ const GNB_MENUS: GNBMenuConfig[] = [
   {
     id: 'ai-system',
     name: 'AI시스템',
-    icon: Zap,
+    icon: Cpu,
+  },
+  {
+    id: 'display',
+    name: '디스플레이',
+    icon: TvMinimalPlay,
   },
   {
     id: 'member',
@@ -84,9 +90,11 @@ export function Header() {
           onClick={handleLogoClick}
           className="flex items-center gap-3 transition-all duration-200 hover:scale-105"
         >
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-konkuk-green to-konkuk-green-light text-white shadow-lg shadow-konkuk-green/20 transition-all duration-200 hover:shadow-xl hover:shadow-konkuk-green/30">
-            <LayoutDashboard className="h-5 w-5" />
-          </div>
+          <img
+            src="https://kuis.konkuk.ac.kr/ui/theme/images/login/ico_logo.png"
+            alt="건국대학교 로고"
+            className="h-9 w-auto"
+          />
           <span className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-lg font-bold tracking-tight">
             KU Wave Plat
           </span>

@@ -3,8 +3,6 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  List,
-  PlusCircle,
   Settings as SettingsIcon,
   Tag,
   Cpu,
@@ -16,6 +14,9 @@ import {
   Activity,
   Wrench,
   BookOpen,
+  Play,
+  ListOrdered,
+  FolderOpen,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigationStore, type GNBMenuItem, type LNBMenuItem } from '@/stores/navigation';
@@ -26,22 +27,16 @@ import { useNavigationStore, type GNBMenuItem, type LNBMenuItem } from '@/stores
 const LNB_MENU_CONFIG: Record<GNBMenuItem, LNBMenuItem[]> = {
   controller: [
     {
-      id: 'controller-list',
-      name: '목록',
-      href: '/controller',
-      icon: List,
-    },
-    {
-      id: 'controller-register',
-      name: '등록',
-      href: '/controller/register',
-      icon: PlusCircle,
-    },
-    {
-      id: 'controller-settings',
-      name: '설정',
-      href: '/controller/settings',
+      id: 'controller-hardware',
+      name: '하드웨어 설정',
+      href: '/controller/hardware',
       icon: SettingsIcon,
+    },
+    {
+      id: 'controller-control',
+      name: '제어관리',
+      href: '/controller/control',
+      icon: SlidersHorizontal,
     },
   ],
   rfid: [
@@ -84,6 +79,26 @@ const LNB_MENU_CONFIG: Record<GNBMenuItem, LNBMenuItem[]> = {
       name: '강의요약',
       href: '/ai-system/lecture-summary',
       icon: BookOpen,
+    },
+  ],
+  display: [
+    {
+      id: 'display-player',
+      name: '플레이어',
+      href: '/display/player',
+      icon: Play,
+    },
+    {
+      id: 'display-list',
+      name: '리스트관리',
+      href: '/display/list',
+      icon: ListOrdered,
+    },
+    {
+      id: 'display-content',
+      name: '콘텐츠관리',
+      href: '/display/content',
+      icon: FolderOpen,
     },
   ],
   member: [
@@ -210,6 +225,7 @@ function getLNBTitle(gnb: GNBMenuItem | null): string {
     rfid: 'RFID',
     'screen-share': '화면공유',
     'ai-system': 'AI시스템',
+    display: '디스플레이',
     member: '회원관리',
     settings: '환경설정',
   };

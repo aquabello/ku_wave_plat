@@ -4,7 +4,7 @@ import { persist } from 'zustand/middleware';
 /**
  * GNB (Global Navigation Bar) Menu Item Type
  */
-export type GNBMenuItem = 'controller' | 'rfid' | 'screen-share' | 'ai-system' | 'member' | 'settings';
+export type GNBMenuItem = 'controller' | 'rfid' | 'screen-share' | 'ai-system' | 'display' | 'member' | 'settings';
 
 /**
  * LNB (Local Navigation Bar) Sub-Menu Item
