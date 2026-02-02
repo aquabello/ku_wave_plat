@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 
 // Modules
 import { AuthModule } from '@modules/auth/auth.module';
@@ -12,6 +14,9 @@ import { OrdersModule } from '@modules/orders/orders.module';
 import { CustomersModule } from '@modules/customers/customers.module';
 import { AnalyticsModule } from '@modules/analytics/analytics.module';
 import { SettingsModule } from '@modules/settings/settings.module';
+
+// Common modules
+import { HttpClientModule } from '@/common/http';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -56,6 +61,9 @@ import { AppService } from './app.service';
       inject: [ConfigService],
     }),
 
+    // Common modules
+    HttpClientModule,
+
     // Feature modules
     AuthModule,
     UsersModule,
@@ -67,6 +75,12 @@ import { AppService } from './app.service';
     SettingsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+  ],
 })
 export class AppModule {}

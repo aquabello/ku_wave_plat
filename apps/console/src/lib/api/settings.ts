@@ -27,8 +27,8 @@ function toSystemSettings(raw: SystemSettingsApiResponse): SystemSettings {
  * Get current system settings
  */
 export async function getSystemSettings(): Promise<SystemSettings> {
-  const response = await apiClient.get<SystemSettingsApiResponse>('/settings/system');
-  return toSystemSettings(response.data);
+  const data = await apiClient<SystemSettingsApiResponse>('/settings/system');
+  return toSystemSettings(data);
 }
 
 /**
@@ -47,12 +47,11 @@ export async function updateSystemSettings(
     formData.append('screenEnd', data.blackoutEndTime);
     formData.append('file', file);
 
-    const response = await apiClient.put<SystemSettingsApiResponse>(
-      '/settings/system',
-      formData,
-      { headers: { 'Content-Type': 'multipart/form-data' } }
-    );
-    return toSystemSettings(response.data);
+    const result = await apiClient<SystemSettingsApiResponse>('/settings/system', {
+      method: 'PUT',
+      body: formData,
+    });
+    return toSystemSettings(result);
   }
 
   const payload = {
@@ -62,8 +61,11 @@ export async function updateSystemSettings(
     screenEnd: data.blackoutEndTime,
   };
 
-  const response = await apiClient.put<SystemSettingsApiResponse>('/settings/system', payload);
-  return toSystemSettings(response.data);
+  const result = await apiClient<SystemSettingsApiResponse>('/settings/system', {
+    method: 'PUT',
+    body: payload,
+  });
+  return toSystemSettings(result);
 }
 
 /**

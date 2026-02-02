@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { LogOut, Settings, User } from 'lucide-react';
 import {
   DropdownMenu,
@@ -13,9 +14,16 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 
 export function UserMenu() {
+  const router = useRouter();
+
   const handleLogout = () => {
-    // TODO: Implement logout logic
-    console.log('Logout clicked');
+    // Remove access_token from localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('access_token');
+    }
+
+    // Redirect to login page
+    router.replace('/login');
   };
 
   return (

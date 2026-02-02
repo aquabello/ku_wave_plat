@@ -1,8 +1,4 @@
-import {
-  registerDecorator,
-  ValidationOptions,
-  ValidationArguments,
-} from 'class-validator';
+import { registerDecorator, ValidationOptions, ValidationArguments } from 'class-validator';
 
 export function IsTimeRangeValid(validationOptions?: ValidationOptions) {
   return function (object: Record<string, any>, propertyName: string) {

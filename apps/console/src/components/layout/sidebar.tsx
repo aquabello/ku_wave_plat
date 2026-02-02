@@ -124,7 +124,7 @@ export function Sidebar() {
   const { activeGNB } = useNavigationStore();
 
   // Get sub-menus for current GNB selection
-  const currentMenus = LNB_MENU_CONFIG[activeGNB] || [];
+  const currentMenus = activeGNB ? LNB_MENU_CONFIG[activeGNB] : [];
 
   return (
     <aside className="flex h-full w-64 flex-col border-r border-border bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30">
@@ -193,7 +193,9 @@ export function Sidebar() {
 /**
  * Get localized title for LNB based on active GNB
  */
-function getLNBTitle(gnb: GNBMenuItem): string {
+function getLNBTitle(gnb: GNBMenuItem | null): string {
+  if (!gnb) return '대시보드';
+
   const titles: Record<GNBMenuItem, string> = {
     controller: '컨트롤러',
     rfid: 'RFID',

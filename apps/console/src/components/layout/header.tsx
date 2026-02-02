@@ -66,8 +66,7 @@ export function Header() {
   const { activeGNB, setActiveGNB } = useNavigationStore();
 
   const handleLogoClick = () => {
-    // Reset GNB to default when clicking logo
-    setActiveGNB('controller');
+    setActiveGNB(null);
   };
 
   return (

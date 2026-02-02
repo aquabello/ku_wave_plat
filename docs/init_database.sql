@@ -1,19 +1,3 @@
--- 데이터베이스 생성
-CREATE DATABASE IF NOT EXISTS ku_wave_plat
-CHARACTER SET utf8mb4
-COLLATE utf8mb4_unicode_ci;
-
--- 사용자 생성 및 권한 부여
-CREATE USER IF NOT EXISTS 'ku_wave_plat'@'%' IDENTIFIED BY '!ku_wave_plat@';
-GRANT ALL PRIVILEGES ON ku_wave_plat.* TO 'ku_wave_plat'@'%';
-FLUSH PRIVILEGES;
-
--- 데이터베이스 사용
-USE ku_wave_plat;
-
-
-
-
 -- 환경설정 테이블
 create table tb_setting
 (
@@ -32,5 +16,33 @@ create table tb_setting
     reg_date        datetime                    not null comment '등록일'
 )
 comment '환경설정';
+
+-- 회원
+create table tb_users
+(
+    tu_seq              int auto_increment comment '시퀀스' primary key,
+    tu_id               varchar(20)                 null comment '아이디',
+    tu_pw               varchar(255)                null comment '패스워드',
+    tu_name             varchar(50)                 null comment '이름',
+    tu_phone            varchar(15)                 null comment '휴대폰',
+    tu_email            varchar(50)                 null comment '이메일',
+    tu_isdel            char                        null comment '삭제여부',
+    tu_step             char(2)                     null comment '상태',
+    tu_type             char(6)                     null comment '타입',
+    tu_content_yn       enum ('Y', 'N') default 'Y' null comment '콘텐츠 사용여부',
+    tu_work_type        varchar(10)                 null comment '계약타입',
+    tu_last_access_date datetime                    null comment '마지막 접속',
+    tu_log              text                        null comment '로그',
+    tu_new_noti         char                        null comment '알림정보',
+    tu_access_token     varchar(300)                null comment '접근토큰',
+    tu_push_token       varchar(100)                null comment 'PUSH 토큰',
+    tu_device_name      varchar(50)                 null comment '디바이스명',
+    tu_app_ver          varchar(10)                 null comment '앱버전',
+    si_seq              int                         null comment '사이트정보',
+    reg_date            datetime                    null comment '등록일'
+)
+comment '회원 테이블';
+
+
 
 

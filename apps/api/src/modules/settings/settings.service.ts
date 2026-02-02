@@ -45,9 +45,7 @@ export class SettingsService {
       return this.mapToResponseDto(setting);
     } catch (error) {
       if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException(
-        '시스템 설정을 조회하는 중 오류가 발생했습니다',
-      );
+      throw new InternalServerErrorException('시스템 설정을 조회하는 중 오류가 발생했습니다');
     }
   }
 
@@ -65,9 +63,7 @@ export class SettingsService {
       try {
         newFilePath = await this.saveFile(file);
       } catch (error) {
-        throw new InternalServerErrorException(
-          '이미지 파일 저장 중 오류가 발생했습니다',
-        );
+        throw new InternalServerErrorException('이미지 파일 저장 중 오류가 발생했습니다');
       }
     }
 
@@ -107,15 +103,10 @@ export class SettingsService {
         await this.deleteFile(newFilePath);
       }
 
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException
-      ) {
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
         throw error;
       }
-      throw new InternalServerErrorException(
-        '시스템 설정을 수정하는 중 오류가 발생했습니다',
-      );
+      throw new InternalServerErrorException('시스템 설정을 수정하는 중 오류가 발생했습니다');
     } finally {
       await queryRunner.release();
     }
@@ -145,9 +136,7 @@ export class SettingsService {
     const allowedMimeTypes = ['image/jpeg', 'image/png'];
 
     if (file.size > maxSize) {
-      throw new BadRequestException(
-        '파일 크기가 너무 큽니다. 최대 5MB까지 업로드 가능합니다',
-      );
+      throw new BadRequestException('파일 크기가 너무 큽니다. 최대 5MB까지 업로드 가능합니다');
     }
 
     if (!allowedMimeTypes.includes(file.mimetype)) {

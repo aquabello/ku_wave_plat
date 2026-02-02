@@ -347,17 +347,22 @@ These agents are activated automatically based on context or can be invoked via 
 
 ### FE Known Issues - 공통 주의사항 (REQUIRED)
 
-**1. apiClient FormData 전송 시 Content-Type 명시 필수** (`lib/api/client.ts`)
-- `apiClient`의 기본 헤더가 `Content-Type: application/json`으로 고정되어 있음
-- 파일 업로드(FormData) 전송 시 반드시 Content-Type을 명시적으로 override해야 함
-- **위반 시**: File 객체가 `{}` 빈 객체로 JSON 직렬화되어 BE에서 400 에러 발생
+**1. apiClient(ofetch) FormData 전송** (`lib/api/client.ts`)
+- HTTP 클라이언트로 `ofetch`를 사용 (axios에서 마이그레이션 완료)
+- ofetch는 `body`에 FormData를 전달하면 자동으로 `multipart/form-data`를 설정함
+- Content-Type 수동 지정 불필요 (수동 지정 시 boundary 누락 오류 발생 가능)
 ```typescript
-// WRONG - FormData가 JSON으로 전송됨
-await apiClient.put('/endpoint', formData);
-
-// CORRECT - multipart/form-data 명시
-await apiClient.put('/endpoint', formData, {
+// WRONG - Content-Type 수동 지정 (boundary 누락됨)
+await apiClient('/endpoint', {
+  method: 'PUT',
+  body: formData,
   headers: { 'Content-Type': 'multipart/form-data' },
+});
+
+// CORRECT - ofetch가 FormData 감지 후 자동 설정
+await apiClient('/endpoint', {
+  method: 'PUT',
+  body: formData,
 });
 ```
 
@@ -427,7 +432,20 @@ function FormChild({ data }) {
   SELECT * FROM tb_table_name LIMIT 5;
   ```
 
-### 3. 페이지 단위 API 단일 호출
+### 3. .http 테스트 파일 Bearer 토큰 필수
+- **`/auth/login`을 제외한 모든 API의 .http 테스트에는 반드시 `Authorization: Bearer {{token}}`을 포함해야 한다.**
+- 각 `.http` 파일 상단에 `@token` 변수를 선언하고, 모든 요청에서 `{{token}}`으로 참조한다.
+- 로그인 API로 발급받은 `accessToken` 값을 `@token`에 붙여넣어 사용한다.
+- JwtAuthGuard가 글로벌 적용되어 있으므로, Bearer 토큰 없이는 401 Unauthorized가 반환된다.
+```
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.PASTE_YOUR_TOKEN_HERE
+
+### API 요청 예시
+GET http://localhost:8000/api/v1/some-endpoint
+Authorization: Bearer {{token}}
+```
+
+### 4. 페이지 단위 API 단일 호출
 - **하나의 페이지에서 저장 버튼을 누르면 API를 한 번만 호출한다.**
 - 설정값 + 파일 업로드 등 여러 데이터를 저장할 때 별도 API로 분리하지 말고, 하나의 엔드포인트에서 `multipart/form-data`로 원자적으로 처리한다.
 - 하나라도 실패하면 전체 롤백되어야 한다.
@@ -435,7 +453,7 @@ function FormChild({ data }) {
 ### 지침 확인 프로토콜
 - **새 세션 시작 시 또는 개발 작업 착수 전에 반드시 이 CRITICAL RULES를 확인하고, 아래와 같이 echo 출력하여 사용자에게 인지시켜라:**
   ```
-  [CRITICAL RULES 확인 완료] 1.테이블생성금지 2.기존DB우선확인 3.페이지단위API단일호출
+  [CRITICAL RULES 확인 완료] 1.테이블생성금지 2.기존DB우선확인 3.http파일Bearer필수 4.페이지단위API단일호출
   ```
 
 ### 이 규칙을 위반하면 안 됩니다. 모든 개발 작업에 우선 적용됩니다.

@@ -20,8 +20,8 @@ export interface LNBMenuItem {
  * Navigation State Interface
  */
 interface NavigationState {
-  activeGNB: GNBMenuItem;
-  setActiveGNB: (menu: GNBMenuItem) => void;
+  activeGNB: GNBMenuItem | null;
+  setActiveGNB: (menu: GNBMenuItem | null) => void;
 }
 
 /**
@@ -34,8 +34,8 @@ interface NavigationState {
 export const useNavigationStore = create<NavigationState>()(
   persist(
     (set) => ({
-      activeGNB: 'controller',
-      setActiveGNB: (menu: GNBMenuItem) => set({ activeGNB: menu }),
+      activeGNB: null,
+      setActiveGNB: (menu: GNBMenuItem | null) => set({ activeGNB: menu }),
     }),
     {
       name: 'ku-navigation-storage',

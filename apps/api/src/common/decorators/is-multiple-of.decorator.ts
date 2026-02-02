@@ -1,13 +1,6 @@
-import {
-  registerDecorator,
-  ValidationOptions,
-  ValidationArguments,
-} from 'class-validator';
+import { registerDecorator, ValidationOptions, ValidationArguments } from 'class-validator';
 
-export function IsMultipleOf(
-  multiple: number,
-  validationOptions?: ValidationOptions,
-) {
+export function IsMultipleOf(multiple: number, validationOptions?: ValidationOptions) {
   return function (object: Record<string, any>, propertyName: string) {
     registerDecorator({
       name: 'isMultipleOf',

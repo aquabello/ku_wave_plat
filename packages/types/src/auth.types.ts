@@ -1,10 +1,8 @@
-import { UserRole } from './user.types';
-
 /**
  * 로그인 요청 DTO
  */
 export interface LoginDto {
-  email: string;
+  id: string;
   password: string;
 }
 
@@ -13,37 +11,23 @@ export interface LoginDto {
  */
 export interface LoginResponse {
   accessToken: string;
-  refreshToken: string;
   user: {
+    seq: number;
     id: string;
-    email: string;
     name: string;
-    role: UserRole;
+    email: string;
+    type: string;
+    step: string;
   };
-}
-
-/**
- * 토큰 갱신 요청 DTO
- */
-export interface RefreshTokenDto {
-  refreshToken: string;
-}
-
-/**
- * 토큰 갱신 응답
- */
-export interface RefreshTokenResponse {
-  accessToken: string;
-  refreshToken: string;
 }
 
 /**
  * JWT 페이로드
  */
 export interface JwtPayload {
-  sub: string; // user id
-  email: string;
-  role: UserRole;
+  sub: number;
+  id: string;
+  type: string;
   iat?: number;
   exp?: number;
 }
@@ -52,7 +36,10 @@ export interface JwtPayload {
  * 현재 사용자 (인증된 사용자)
  */
 export interface CurrentUser {
+  seq: number;
   id: string;
+  name: string;
   email: string;
-  role: UserRole;
+  type: string;
+  step: string;
 }

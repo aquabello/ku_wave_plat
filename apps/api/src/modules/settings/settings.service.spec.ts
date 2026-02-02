@@ -74,9 +74,7 @@ describe('SettingsService', () => {
 
     it('should throw NotFoundException if no settings exist', async () => {
       mockRepository.findOne.mockResolvedValue(null);
-      await expect(service.getSystemSettings()).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.getSystemSettings()).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -103,15 +101,11 @@ describe('SettingsService', () => {
 
     it('should throw NotFoundException if no settings exist', async () => {
       (mockQueryRunner.manager.findOne as jest.Mock).mockResolvedValue(null);
-      await expect(service.updateSystemSettings(validDto)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.updateSystemSettings(validDto)).rejects.toThrow(NotFoundException);
     });
 
     it('should rollback on DB error', async () => {
-      (mockQueryRunner.manager.findOne as jest.Mock).mockRejectedValue(
-        new Error('DB error'),
-      );
+      (mockQueryRunner.manager.findOne as jest.Mock).mockRejectedValue(new Error('DB error'));
       await expect(service.updateSystemSettings(validDto)).rejects.toThrow();
       expect(mockQueryRunner.rollbackTransaction).toHaveBeenCalled();
       expect(mockQueryRunner.release).toHaveBeenCalled();
@@ -125,9 +119,9 @@ describe('SettingsService', () => {
         buffer: Buffer.from(''),
       } as Express.Multer.File;
 
-      await expect(
-        service.updateSystemSettings(validDto, mockFile),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.updateSystemSettings(validDto, mockFile)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should reject image exceeding 5MB', async () => {
@@ -138,9 +132,9 @@ describe('SettingsService', () => {
         buffer: Buffer.from(''),
       } as Express.Multer.File;
 
-      await expect(
-        service.updateSystemSettings(validDto, mockFile),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.updateSystemSettings(validDto, mockFile)).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 });

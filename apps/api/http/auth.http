@@ -1,0 +1,76 @@
+### 1. 로그인 - 정상 요청
+POST http://localhost:8000/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "id": "admin",
+  "password": "!today25@"
+}
+
+### 2. 로그인 - 아이디 틀림 → 401
+POST http://localhost:8000/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "id": "nonexistent",
+  "password": "!today25@"
+}
+
+### 3. 로그인 - 비밀번호 틀림 → 401
+POST http://localhost:8000/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "id": "admin",
+  "password": "wrongpassword"
+}
+
+### 4. [ERROR] 아이디 누락 → 400
+POST http://localhost:8000/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "password": "!today25@"
+}
+
+### 5. [ERROR] 비밀번호 누락 → 400
+POST http://localhost:8000/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "id": "admin"
+}
+
+### 6. [ERROR] 빈 body → 400
+POST http://localhost:8000/api/v1/auth/login
+Content-Type: application/json
+
+{}
+
+### ──────────────────────────────────────
+### Bearer 토큰 테스트 (로그인 후 accessToken 값을 아래에 붙여넣기)
+### ──────────────────────────────────────
+
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.PASTE_YOUR_TOKEN_HERE
+
+### 7. Bearer 토큰으로 보호된 API 호출 → 200
+GET http://localhost:8000/api/v1/settings/system
+Authorization: Bearer {{token}}
+
+### 8. Bearer 토큰 없이 보호된 API 호출 → 401
+GET http://localhost:8000/api/v1/settings/system
+
+### 9. 잘못된 Bearer 토큰 → 401
+GET http://localhost:8000/api/v1/settings/system
+Authorization: Bearer invalid.token.here
+
+### ──────────────────────────────────────
+### 로그아웃 테스트
+### ──────────────────────────────────────
+
+### 10. 로그아웃 → 200
+POST http://localhost:8000/api/v1/auth/logout
+Authorization: Bearer {{token}}
+
+### 11. 로그아웃 - 토큰 없이 → 401
+POST http://localhost:8000/api/v1/auth/logout

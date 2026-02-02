@@ -1,0 +1,90 @@
+### 변수 설정
+@baseUrl = http://localhost:8000/api/v1
+@token = YOUR_JWT_TOKEN_HERE
+@testSeq = 1
+
+### 1. 회원 정보 업데이트 - PUT /users/:seq
+PUT {{baseUrl}}/users/{{testSeq}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "홍길동",
+  "phone": "010-1234-5678",
+  "email": "hong@example.com"
+}
+
+### 2. 회원 정보 업데이트 (부분 업데이트 - 이름만)
+PUT {{baseUrl}}/users/{{testSeq}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "김철수"
+}
+
+### 3. 회원 정보 업데이트 (부분 업데이트 - 이메일만)
+PUT {{baseUrl}}/users/{{testSeq}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "email": "kim@example.com"
+}
+
+### 4. 비밀번호 초기화 - PATCH /users/:seq/reset-password
+PATCH {{baseUrl}}/users/{{testSeq}}/reset-password
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "newPassword": "newPassword123!"
+}
+
+### 5. 회원 삭제 (소프트 삭제) - DELETE /users/:seq
+DELETE {{baseUrl}}/users/{{testSeq}}
+Authorization: Bearer {{token}}
+
+### 6. 삭제된 회원 정보 업데이트 시도 (404 에러 발생 예상)
+PUT {{baseUrl}}/users/{{testSeq}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "테스트"
+}
+
+### 7. 존재하지 않는 회원 조회 (404 에러 발생 예상)
+PUT {{baseUrl}}/users/9999
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "테스트"
+}
+
+### 8. 유효하지 않은 이메일 형식 (400 에러 발생 예상)
+PUT {{baseUrl}}/users/{{testSeq}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "email": "invalid-email"
+}
+
+### 9. 짧은 비밀번호 (400 에러 발생 예상)
+PATCH {{baseUrl}}/users/{{testSeq}}/reset-password
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "newPassword": "short"
+}
+
+### 10. 인증 토큰 없이 요청 (401 에러 발생 예상)
+PUT {{baseUrl}}/users/{{testSeq}}
+Content-Type: application/json
+
+{
+  "name": "테스트"
+}
