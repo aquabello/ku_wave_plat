@@ -6,6 +6,7 @@ import {
   Cpu,
   Radio,
   Monitor,
+  Zap,
   Users,
   Settings,
 } from 'lucide-react';
@@ -38,6 +39,11 @@ const GNB_MENUS: GNBMenuConfig[] = [
     id: 'screen-share',
     name: '화면공유',
     icon: Monitor,
+  },
+  {
+    id: 'ai-system',
+    name: 'AI시스템',
+    icon: Zap,
   },
   {
     id: 'member',

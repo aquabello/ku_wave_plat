@@ -15,6 +15,7 @@ import {
   Shield,
   Activity,
   Wrench,
+  BookOpen,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigationStore, type GNBMenuItem, type LNBMenuItem } from '@/stores/navigation';
@@ -75,6 +76,14 @@ const LNB_MENU_CONFIG: Record<GNBMenuItem, LNBMenuItem[]> = {
       name: '공유 설정',
       href: '/screen-share/settings',
       icon: SlidersHorizontal,
+    },
+  ],
+  'ai-system': [
+    {
+      id: 'ai-lecture-summary',
+      name: '강의요약',
+      href: '/ai-system/lecture-summary',
+      icon: BookOpen,
     },
   ],
   member: [
@@ -200,6 +209,7 @@ function getLNBTitle(gnb: GNBMenuItem | null): string {
     controller: '컨트롤러',
     rfid: 'RFID',
     'screen-share': '화면공유',
+    'ai-system': 'AI시스템',
     member: '회원관리',
     settings: '환경설정',
   };
