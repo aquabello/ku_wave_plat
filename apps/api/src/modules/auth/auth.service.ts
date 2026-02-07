@@ -52,6 +52,11 @@ export class AuthService {
       throw new UnauthorizedException('로그인에 실패하였습니다');
     }
 
+    // 승인된 회원만 로그인 가능
+    if (user.step !== 'OK') {
+      throw new UnauthorizedException('승인된 회원만 로그인할 수 있습니다');
+    }
+
     // JWT 페이로드 생성
     const payload = {
       sub: user.seq,

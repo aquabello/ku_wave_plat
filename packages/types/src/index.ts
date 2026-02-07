@@ -24,3 +24,9 @@ export * from './settings.types';
 
 // Building Types
 export * from './building.types';
+
+// Member Types
+export * from './member.types';
+
+// Permission Types
+export * from './permission.types';

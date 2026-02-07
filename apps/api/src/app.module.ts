@@ -15,6 +15,7 @@ import { CustomersModule } from '@modules/customers/customers.module';
 import { AnalyticsModule } from '@modules/analytics/analytics.module';
 import { SettingsModule } from '@modules/settings/settings.module';
 import { BuildingsModule } from '@modules/buildings/buildings.module';
+import { MenusModule } from '@modules/menus/menus.module';
 
 // Common modules
 import { HttpClientModule } from '@/common/http';
@@ -75,6 +76,7 @@ import { AppService } from './app.service';
     AnalyticsModule,
     SettingsModule,
     BuildingsModule,
+    MenusModule,
   ],
   controllers: [AppController],
   providers: [

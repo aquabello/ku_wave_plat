@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsEmail, MaxLength } from 'class-validator';
+import { IsOptional, IsString, IsEmail, IsIn, MaxLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateUserDto {
@@ -34,4 +34,15 @@ export class UpdateUserDto {
   @IsEmail({}, { message: '올바른 이메일 형식이 아닙니다' })
   @MaxLength(50, { message: '이메일은 최대 50자까지 입력 가능합니다' })
   email?: string;
+
+  @ApiProperty({
+    description: '회원 상태 (ST=대기, OK=승인, BN=반려)',
+    example: 'OK',
+    enum: ['ST', 'OK', 'BN'],
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  @IsIn(['ST', 'OK', 'BN'], { message: '상태는 ST, OK, BN 중 하나여야 합니다' })
+  step?: string;
 }

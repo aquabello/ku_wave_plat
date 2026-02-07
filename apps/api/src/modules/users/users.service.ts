@@ -1,10 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { TbUser } from './entities/tb-user.entity';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { ResetPasswordDto } from './dto/reset-password.dto';
+import { UpdateUserDto, ResetPasswordDto, UserQueryDto, CreateUserDto } from './dto';
+import { UserListItemDto, UserListResponseDto } from './dto';
 
 @Injectable()
 export class UsersService {
@@ -12,6 +12,52 @@ export class UsersService {
     @InjectRepository(TbUser)
     private readonly userRepository: Repository<TbUser>,
   ) {}
+
+  /**
+   * 사용자 리스트 조회 (삭제되지 않은 사용자만, 페이징)
+   */
+  async findAll(query: UserQueryDto): Promise<UserListResponseDto> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+    const skip = (page - 1) * limit;
+
+    const qb = this.userRepository
+      .createQueryBuilder('u')
+      .where('(u.tu_isdel IS NULL OR u.tu_isdel != :deleted)', {
+        deleted: 'Y',
+      });
+
+    if (query.search) {
+      qb.andWhere(
+        '(u.tu_id LIKE :search OR u.tu_name LIKE :search OR u.tu_email LIKE :search)',
+        { search: `%${query.search}%` },
+      );
+    }
+
+    const [users, total] = await qb
+      .orderBy('u.tu_seq', 'DESC')
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    const items: UserListItemDto[] = users.map((u, index) => ({
+      no: total - skip - index,
+      seq: u.seq,
+      id: u.id,
+      name: u.name,
+      lastAccessDate: u.lastAccessDate,
+      step: u.step,
+      approvedDate: u.approvedDate,
+    }));
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
 
   /**
    * 아이디로 사용자 조회 (삭제되지 않은 사용자만)
@@ -62,6 +108,27 @@ export class UsersService {
   }
 
   /**
+   * 회원 등록 (아이디, 이름만)
+   */
+  async create(createUserDto: CreateUserDto): Promise<Omit<TbUser, 'password'>> {
+    // 아이디 중복 체크
+    const existing = await this.findByUserId(createUserDto.id);
+    if (existing) {
+      throw new ConflictException('이미 사용 중인 아이디입니다');
+    }
+
+    const user = this.userRepository.create({
+      id: createUserDto.id,
+      name: createUserDto.name,
+    });
+
+    const savedUser = await this.userRepository.save(user);
+
+    const { password, ...userWithoutPassword } = savedUser;
+    return userWithoutPassword;
+  }
+
+  /**
    * 회원 정보 업데이트
    * @param seq 사용자 시퀀스
    * @param updateUserDto 업데이트할 데이터
@@ -83,6 +150,13 @@ export class UsersService {
     }
     if (updateUserDto.email !== undefined) {
       user.email = updateUserDto.email;
+    }
+    if (updateUserDto.step !== undefined) {
+      user.step = updateUserDto.step;
+      // 승인(OK) 시 승인일시 자동 설정
+      if (updateUserDto.step === 'OK') {
+        user.approvedDate = new Date();
+      }
     }
 
     const updatedUser = await this.userRepository.save(user);
@@ -130,15 +204,5 @@ export class UsersService {
     await this.userRepository.update(seq, {
       isDel: 'Y',
     });
-  }
-
-  async findAll() {
-    // TODO: Implement actual database query
-    return [];
-  }
-
-  async findOne(id: string) {
-    // TODO: Implement actual database query
-    return { id };
   }
 }

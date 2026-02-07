@@ -29,6 +29,7 @@ create table tb_users
     tu_isdel            char                        null comment '삭제여부',
     tu_step             char(2)                     null comment '상태',
     tu_type             char(6)                     null comment '타입',
+    tu_approved_date    datetime                    null comment '승인일시',
     tu_content_yn       enum ('Y', 'N') default 'Y' null comment '콘텐츠 사용여부',
     tu_work_type        varchar(10)                 null comment '계약타입',
     tu_last_access_date datetime                    null comment '마지막 접속',
@@ -76,4 +77,78 @@ create index idx_building_name
 create index idx_building_order
     on tb_building (building_order);
 
+
+-- 메뉴 마스터
+create table tb_menu
+(
+    menu_seq    int auto_increment comment '메뉴 시퀀스' primary key,
+    menu_name   varchar(50)                          not null comment '메뉴명',
+    menu_code   varchar(50)                          not null comment '메뉴코드',
+    menu_path   varchar(255)                         null comment '라우트 경로',
+    menu_type   enum ('GNB', 'LNB')                  not null comment '메뉴 타입 (GNB=상단, LNB=사이드)',
+    parent_seq  int                                  null comment '상위메뉴 시퀀스 (GNB은 null)',
+    menu_order  int          default 0               null comment '정렬 순서',
+    menu_isdel  char         default 'N'             null comment '삭제 여부',
+    reg_date    datetime     default current_timestamp() null comment '등록일시',
+    constraint uk_menu_code unique (menu_code),
+    constraint fk_menu_parent foreign key (parent_seq) references tb_menu (menu_seq) on delete set null
+)
+    comment '메뉴 마스터' charset = utf8mb4;
+
+create index idx_menu_type on tb_menu (menu_type);
+create index idx_menu_parent on tb_menu (parent_seq);
+create index idx_menu_order on tb_menu (menu_order);
+
+-- 메뉴 초기 데이터: GNB (상단 메뉴 7개)
+INSERT INTO tb_menu (menu_seq, menu_name, menu_code, menu_path, menu_type, parent_seq, menu_order) VALUES
+(1,  '컨트롤러',  'controller',    null,                      'GNB', null, 1),
+(2,  'RFID',      'rfid',          null,                      'GNB', null, 2),
+(3,  '화면공유',  'screen-share',  null,                      'GNB', null, 3),
+(4,  'AI시스템',  'ai-system',     null,                      'GNB', null, 4),
+(5,  '디스플레이','display',       null,                      'GNB', null, 5),
+(6,  '회원관리',  'member',        null,                      'GNB', null, 6),
+(7,  '환경설정',  'settings',      null,                      'GNB', null, 7);
+
+-- 메뉴 초기 데이터: LNB (사이드 메뉴 16개)
+INSERT INTO tb_menu (menu_seq, menu_name, menu_code, menu_path, menu_type, parent_seq, menu_order) VALUES
+-- 컨트롤러 하위
+(11, '하드웨어 설정', 'controller-hardware', '/controller/hardware', 'LNB', 1, 1),
+(12, '제어관리',      'controller-control',  '/controller/control',  'LNB', 1, 2),
+-- RFID 하위
+(21, '태그 관리',     'rfid-tag',            '/rfid/tags',           'LNB', 2, 1),
+(22, '리더기 관리',   'rfid-reader',         '/rfid/readers',        'LNB', 2, 2),
+(23, '로그',          'rfid-log',            '/rfid/logs',           'LNB', 2, 3),
+-- 화면공유 하위
+(31, '세션 목록',     'screen-session',      '/screen-share/sessions',  'LNB', 3, 1),
+(32, '공유 설정',     'screen-settings',     '/screen-share/settings',  'LNB', 3, 2),
+-- AI시스템 하위
+(41, '강의요약',      'ai-lecture-summary',  '/ai-system/lecture-summary', 'LNB', 4, 1),
+-- 디스플레이 하위
+(51, '플레이어',      'display-player',      '/display/player',      'LNB', 5, 1),
+(52, '리스트관리',    'display-list',        '/display/list',        'LNB', 5, 2),
+(53, '콘텐츠관리',    'display-content',     '/display/content',     'LNB', 5, 3),
+-- 회원관리 하위
+(61, '사용자 목록',   'member-list',         '/members',             'LNB', 6, 1),
+(62, '권한 관리',     'member-permissions',  '/members/permissions', 'LNB', 6, 2),
+(63, '활동 로그',     'member-activity',     '/members/activity',    'LNB', 6, 3),
+-- 환경설정 하위
+(71, '건물관리',      'settings-buildings',  '/settings/buildings',  'LNB', 7, 1),
+(72, '시스템 설정',   'settings-system',     '/settings',            'LNB', 7, 2);
+
+
+-- 사용자별 메뉴 권한
+create table tb_menu_users
+(
+    mu_seq    int auto_increment comment '시퀀스' primary key,
+    tu_seq    int                                  not null comment '사용자 시퀀스',
+    menu_seq  int                                  not null comment '메뉴 시퀀스',
+    reg_date  datetime     default current_timestamp() null comment '권한 부여일',
+    constraint fk_mu_user foreign key (tu_seq) references tb_users (tu_seq) on delete cascade,
+    constraint fk_mu_menu foreign key (menu_seq) references tb_menu (menu_seq) on delete cascade,
+    constraint uk_mu_user_menu unique (tu_seq, menu_seq)
+)
+    comment '사용자별 메뉴 권한' charset = utf8mb4;
+
+create index idx_mu_user on tb_menu_users (tu_seq);
+create index idx_mu_menu on tb_menu_users (menu_seq);
 

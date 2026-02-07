@@ -21,9 +21,6 @@ import { Label } from '@/components/ui/label';
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import {
   Table,
@@ -379,12 +376,7 @@ export default function BuildingsPage() {
     <div className="space-y-6">
       {/* 페이지 헤더 */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">건물관리</h1>
-          <p className="text-muted-foreground">
-            캠퍼스 건물 정보를 관리합니다
-          </p>
-        </div>
+        <h1 className="text-3xl font-bold tracking-tight">건물관리</h1>
         <Button onClick={handleAdd}>
           <Plus className="mr-2 h-4 w-4" />
           건물 추가
@@ -433,16 +425,7 @@ export default function BuildingsPage() {
 
       {/* 건물 목록 테이블 */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Building2 className="h-5 w-5" />
-            건물 목록
-          </CardTitle>
-          <CardDescription>
-            등록된 건물 목록을 확인하고 관리할 수 있습니다
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <Table>
             <TableHeader>
               <TableRow>

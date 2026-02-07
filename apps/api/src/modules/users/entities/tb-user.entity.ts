@@ -164,6 +164,14 @@ export class TbUser {
   siSeq: number | null;
 
   @Column({
+    name: 'tu_approved_date',
+    type: 'datetime',
+    nullable: true,
+    comment: '승인일시',
+  })
+  approvedDate: Date | null;
+
+  @Column({
     name: 'reg_date',
     type: 'datetime',
     nullable: true,

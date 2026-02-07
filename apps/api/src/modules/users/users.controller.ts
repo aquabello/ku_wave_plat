@@ -1,14 +1,17 @@
 import {
   Controller,
   Get,
+  Post,
   Put,
   Patch,
   Delete,
   Body,
   Param,
+  Query,
   ParseIntPipe,
   HttpCode,
   HttpStatus,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -18,8 +21,7 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { UsersService } from './users.service';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { ResetPasswordDto } from './dto/reset-password.dto';
+import { CreateUserDto, UpdateUserDto, ResetPasswordDto, UserQueryDto, UserListResponseDto } from './dto';
 
 @ApiTags('users')
 @ApiBearerAuth()
@@ -28,18 +30,37 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Get all users' })
-  @ApiResponse({ status: 200, description: 'Users retrieved successfully' })
-  findAll() {
-    return this.usersService.findAll();
+  @ApiOperation({ summary: '사용자 리스트 조회 (페이징)' })
+  @ApiResponse({
+    status: 200,
+    description: '사용자 리스트 조회 성공',
+    type: UserListResponseDto,
+  })
+  findAll(@Query() query: UserQueryDto) {
+    return this.usersService.findAll(query);
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Get user by ID' })
-  @ApiResponse({ status: 200, description: 'User retrieved successfully' })
-  @ApiResponse({ status: 404, description: 'User not found' })
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(id);
+  @Get(':seq')
+  @ApiOperation({ summary: '사용자 상세 조회' })
+  @ApiParam({ name: 'seq', description: '사용자 시퀀스', example: 1, type: Number })
+  @ApiResponse({ status: 200, description: '사용자 상세 조회 성공' })
+  @ApiResponse({ status: 404, description: '해당 회원을 찾을 수 없습니다' })
+  async findOne(@Param('seq', ParseIntPipe) seq: number) {
+    const user = await this.usersService.findBySeq(seq);
+    if (!user) {
+      throw new NotFoundException('해당 회원을 찾을 수 없습니다');
+    }
+    const { password, ...userWithoutPassword } = user;
+    return userWithoutPassword;
+  }
+
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: '회원 등록' })
+  @ApiResponse({ status: 201, description: '회원이 등록되었습니다' })
+  @ApiResponse({ status: 409, description: '이미 사용 중인 아이디입니다' })
+  create(@Body() createUserDto: CreateUserDto) {
+    return this.usersService.create(createUserDto);
   }
 
   @Put(':seq')
