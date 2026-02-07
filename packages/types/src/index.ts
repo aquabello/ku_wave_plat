@@ -21,3 +21,6 @@ export * from './dashboard.types';
 
 // Settings Types
 export * from './settings.types';
+
+// Building Types
+export * from './building.types';

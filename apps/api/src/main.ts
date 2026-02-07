@@ -69,6 +69,7 @@ async function bootstrap() {
     .addTag('customers', 'Customer management')
     .addTag('analytics', 'Analytics data')
     .addTag('settings', 'Application settings')
+    .addTag('buildings', '건물 관리')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

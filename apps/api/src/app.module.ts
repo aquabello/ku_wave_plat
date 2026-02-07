@@ -14,6 +14,7 @@ import { OrdersModule } from '@modules/orders/orders.module';
 import { CustomersModule } from '@modules/customers/customers.module';
 import { AnalyticsModule } from '@modules/analytics/analytics.module';
 import { SettingsModule } from '@modules/settings/settings.module';
+import { BuildingsModule } from '@modules/buildings/buildings.module';
 
 // Common modules
 import { HttpClientModule } from '@/common/http';
@@ -73,6 +74,7 @@ import { AppService } from './app.service';
     CustomersModule,
     AnalyticsModule,
     SettingsModule,
+    BuildingsModule,
   ],
   controllers: [AppController],
   providers: [

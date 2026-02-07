@@ -15,7 +15,7 @@ import {
   validateImageFile,
   type SystemSettingsFormValues,
 } from '@/lib/validations/settings';
-import { useToast } from '@/hooks/use-toast';
+import { showToast } from '@/lib/toast';
 import type { SystemSettings } from '@/types/settings';
 
 import {
@@ -91,7 +91,6 @@ export default function SettingsPage() {
  * 데이터 로드 완료 후에만 렌더링되어 defaultValues가 정확한 값을 갖습니다.
  */
 function SettingsForm({ settings }: { settings: SystemSettings }) {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -115,10 +114,10 @@ function SettingsForm({ settings }: { settings: SystemSettings }) {
       queryClient.invalidateQueries({ queryKey: ['systemSettings'] });
       setSelectedFile(null);
       setImagePreview(null);
-      toast({ variant: 'success', title: '저장되었습니다.' });
+      showToast.success('저장 완료', '설정이 저장되었습니다.');
     },
     onError: (error: Error) => {
-      toast({ variant: 'destructive', title: `실행중 오류가 발생했습니다 (오류원인: ${error.message || '알 수 없는 오류'})` });
+      showToast.error('저장 실패', error.message || '알 수 없는 오류가 발생했습니다');
     },
   });
 
@@ -135,7 +134,7 @@ function SettingsForm({ settings }: { settings: SystemSettings }) {
     // Validate file
     const validationError = validateImageFile(file);
     if (validationError) {
-      toast({ variant: 'destructive', title: `실행중 오류가 발생했습니다 (오류원인: ${validationError})` });
+      showToast.error('파일 오류', validationError);
       event.target.value = '';
       return;
     }

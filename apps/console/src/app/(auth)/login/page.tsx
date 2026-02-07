@@ -4,18 +4,16 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { FetchError } from 'ofetch';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { showToast } from '@/lib/toast';
 import { login } from '@/lib/api/auth';
 import { loginSchema, type LoginFormValues } from '@/lib/validations/auth';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
   const {
@@ -35,17 +33,10 @@ export default function LoginPage() {
     try {
       const response = await login(data);
       localStorage.setItem('access_token', response.accessToken);
+      localStorage.setItem('user', JSON.stringify(response.user));
       router.push('/dashboard');
     } catch (error) {
-      const message =
-        error instanceof FetchError && error.data?.message
-          ? error.data.message
-          : '로그인 중 오류가 발생했습니다';
-      toast({
-        variant: 'destructive',
-        title: '로그인 실패',
-        description: message,
-      });
+      showToast.apiError(error, '로그인 중 오류가 발생했습니다');
     } finally {
       setIsLoading(false);
     }

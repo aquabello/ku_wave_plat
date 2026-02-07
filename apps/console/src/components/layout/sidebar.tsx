@@ -13,6 +13,7 @@ import {
   Shield,
   Activity,
   Wrench,
+  Building2,
   BookOpen,
   Play,
   ListOrdered,
@@ -121,12 +122,20 @@ const LNB_MENU_CONFIG: Record<GNBMenuItem, LNBMenuItem[]> = {
       icon: Activity,
     },
   ],
-  settings: [{
-    id: 'settings-system',
-    name: '시스템 설정',
-    href: '/settings',
-    icon: Wrench,
-  }],
+  settings: [
+    {
+      id: 'settings-buildings',
+      name: '건물관리',
+      href: '/settings/buildings',
+      icon: Building2,
+    },
+    {
+      id: 'settings-system',
+      name: '시스템 설정',
+      href: '/settings',
+      icon: Wrench,
+    },
+  ],
 };
 
 /**
@@ -150,6 +159,15 @@ export function Sidebar() {
   // Get sub-menus for current GNB selection
   const currentMenus = activeGNB ? LNB_MENU_CONFIG[activeGNB] : [];
 
+  // 가장 구체적인(가장 긴) href 매칭 아이템만 활성화
+  const activeItemId = currentMenus.reduce<string | null>((bestId, item) => {
+    const matches = pathname === item.href || pathname.startsWith(item.href + '/');
+    if (!matches) return bestId;
+    const bestItem = currentMenus.find((m) => m.id === bestId);
+    if (!bestItem) return item.id;
+    return item.href.length > bestItem.href.length ? item.id : bestId;
+  }, null);
+
   return (
     <aside className="flex h-full w-64 flex-col border-r border-border bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30">
       {/* LNB Navigation Menu */}
@@ -161,7 +179,7 @@ export function Sidebar() {
           </div>
         ) : (
           currentMenus.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+            const isActive = item.id === activeItemId;
             const Icon = item.icon;
 
             return (

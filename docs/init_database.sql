@@ -44,5 +44,36 @@ create table tb_users
 comment '회원 테이블';
 
 
+-- 건물관리
+create table tb_building
+(
+    building_seq           int auto_increment comment '건물 시퀀스'
+        primary key,
+    building_name          varchar(100)                         not null comment '건물명',
+    building_code          varchar(50)                          not null comment '건물 코드 (예: BLD-001)',
+    building_location      text                                 null comment '위치 설명',
+    building_floor_count   int      default 0                   null comment '층수',
+    building_order         int      default 0                   null comment '정렬 순서',
+    building_manager_name  varchar(100)                         null comment '건물 담당자',
+    building_manager_phone varchar(20)                          null comment '담당자 연락처',
+    building_isdel         char     default 'N'                 null comment '삭제 여부',
+    reg_date               datetime default current_timestamp() null comment '등록일시',
+    upd_date               datetime default current_timestamp() null on update current_timestamp() comment '수정일시',
+    constraint building_code
+        unique (building_code)
+)
+    comment '건물 마스터' charset = utf8mb4;
+
+create index idx_building_code
+    on tb_building (building_code);
+
+create index idx_building_isdel
+    on tb_building (building_isdel);
+
+create index idx_building_name
+    on tb_building (building_name);
+
+create index idx_building_order
+    on tb_building (building_order);
 
 

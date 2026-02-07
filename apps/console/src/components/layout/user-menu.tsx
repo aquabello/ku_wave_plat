@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LogOut, Settings, User } from 'lucide-react';
 import {
@@ -12,17 +13,32 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import type { CurrentUser } from '@ku/types';
 
 export function UserMenu() {
   const router = useRouter();
+  const [user, setUser] = useState<CurrentUser | null>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('user');
+    if (stored) {
+      try {
+        setUser(JSON.parse(stored));
+      } catch {
+        // invalid JSON
+      }
+    }
+  }, []);
+
+  const displayName = user?.name || '사용자';
+  const displayEmail = user?.email || '';
+  const initials = displayName.slice(0, 1).toUpperCase();
 
   const handleLogout = () => {
-    // Remove access_token from localStorage
     if (typeof window !== 'undefined') {
       localStorage.removeItem('access_token');
+      localStorage.removeItem('user');
     }
-
-    // Redirect to login page
     router.replace('/login');
   };
 
@@ -36,7 +52,7 @@ export function UserMenu() {
           <Avatar className="h-10 w-10 shadow-md ring-2 ring-background transition-all duration-200 hover:shadow-lg">
             <AvatarImage src="/avatar.png" alt="User" />
             <AvatarFallback className="bg-gradient-to-br from-konkuk-green to-konkuk-green-light text-white font-semibold">
-              KU
+              {initials}
             </AvatarFallback>
           </Avatar>
         </Button>
@@ -49,15 +65,15 @@ export function UserMenu() {
         <DropdownMenuLabel className="font-normal p-3">
           <div className="flex items-center gap-3">
             <Avatar className="h-12 w-12 shadow-md ring-2 ring-konkuk-green/20">
-              <AvatarImage src="/avatar.png" alt="User" />
+              <AvatarImage src="/avatar.png" alt={displayName} />
               <AvatarFallback className="bg-gradient-to-br from-konkuk-green to-konkuk-green-light text-white font-semibold">
-                KU
+                {initials}
               </AvatarFallback>
             </Avatar>
             <div className="flex flex-col space-y-1">
-              <p className="text-sm font-semibold leading-none">관리자</p>
+              <p className="text-sm font-semibold leading-none">{displayName}</p>
               <p className="text-xs leading-none text-muted-foreground">
-                admin@ku.com
+                {displayEmail}
               </p>
             </div>
           </div>
