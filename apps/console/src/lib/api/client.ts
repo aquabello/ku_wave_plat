@@ -1,4 +1,5 @@
 import { ofetch, FetchError } from 'ofetch';
+import { useNavigationStore } from '@/stores/navigation';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
@@ -14,8 +15,20 @@ export const apiClient = ofetch.create({
   },
   onResponseError({ response }) {
     if (response.status === 401) {
+      const message = response._data?.message || '';
+      const isPermissionChanged =
+        typeof message === 'string' && message.includes('권한이 변경되었습니다');
+
       localStorage.removeItem('access_token');
+      localStorage.removeItem('user');
+      useNavigationStore.getState().clearMenus();
+
       if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+        if (isPermissionChanged) {
+          sessionStorage.setItem('logout_reason', 'permission_changed');
+        } else {
+          sessionStorage.setItem('logout_reason', 'session_expired');
+        }
         window.location.href = '/login';
       }
     }

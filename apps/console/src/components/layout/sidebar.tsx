@@ -20,152 +20,53 @@ import {
   FolderOpen,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useNavigationStore, type GNBMenuItem, type LNBMenuItem } from '@/stores/navigation';
+import { useNavigationStore } from '@/stores/navigation';
 
 /**
- * LNB Menu Configuration by GNB Category
+ * LNB menuCode → Icon 매핑
  */
-const LNB_MENU_CONFIG: Record<GNBMenuItem, LNBMenuItem[]> = {
-  controller: [
-    {
-      id: 'controller-hardware',
-      name: '하드웨어 설정',
-      href: '/controller/hardware',
-      icon: SettingsIcon,
-    },
-    {
-      id: 'controller-control',
-      name: '제어관리',
-      href: '/controller/control',
-      icon: SlidersHorizontal,
-    },
-  ],
-  rfid: [
-    {
-      id: 'rfid-tag',
-      name: '태그 관리',
-      href: '/rfid/tags',
-      icon: Tag,
-    },
-    {
-      id: 'rfid-reader',
-      name: '리더기 관리',
-      href: '/rfid/readers',
-      icon: Cpu,
-    },
-    {
-      id: 'rfid-log',
-      name: '로그',
-      href: '/rfid/logs',
-      icon: FileText,
-    },
-  ],
-  'screen-share': [
-    {
-      id: 'screen-session',
-      name: '세션 목록',
-      href: '/screen-share/sessions',
-      icon: MonitorPlay,
-    },
-    {
-      id: 'screen-settings',
-      name: '공유 설정',
-      href: '/screen-share/settings',
-      icon: SlidersHorizontal,
-    },
-  ],
-  'ai-system': [
-    {
-      id: 'ai-lecture-summary',
-      name: '강의요약',
-      href: '/ai-system/lecture-summary',
-      icon: BookOpen,
-    },
-  ],
-  display: [
-    {
-      id: 'display-player',
-      name: '플레이어',
-      href: '/display/player',
-      icon: Play,
-    },
-    {
-      id: 'display-list',
-      name: '리스트관리',
-      href: '/display/list',
-      icon: ListOrdered,
-    },
-    {
-      id: 'display-content',
-      name: '콘텐츠관리',
-      href: '/display/content',
-      icon: FolderOpen,
-    },
-  ],
-  member: [
-    {
-      id: 'member-list',
-      name: '사용자 목록',
-      href: '/members',
-      icon: Users,
-    },
-    {
-      id: 'member-permissions',
-      name: '권한 관리',
-      href: '/members/permissions',
-      icon: Shield,
-    },
-    {
-      id: 'member-activity',
-      name: '활동 로그',
-      href: '/members/activity',
-      icon: Activity,
-    },
-  ],
-  settings: [
-    {
-      id: 'settings-buildings',
-      name: '건물관리',
-      href: '/settings/buildings',
-      icon: Building2,
-    },
-    {
-      id: 'settings-system',
-      name: '시스템 설정',
-      href: '/settings',
-      icon: Wrench,
-    },
-  ],
+const LNB_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  'controller-hardware': SettingsIcon,
+  'controller-control': SlidersHorizontal,
+  'rfid-tag': Tag,
+  'rfid-reader': Cpu,
+  'rfid-log': FileText,
+  'screen-session': MonitorPlay,
+  'screen-settings': SlidersHorizontal,
+  'ai-lecture-summary': BookOpen,
+  'display-player': Play,
+  'display-list': ListOrdered,
+  'display-content': FolderOpen,
+  'member-list': Users,
+  'member-permissions': Shield,
+  'member-activity': Activity,
+  'settings-buildings': Building2,
+  'settings-system': Wrench,
 };
 
 /**
  * LNB (Local Navigation Bar) Component - Left Sidebar
  *
  * @description
- * Left sidebar navigation that displays sub-menus based on active GNB selection.
- * Automatically updates when GNB selection changes.
- *
- * @features
- * - Dynamic sub-menu rendering based on GNB state
- * - Active route highlighting
- * - Icon-based navigation items
- * - Responsive layout with fixed width
- * - Keyboard accessible navigation
+ * 로그인 응답의 menus 배열에서 선택된 GNB의 children을 렌더링.
+ * menuPath를 href로 사용하여 라우팅 연결.
  */
 export function Sidebar() {
   const pathname = usePathname();
-  const { activeGNB } = useNavigationStore();
+  const { activeGNB, menus } = useNavigationStore();
 
-  // Get sub-menus for current GNB selection
-  const currentMenus = activeGNB ? LNB_MENU_CONFIG[activeGNB] : [];
+  // 현재 활성 GNB의 children (LNB 메뉴)
+  const activeGroup = menus.find((m) => m.menuCode === activeGNB);
+  const currentMenus = activeGroup?.children ?? [];
 
-  // 가장 구체적인(가장 긴) href 매칭 아이템만 활성화
-  const activeItemId = currentMenus.reduce<string | null>((bestId, item) => {
-    const matches = pathname === item.href || pathname.startsWith(item.href + '/');
-    if (!matches) return bestId;
-    const bestItem = currentMenus.find((m) => m.id === bestId);
-    if (!bestItem) return item.id;
-    return item.href.length > bestItem.href.length ? item.id : bestId;
+  // 가장 구체적인(가장 긴) menuPath 매칭 아이템만 활성화
+  const activeItemCode = currentMenus.reduce<string | null>((bestCode, item) => {
+    if (!item.menuPath) return bestCode;
+    const matches = pathname === item.menuPath || pathname.startsWith(item.menuPath + '/');
+    if (!matches) return bestCode;
+    const bestItem = currentMenus.find((m) => m.menuCode === bestCode);
+    if (!bestItem?.menuPath) return item.menuCode;
+    return item.menuPath.length > bestItem.menuPath.length ? item.menuCode : bestCode;
   }, null);
 
   return (
@@ -179,13 +80,13 @@ export function Sidebar() {
           </div>
         ) : (
           currentMenus.map((item) => {
-            const isActive = item.id === activeItemId;
-            const Icon = item.icon;
+            const isActive = item.menuCode === activeItemCode;
+            const Icon = LNB_ICONS[item.menuCode];
 
             return (
               <Link
-                key={item.id}
-                href={item.href}
+                key={item.menuSeq}
+                href={item.menuPath ?? '#'}
                 className={cn(
                   'group relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200',
                   'hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
@@ -204,7 +105,7 @@ export function Sidebar() {
                     isActive ? "scale-110" : "group-hover:scale-110"
                   )} />
                 )}
-                <span className="flex-1">{item.name}</span>
+                <span className="flex-1">{item.menuName}</span>
                 {isActive && (
                   <span className="h-2 w-2 rounded-full bg-white/60 shadow-sm" />
                 )}
@@ -214,7 +115,7 @@ export function Sidebar() {
         )}
       </nav>
 
-      {/* Footer Info with Modern Styling */}
+      {/* Footer Info */}
       <div className="border-t border-border bg-muted/30 p-5">
         <div className="rounded-lg bg-background/50 p-3 backdrop-blur">
           <div className="flex items-center gap-2 text-xs">
@@ -222,7 +123,9 @@ export function Sidebar() {
               <span className="font-bold">{currentMenus.length}</span>
             </div>
             <div className="flex-1">
-              <div className="font-semibold text-foreground">{getLNBTitle(activeGNB)}</div>
+              <div className="font-semibold text-foreground">
+                {activeGroup?.menuName ?? '대시보드'}
+              </div>
               <div className="text-muted-foreground/70">메뉴 항목</div>
             </div>
           </div>
@@ -230,23 +133,4 @@ export function Sidebar() {
       </div>
     </aside>
   );
-}
-
-/**
- * Get localized title for LNB based on active GNB
- */
-function getLNBTitle(gnb: GNBMenuItem | null): string {
-  if (!gnb) return '대시보드';
-
-  const titles: Record<GNBMenuItem, string> = {
-    controller: '컨트롤러',
-    rfid: 'RFID',
-    'screen-share': '화면공유',
-    'ai-system': 'AI시스템',
-    display: '디스플레이',
-    member: '회원관리',
-    settings: '환경설정',
-  };
-
-  return titles[gnb] || '';
 }

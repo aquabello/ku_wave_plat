@@ -13,11 +13,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { useNavigationStore } from '@/stores/navigation';
 import type { CurrentUser } from '@ku/types';
 
 export function UserMenu() {
   const router = useRouter();
   const [user, setUser] = useState<CurrentUser | null>(null);
+  const clearMenus = useNavigationStore((s) => s.clearMenus);
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
@@ -39,6 +41,7 @@ export function UserMenu() {
       localStorage.removeItem('access_token');
       localStorage.removeItem('user');
     }
+    clearMenus();
     router.replace('/login');
   };
 

@@ -1,0 +1,64 @@
+### 활동 로그 API 테스트
+### 사전 준비: 로그인 후 accessToken을 @token에 붙여넣기
+
+@baseUrl = http://localhost:8000/api/v1
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.PASTE_YOUR_TOKEN_HERE
+
+### ============================================
+### 1. 활동로그 리스트 조회 (기본)
+### ============================================
+GET {{baseUrl}}/activity-logs
+Authorization: Bearer {{token}}
+
+### ============================================
+### 2. 활동로그 리스트 조회 (페이징)
+### ============================================
+GET {{baseUrl}}/activity-logs?page=1&limit=5
+Authorization: Bearer {{token}}
+
+### ============================================
+### 3. 활동로그 리스트 조회 (사용자 검색)
+### ============================================
+GET {{baseUrl}}/activity-logs?search=admin
+Authorization: Bearer {{token}}
+
+### ============================================
+### 4. 활동로그 리스트 조회 (HTTP 메서드 필터)
+### ============================================
+GET {{baseUrl}}/activity-logs?httpMethod=POST
+Authorization: Bearer {{token}}
+
+### ============================================
+### 5. 활동로그 리스트 조회 (행위명 필터)
+### ============================================
+GET {{baseUrl}}/activity-logs?actionName=로그인
+Authorization: Bearer {{token}}
+
+### ============================================
+### 6. 활동로그 리스트 조회 (날짜 범위 필터)
+### ============================================
+GET {{baseUrl}}/activity-logs?startDate=2026-01-01&endDate=2026-12-31
+Authorization: Bearer {{token}}
+
+### ============================================
+### 7. 활동로그 리스트 조회 (복합 필터)
+### ============================================
+GET {{baseUrl}}/activity-logs?search=admin&httpMethod=POST&page=1&limit=10
+Authorization: Bearer {{token}}
+
+### ============================================
+### 8. 활동로그 상세 조회 (정상)
+### ============================================
+GET {{baseUrl}}/activity-logs/1
+Authorization: Bearer {{token}}
+
+### ============================================
+### 9. 활동로그 상세 조회 (404 - 존재하지 않는 로그)
+### ============================================
+GET {{baseUrl}}/activity-logs/999999
+Authorization: Bearer {{token}}
+
+### ============================================
+### 10. 인증 없이 조회 (401)
+### ============================================
+GET {{baseUrl}}/activity-logs

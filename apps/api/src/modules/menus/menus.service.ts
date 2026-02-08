@@ -72,8 +72,28 @@ export class MenusService {
       order: { menuOrder: 'ASC' },
     });
 
-    const gnbMenus = menus.filter((m) => m.menuType === 'GNB');
     const lnbMenus = menus.filter((m) => m.menuType === 'LNB');
+    let gnbMenus = menus.filter((m) => m.menuType === 'GNB');
+
+    // LNB의 부모 GNB가 할당 목록에 없으면 자동 포함
+    const gnbSeqs = new Set(gnbMenus.map((g) => g.menuSeq));
+    const missingGnbSeqs = [
+      ...new Set(
+        lnbMenus
+          .filter((lnb) => lnb.parentSeq && !gnbSeqs.has(lnb.parentSeq))
+          .map((lnb) => lnb.parentSeq as number),
+      ),
+    ];
+
+    if (missingGnbSeqs.length > 0) {
+      const missingGnbs = await this.menuRepository.find({
+        where: { menuSeq: In(missingGnbSeqs), menuIsdel: 'N' },
+        order: { menuOrder: 'ASC' },
+      });
+      gnbMenus = [...gnbMenus, ...missingGnbs].sort(
+        (a, b) => (a.menuOrder ?? 0) - (b.menuOrder ?? 0),
+      );
+    }
 
     const menuTree: GNBMenuItemDto[] = gnbMenus.map((gnb) => ({
       menuSeq: gnb.menuSeq,
@@ -103,7 +123,7 @@ export class MenusService {
       throw new NotFoundException('해당 회원을 찾을 수 없습니다');
     }
 
-    // 트랜잭션: 기존 권한 삭제 → 새 권한 INSERT
+    // 트랜잭션: 기존 권한 삭제 → 새 권한 INSERT → 토큰 버전 증가
     await this.menuUsersRepository.manager.transaction(async (manager) => {
       // 기존 권한 전체 삭제
       await manager.delete(TbMenuUsers, { tuSeq: userSeq });
@@ -115,6 +135,9 @@ export class MenusService {
         );
         await manager.save(TbMenuUsers, newRecords);
       }
+
+      // 토큰 버전 증가 → 해당 사용자 강제 재로그인
+      await manager.increment(TbUser, { seq: userSeq }, 'tokenVer', 1);
     });
 
     // 저장 후 결과 반환

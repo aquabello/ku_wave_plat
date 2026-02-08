@@ -58,7 +58,7 @@ import {
   resetPassword,
   deleteUser,
 } from '@/lib/api/members';
-import type { UserListItem, CreateUserDto, UpdateUserDto } from '@ku/types';
+import type { UserListItem, UpdateUserDto } from '@ku/types';
 
 // --- JWT 유저 타입 확인 ---
 

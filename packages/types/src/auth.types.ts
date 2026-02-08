@@ -6,6 +6,8 @@ export interface LoginDto {
   password: string;
 }
 
+import type { GNBMenuItem } from './menu.types';
+
 /**
  * 로그인 응답
  */
@@ -19,6 +21,7 @@ export interface LoginResponse {
     type: string;
     step: string;
   };
+  menus: GNBMenuItem[];
 }
 
 /**

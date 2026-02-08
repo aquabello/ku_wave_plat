@@ -120,6 +120,7 @@ export class UsersService {
     const user = this.userRepository.create({
       id: createUserDto.id,
       name: createUserDto.name,
+      step: 'NORMAL',
     });
 
     const savedUser = await this.userRepository.save(user);

@@ -30,3 +30,9 @@ export * from './member.types';
 
 // Permission Types
 export * from './permission.types';
+
+// Menu Types
+export * from './menu.types';
+
+// Activity Log Types
+export * from './activity-log.types';

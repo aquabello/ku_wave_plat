@@ -22,26 +22,6 @@ export interface User {
 }
 
 /**
- * 사용자 생성 DTO
- */
-export interface CreateUserDto {
-  email: string;
-  password: string;
-  name: string;
-  role: UserRole;
-}
-
-/**
- * 사용자 수정 DTO
- */
-export interface UpdateUserDto {
-  email?: string;
-  name?: string;
-  role?: UserRole;
-  isActive?: boolean;
-}
-
-/**
  * 사용자 목록 필터
  */
 export interface UserFilter {

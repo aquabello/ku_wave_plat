@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -16,6 +16,9 @@ import { AnalyticsModule } from '@modules/analytics/analytics.module';
 import { SettingsModule } from '@modules/settings/settings.module';
 import { BuildingsModule } from '@modules/buildings/buildings.module';
 import { MenusModule } from '@modules/menus/menus.module';
+import { PermissionsModule } from '@modules/permissions/permissions.module';
+import { ActivityLogsModule } from '@modules/activity-logs/activity-logs.module';
+import { ActivityLogInterceptor } from '@modules/activity-logs/interceptors/activity-log.interceptor';
 
 // Common modules
 import { HttpClientModule } from '@/common/http';
@@ -77,6 +80,8 @@ import { AppService } from './app.service';
     SettingsModule,
     BuildingsModule,
     MenusModule,
+    PermissionsModule,
+    ActivityLogsModule,
   ],
   controllers: [AppController],
   providers: [
@@ -84,6 +89,10 @@ import { AppService } from './app.service';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ActivityLogInterceptor,
     },
   ],
 })

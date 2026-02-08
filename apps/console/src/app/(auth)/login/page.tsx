@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,10 +11,41 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { showToast } from '@/lib/toast';
 import { login } from '@/lib/api/auth';
 import { loginSchema, type LoginFormValues } from '@/lib/validations/auth';
+import { useNavigationStore } from '@/stores/navigation';
 
 export default function LoginPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+
+  // 세션 만료/변경으로 인한 강제 로그아웃 시 안내 메시지 표시
+  useEffect(() => {
+    const reason = sessionStorage.getItem('logout_reason');
+    if (!reason) return;
+
+    sessionStorage.removeItem('logout_reason');
+
+    switch (reason) {
+      case 'permission_changed':
+        showToast.error(
+          '권한 변경',
+          '권한이 변경되어 자동 로그아웃 되었습니다. 다시 로그인해주세요.'
+        );
+        break;
+      case 'token_expired':
+        showToast.error(
+          '세션 만료',
+          '로그인 세션이 만료되었습니다. 다시 로그인해주세요.'
+        );
+        break;
+      case 'session_invalid':
+      case 'session_expired':
+        showToast.error(
+          '세션 종료',
+          '세션이 변경되어 로그아웃 되었습니다. 다시 로그인해주세요.'
+        );
+        break;
+    }
+  }, []);
 
   const {
     register,
@@ -34,6 +65,7 @@ export default function LoginPage() {
       const response = await login(data);
       localStorage.setItem('access_token', response.accessToken);
       localStorage.setItem('user', JSON.stringify(response.user));
+      useNavigationStore.getState().setMenus(response.menus ?? []);
       router.push('/dashboard');
     } catch (error) {
       showToast.apiError(error, '로그인 중 오류가 발생했습니다');

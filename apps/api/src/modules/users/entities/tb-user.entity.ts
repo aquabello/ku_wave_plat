@@ -172,6 +172,14 @@ export class TbUser {
   approvedDate: Date | null;
 
   @Column({
+    name: 'tu_token_ver',
+    type: 'int',
+    default: 1,
+    comment: '토큰 버전 (권한 변경 시 +1 → 강제 재로그인)',
+  })
+  tokenVer: number;
+
+  @Column({
     name: 'reg_date',
     type: 'datetime',
     nullable: true,

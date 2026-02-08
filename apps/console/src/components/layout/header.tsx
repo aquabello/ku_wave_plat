@@ -14,68 +14,30 @@ import {
 import { Button } from '@/components/ui/button';
 import { UserMenu } from './user-menu';
 import { cn } from '@/lib/utils';
-import { useNavigationStore, type GNBMenuItem } from '@/stores/navigation';
+import { useNavigationStore } from '@/stores/navigation';
 
 /**
- * GNB Menu Configuration
+ * GNB menuCode → Icon 매핑
  */
-interface GNBMenuConfig {
-  id: GNBMenuItem;
-  name: string;
-  icon: React.ComponentType<{ className?: string }>;
-}
-
-const GNB_MENUS: GNBMenuConfig[] = [
-  {
-    id: 'controller',
-    name: '컨트롤러',
-    icon: Zap,
-  },
-  {
-    id: 'rfid',
-    name: 'RFID',
-    icon: Radio,
-  },
-  {
-    id: 'screen-share',
-    name: '화면공유',
-    icon: Monitor,
-  },
-  {
-    id: 'ai-system',
-    name: 'AI시스템',
-    icon: Cpu,
-  },
-  {
-    id: 'display',
-    name: '디스플레이',
-    icon: TvMinimalPlay,
-  },
-  {
-    id: 'member',
-    name: '회원관리',
-    icon: Users,
-  },
-  {
-    id: 'settings',
-    name: '환경설정',
-    icon: Settings,
-  },
-];
+const GNB_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  controller: Zap,
+  rfid: Radio,
+  'screen-share': Monitor,
+  'ai-system': Cpu,
+  display: TvMinimalPlay,
+  member: Users,
+  settings: Settings,
+};
 
 /**
  * Header Component
  *
  * @description
- * Top header with logo, integrated GNB navigation, notifications, and user menu.
- *
- * Layout Structure:
- * - Logo Area (w-64): KU Console brand - aligned with sidebar
- * - GNB Navigation: Menu items (컨트롤러, RFID, 화면공유, 회원관리, 환경설정)
- * - Right Actions: Notification bell + User menu
+ * Top header with logo and permission-based GNB navigation.
+ * 로그인 응답의 menus 배열 기반으로 권한이 있는 GNB만 렌더링.
  */
 export function Header() {
-  const { activeGNB, setActiveGNB } = useNavigationStore();
+  const { activeGNB, setActiveGNB, menus } = useNavigationStore();
 
   const handleLogoClick = () => {
     setActiveGNB(null);
@@ -83,7 +45,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 flex h-16 items-center border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      {/* Logo Area - Aligned with Sidebar with Konkuk Green Gradient */}
+      {/* Logo Area */}
       <div className="flex h-16 w-64 items-center border-r border-border px-6">
         <Link
           href="/dashboard"
@@ -101,16 +63,16 @@ export function Header() {
         </Link>
       </div>
 
-      {/* GNB Navigation - Center with Modern Styling */}
+      {/* GNB Navigation - 권한 기반 메뉴만 렌더링 */}
       <nav className="flex flex-1 items-center gap-2 px-6">
-        {GNB_MENUS.map((menu) => {
-          const isActive = activeGNB === menu.id;
-          const Icon = menu.icon;
+        {menus.map((menu) => {
+          const isActive = activeGNB === menu.menuCode;
+          const Icon = GNB_ICONS[menu.menuCode];
 
           return (
             <button
-              key={menu.id}
-              onClick={() => setActiveGNB(menu.id)}
+              key={menu.menuSeq}
+              onClick={() => setActiveGNB(menu.menuCode)}
               className={cn(
                 'group relative flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200',
                 'hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
@@ -120,12 +82,14 @@ export function Header() {
               )}
               aria-current={isActive ? 'page' : undefined}
             >
-              <Icon className={cn(
-                "h-4 w-4 transition-transform duration-200",
-                isActive ? "scale-110" : "group-hover:scale-110"
-              )} />
+              {Icon && (
+                <Icon className={cn(
+                  "h-4 w-4 transition-transform duration-200",
+                  isActive ? "scale-110" : "group-hover:scale-110"
+                )} />
+              )}
               <span className="relative">
-                {menu.name}
+                {menu.menuName}
                 {isActive && (
                   <span className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-white/30" />
                 )}
@@ -135,7 +99,7 @@ export function Header() {
         })}
       </nav>
 
-      {/* Actions - Right Side with Enhanced Styling */}
+      {/* Actions - Right Side */}
       <div className="flex items-center gap-3 px-6">
         <Button
           variant="ghost"

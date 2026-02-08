@@ -1,0 +1,28 @@
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.PASTE_YOUR_TOKEN_HERE
+
+### ──────────────────────────────────────
+### 권한 목록 조회
+### ──────────────────────────────────────
+
+### 1. 권한 목록 조회 (기본 page=1, limit=10) → 200
+GET http://localhost:8000/api/v1/permissions
+Authorization: Bearer {{token}}
+
+### 1-1. 권한 목록 조회 (페이징: 1페이지, 5개) → 200
+GET http://localhost:8000/api/v1/permissions?page=1&limit=5
+Authorization: Bearer {{token}}
+
+### 1-2. 권한 목록 조회 (통합검색: 아이디) → 200
+GET http://localhost:8000/api/v1/permissions?search=admin
+Authorization: Bearer {{token}}
+
+### 1-3. 권한 목록 조회 (통합검색: 이름) → 200
+GET http://localhost:8000/api/v1/permissions?search=관리자
+Authorization: Bearer {{token}}
+
+### 1-4. 권한 목록 조회 (통합검색 + 페이징) → 200
+GET http://localhost:8000/api/v1/permissions?search=admin&page=1&limit=5
+Authorization: Bearer {{token}}
+
+### 2. 토큰 없이 조회 → 401
+GET http://localhost:8000/api/v1/permissions

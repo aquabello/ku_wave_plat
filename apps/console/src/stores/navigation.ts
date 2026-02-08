@@ -1,45 +1,56 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-
-/**
- * GNB (Global Navigation Bar) Menu Item Type
- */
-export type GNBMenuItem = 'controller' | 'rfid' | 'screen-share' | 'ai-system' | 'display' | 'member' | 'settings';
-
-/**
- * LNB (Local Navigation Bar) Sub-Menu Item
- */
-export interface LNBMenuItem {
-  id: string;
-  name: string;
-  href: string;
-  icon?: React.ComponentType<{ className?: string }>;
-}
+import type { GNBMenuItem as GNBMenuGroup } from '@ku/types';
 
 /**
  * Navigation State Interface
+ *
+ * - activeGNB: 현재 선택된 GNB menuCode
+ * - menus: 로그인 시 BE에서 받은 권한 기반 메뉴 트리
  */
 interface NavigationState {
-  activeGNB: GNBMenuItem | null;
-  setActiveGNB: (menu: GNBMenuItem | null) => void;
+  activeGNB: string | null;
+  setActiveGNB: (menuCode: string | null) => void;
+
+  menus: GNBMenuGroup[];
+  setMenus: (menus: GNBMenuGroup[]) => void;
+  clearMenus: () => void;
 }
 
 /**
- * Navigation Store - Manages GNB and LNB state
+ * Navigation Store - Manages GNB/LNB state with permission-based filtering
  *
- * @description
- * Zustand store for managing global and local navigation state.
- * Persists active GNB selection to localStorage for session continuity.
+ * 로그인 응답의 menus 배열을 저장하여 권한에 맞는 GNB/LNB만 렌더링.
+ * activeGNB와 menus를 localStorage에 persist하여 새로고침 시 유지.
  */
 export const useNavigationStore = create<NavigationState>()(
   persist(
     (set) => ({
       activeGNB: null,
-      setActiveGNB: (menu: GNBMenuItem | null) => set({ activeGNB: menu }),
+      setActiveGNB: (menuCode: string | null) => set({ activeGNB: menuCode }),
+
+      menus: [],
+      setMenus: (menus: GNBMenuGroup[]) =>
+        set((state) => {
+          // 현재 activeGNB가 새 메뉴 목록에 없으면 초기화
+          const gnbCodes = menus.map((m) => m.menuCode);
+          const isActiveAllowed = state.activeGNB && gnbCodes.includes(state.activeGNB);
+          return {
+            menus,
+            activeGNB: isActiveAllowed ? state.activeGNB : null,
+          };
+        }),
+      clearMenus: () => set({ menus: [], activeGNB: null }),
     }),
     {
       name: 'ku-navigation-storage',
-      version: 1,
+      version: 2,
+      migrate: (persistedState: unknown, version: number) => {
+        if (version < 2) {
+          return { ...(persistedState as Record<string, unknown>), menus: [] };
+        }
+        return persistedState;
+      },
     }
   )
 );

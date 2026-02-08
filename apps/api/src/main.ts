@@ -70,6 +70,8 @@ async function bootstrap() {
     .addTag('analytics', 'Analytics data')
     .addTag('settings', 'Application settings')
     .addTag('buildings', '건물 관리')
+    .addTag('permissions', '권한 관리')
+    .addTag('activity-logs', '활동 로그')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
