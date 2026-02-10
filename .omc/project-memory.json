@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1770454096145,
+  "lastScanned": 1770725081765,
   "projectRoot": "/Users/aquabello/Documents/10-Dev/ku_wave_plat",
   "techStack": {
     "languages": [
@@ -54,18 +54,32 @@
   },
   "customNotes": [],
   "directoryMap": {
+    "_bmad": {
+      "path": "_bmad",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1770725081582,
+      "keyFiles": []
+    },
+    "_bmad-output": {
+      "path": "_bmad-output",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1770725081583,
+      "keyFiles": []
+    },
     "apps": {
       "path": "apps",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1770454096084,
+      "lastAccessed": 1770725081583,
       "keyFiles": []
     },
     "docs": {
       "path": "docs",
       "purpose": "Documentation",
       "fileCount": 2,
-      "lastAccessed": 1770454096088,
+      "lastAccessed": 1770725081732,
       "keyFiles": [
         "implementation-system-settings-api.md",
         "init_database.sql"
@@ -75,24 +89,31 @@
       "path": "packages",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1770454096119,
+      "lastAccessed": 1770725081733,
       "keyFiles": []
     },
     "scripts": {
       "path": "scripts",
       "purpose": "Build/utility scripts",
       "fileCount": 2,
-      "lastAccessed": 1770454096120,
+      "lastAccessed": 1770725081733,
       "keyFiles": [
         "check-db.js",
         "dev-wrapper.js"
       ]
     },
+    "tools": {
+      "path": "tools",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1770725081733,
+      "keyFiles": []
+    },
     "apps/api": {
       "path": "apps/api",
       "purpose": "API routes",
       "fileCount": 10,
-      "lastAccessed": 1770454096120,
+      "lastAccessed": 1770725081734,
       "keyFiles": [
         "README.md",
         "nest-cli.json",
@@ -102,17 +123,19 @@
     "docs/api": {
       "path": "docs/api",
       "purpose": "API routes",
-      "fileCount": 1,
-      "lastAccessed": 1770454096121,
+      "fileCount": 10,
+      "lastAccessed": 1770725081735,
       "keyFiles": [
-        "settings.api.md"
+        "activity-logs.api.md",
+        "auth.api.md",
+        "buildings.api.md"
       ]
     },
     "packages/config": {
       "path": "packages/config",
       "purpose": "Configuration files",
       "fileCount": 4,
-      "lastAccessed": 1770454096121,
+      "lastAccessed": 1770725081736,
       "keyFiles": [
         "eslint-preset.js",
         "package.json",
@@ -123,314 +146,13 @@
       "path": "packages/types",
       "purpose": "Type definitions",
       "fileCount": 3,
-      "lastAccessed": 1770454096121,
+      "lastAccessed": 1770725081736,
       "keyFiles": [
         "package.json",
         "tsconfig.json"
       ]
     }
   },
-  "hotPaths": [
-    {
-      "path": "apps/console/src/app/(dashboard)/members/page.tsx",
-      "accessCount": 43,
-      "lastAccessed": 1770588044194,
-      "type": "file"
-    },
-    {
-      "path": "apps/console/src/components/auth/auth-guard.tsx",
-      "accessCount": 19,
-      "lastAccessed": 1770587881242,
-      "type": "file"
-    },
-    {
-      "path": "packages/types/src/index.ts",
-      "accessCount": 17,
-      "lastAccessed": 1770478176054,
-      "type": "file"
-    },
-    {
-      "path": "docs/init_database.sql",
-      "accessCount": 16,
-      "lastAccessed": 1770474804127,
-      "type": "directory"
-    },
-    {
-      "path": "apps/console/src/app/(auth)/login/page.tsx",
-      "accessCount": 14,
-      "lastAccessed": 1770587882371,
-      "type": "file"
-    },
-    {
-      "path": "apps/console/src",
-      "accessCount": 12,
-      "lastAccessed": 1770479818079,
-      "type": "directory"
-    },
-    {
-      "path": "apps/console/src/components/layout/sidebar.tsx",
-      "accessCount": 12,
-      "lastAccessed": 1770500455557,
-      "type": "file"
-    },
-    {
-      "path": "apps/console/src/lib/api/client.ts",
-      "accessCount": 12,
-      "lastAccessed": 1770587881783,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/app.module.ts",
-      "accessCount": 9,
-      "lastAccessed": 1770474574740,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/users/users.service.ts",
-      "accessCount": 9,
-      "lastAccessed": 1770479389795,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/users/entities/tb-user.entity.ts",
-      "accessCount": 9,
-      "lastAccessed": 1770479413454,
-      "type": "file"
-    },
-    {
-      "path": "apps/console/src/components/layout/user-menu.tsx",
-      "accessCount": 9,
-      "lastAccessed": 1770500508462,
-      "type": "file"
-    },
-    {
-      "path": "apps/console/src/stores/navigation.ts",
-      "accessCount": 8,
-      "lastAccessed": 1770500440404,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/users/users.controller.ts",
-      "accessCount": 7,
-      "lastAccessed": 1770462880416,
-      "type": "file"
-    },
-    {
-      "path": "packages/types/src/member.types.ts",
-      "accessCount": 7,
-      "lastAccessed": 1770477036846,
-      "type": "file"
-    },
-    {
-      "path": "packages/types/src/permission.types.ts",
-      "accessCount": 6,
-      "lastAccessed": 1770475062845,
-      "type": "file"
-    },
-    {
-      "path": "apps/console/src/lib/api/permissions.ts",
-      "accessCount": 6,
-      "lastAccessed": 1770476848625,
-      "type": "file"
-    },
-    {
-      "path": "",
-      "accessCount": 6,
-      "lastAccessed": 1770478867090,
-      "type": "directory"
-    },
-    {
-      "path": "apps/api/src/modules/auth/auth.service.ts",
-      "accessCount": 6,
-      "lastAccessed": 1770500507138,
-      "type": "file"
-    },
-    {
-      "path": "packages/types/src",
-      "accessCount": 5,
-      "lastAccessed": 1770478881434,
-      "type": "directory"
-    },
-    {
-      "path": "apps/api/src",
-      "accessCount": 5,
-      "lastAccessed": 1770480382026,
-      "type": "directory"
-    },
-    {
-      "path": "apps/api",
-      "accessCount": 5,
-      "lastAccessed": 1770480632420,
-      "type": "directory"
-    },
-    {
-      "path": "apps/api/http/auth.http",
-      "accessCount": 5,
-      "lastAccessed": 1770480639706,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/users/dto/update-user.dto.ts",
-      "accessCount": 4,
-      "lastAccessed": 1770460580778,
-      "type": "file"
-    },
-    {
-      "path": "packages/types/src/auth.types.ts",
-      "accessCount": 4,
-      "lastAccessed": 1770478329827,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/users/users.module.ts",
-      "accessCount": 4,
-      "lastAccessed": 1770479403212,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/common/dto/pagination-query.dto.ts",
-      "accessCount": 3,
-      "lastAccessed": 1770459370369,
-      "type": "file"
-    },
-    {
-      "path": "apps/console/src/lib/api/members.ts",
-      "accessCount": 3,
-      "lastAccessed": 1770462831127,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/main.ts",
-      "accessCount": 3,
-      "lastAccessed": 1770474576173,
-      "type": "file"
-    },
-    {
-      "path": "docs",
-      "accessCount": 3,
-      "lastAccessed": 1770474807010,
-      "type": "directory"
-    },
-    {
-      "path": "packages/types/src/user.types.ts",
-      "accessCount": 3,
-      "lastAccessed": 1770477043656,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/.env",
-      "accessCount": 3,
-      "lastAccessed": 1770479449975,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/users/dto/reset-password.dto.ts",
-      "accessCount": 2,
-      "lastAccessed": 1770459359641,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/http/users.http",
-      "accessCount": 2,
-      "lastAccessed": 1770459486858,
-      "type": "file"
-    },
-    {
-      "path": "apps/console/package.json",
-      "accessCount": 2,
-      "lastAccessed": 1770475067985,
-      "type": "file"
-    },
-    {
-      "path": "apps/console/src/lib/api/auth.ts",
-      "accessCount": 2,
-      "lastAccessed": 1770477865393,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules",
-      "accessCount": 2,
-      "lastAccessed": 1770480991586,
-      "type": "directory"
-    },
-    {
-      "path": ".env",
-      "accessCount": 1,
-      "lastAccessed": 1770454815671,
-      "type": "file"
-    },
-    {
-      "path": "packages/types",
-      "accessCount": 1,
-      "lastAccessed": 1770455026317,
-      "type": "directory"
-    },
-    {
-      "path": "apps/api/src/database",
-      "accessCount": 1,
-      "lastAccessed": 1770455127006,
-      "type": "directory"
-    },
-    {
-      "path": "apps/console/src/app/(dashboard)/users/page.tsx",
-      "accessCount": 1,
-      "lastAccessed": 1770455908641,
-      "type": "file"
-    },
-    {
-      "path": "apps/console/src/app/(dashboard)/dashboard/page.tsx",
-      "accessCount": 1,
-      "lastAccessed": 1770455909386,
-      "type": "file"
-    },
-    {
-      "path": "apps/console/next.config.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770458946073,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/users/dto/user-query.dto.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770459390542,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/users/dto/user-list-response.dto.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770459396128,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/users/dto/create-user.dto.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770459398777,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/users/dto/index.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770459400252,
-      "type": "file"
-    },
-    {
-      "path": "apps/console/src/stores",
-      "accessCount": 1,
-      "lastAccessed": 1770460910840,
-      "type": "directory"
-    },
-    {
-      "path": "apps/console/src/lib",
-      "accessCount": 1,
-      "lastAccessed": 1770460922420,
-      "type": "directory"
-    },
-    {
-      "path": "apps/console/src/lib/api/settings.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770460928463,
-      "type": "file"
-    }
-  ],
+  "hotPaths": [],
   "userDirectives": []
 }

@@ -24,6 +24,9 @@ export class BuildingListItemDto {
 
   @ApiProperty({ description: '할당 사용자 수', example: 0 })
   assignedUserCount: number;
+
+  @ApiProperty({ description: '공간 수', example: 3 })
+  spaceCount: number;
 }
 
 export class BuildingListResponseDto {

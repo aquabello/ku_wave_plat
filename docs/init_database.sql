@@ -152,3 +152,336 @@ create table tb_menu_users
 create index idx_mu_user on tb_menu_users (tu_seq);
 create index idx_mu_menu on tb_menu_users (menu_seq);
 
+
+-- 사용자-건물 권한 매핑
+create table tb_user_building
+(
+    tub_seq        int auto_increment comment '시퀀스'
+        primary key,
+    tu_seq         int                                  not null comment '사용자 시퀀스',
+    building_seq   int                                  not null comment '건물 시퀀스',
+    reg_date       datetime default current_timestamp() null comment '할당일시',
+    upd_date       datetime default current_timestamp() null on update current_timestamp() comment '수정일시',
+    constraint uq_user_building
+        unique (tu_seq, building_seq),
+    constraint fk_user_building_building
+        foreign key (building_seq) references tb_building (building_seq)
+            on delete cascade,
+    constraint fk_user_building_user
+        foreign key (tu_seq) references tb_users (tu_seq)
+            on delete cascade
+)
+    comment '사용자-건물 권한 매핑' charset = utf8mb4;
+
+create index idx_user_building_building
+    on tb_user_building (building_seq);
+
+
+-- 공간 마스터
+create table tb_space
+(
+    space_seq           int auto_increment comment '공간 시퀀스'
+        primary key,
+    building_seq        int                                  not null comment '건물 시퀀스',
+    space_name          varchar(100)                         not null comment '공간명 (예: 101호, 대강당)',
+    space_code          varchar(50)                          not null comment '공간 코드 (예: SPC-001)',
+    space_floor         varchar(10)                          null comment '층 (예: 1, 2, B1, B2)',
+    space_type          varchar(20)                          null comment '공간 유형 (강의실, 실험실, 사무실, 회의실, 기타)',
+    space_capacity      int          default 0               null comment '수용 인원',
+    space_description   text                                 null comment '공간 설명/메모',
+    space_order         int          default 0               null comment '정렬 순서',
+    space_isdel         char         default 'N'             null comment '삭제 여부',
+    reg_date            datetime     default current_timestamp() null comment '등록일시',
+    upd_date            datetime     default current_timestamp() null on update current_timestamp() comment '수정일시',
+    constraint uk_space_code
+        unique (space_code),
+    constraint fk_space_building
+        foreign key (building_seq) references tb_building (building_seq)
+            on delete cascade
+)
+    comment '공간 마스터' charset = utf8mb4;
+
+create index idx_space_building
+    on tb_space (building_seq);
+
+create index idx_space_code
+    on tb_space (space_code);
+
+create index idx_space_floor
+    on tb_space (space_floor);
+
+create index idx_space_isdel
+    on tb_space (space_isdel);
+
+create index idx_space_order
+    on tb_space (space_order);
+
+
+-- =============================================
+-- 컨트롤러 시스템
+-- =============================================
+
+-- 장비 프리셋 마스터
+create table tb_device_preset
+(
+    preset_seq          int auto_increment comment '프리셋 시퀀스'
+        primary key,
+    preset_name         varchar(100)                         not null comment '프리셋명 (예: 강의실 프로젝터)',
+    protocol_type       enum ('TCP', 'UDP', 'WOL', 'HTTP', 'RS232') not null comment '통신 프로토콜',
+    default_port        int                                  null comment '기본 통신 포트 (장비 등록 시 자동 채움)',
+    preset_description  text                                 null comment '프리셋 설명',
+    preset_order        int          default 0               null comment '정렬 순서',
+    preset_isdel        char         default 'N'             null comment '삭제 여부',
+    reg_date            datetime     default current_timestamp() null comment '등록일시',
+    upd_date            datetime     default current_timestamp() null on update current_timestamp() comment '수정일시'
+)
+    comment '장비 프리셋 마스터' charset = utf8mb4;
+
+create index idx_preset_protocol
+    on tb_device_preset (protocol_type);
+
+create index idx_preset_isdel
+    on tb_device_preset (preset_isdel);
+
+create index idx_preset_order
+    on tb_device_preset (preset_order);
+
+
+-- 프리셋 명령어 (프리셋 1 : 명령어 N)
+create table tb_preset_command
+(
+    command_seq         int auto_increment comment '명령어 시퀀스'
+        primary key,
+    preset_seq          int                                  not null comment '프리셋 시퀀스',
+    command_name        varchar(100)                         not null comment '명령어명 (예: 전원 ON)',
+    command_code        varchar(500)                         not null comment '명령어 코드 (HEX 또는 텍스트)',
+    command_type        varchar(20)  default 'CUSTOM'        null comment '명령어 유형 (POWER_ON, POWER_OFF, INPUT_CHANGE, CUSTOM)',
+    command_order       int          default 0               null comment '정렬 순서',
+    command_isdel       char         default 'N'             null comment '삭제 여부',
+    reg_date            datetime     default current_timestamp() null comment '등록일시',
+    upd_date            datetime     default current_timestamp() null on update current_timestamp() comment '수정일시',
+    constraint fk_command_preset
+        foreign key (preset_seq) references tb_device_preset (preset_seq)
+            on delete cascade
+)
+    comment '프리셋 명령어' charset = utf8mb4;
+
+create index idx_command_preset
+    on tb_preset_command (preset_seq);
+
+create index idx_command_type
+    on tb_preset_command (command_type);
+
+create index idx_command_isdel
+    on tb_preset_command (command_isdel);
+
+create index idx_command_order
+    on tb_preset_command (command_order);
+
+
+-- 공간-장비 매핑
+create table tb_space_device
+(
+    space_device_seq    int auto_increment comment '공간장비 시퀀스'
+        primary key,
+    space_seq           int                                  not null comment '공간 시퀀스',
+    preset_seq          int                                  not null comment '프리셋 시퀀스',
+    device_name         varchar(100)                         not null comment '장비명 (예: 101호 프로젝터)',
+    device_ip           varchar(45)                          not null comment '장비 IP',
+    device_port         int                                  not null comment '장비 포트 (프리셋 기본값에서 자동 채움, 수정 가능)',
+    device_status       enum ('ACTIVE', 'INACTIVE') default 'ACTIVE' null comment '장비 상태',
+    device_order        int          default 0               null comment '정렬 순서',
+    device_isdel        char         default 'N'             null comment '삭제 여부',
+    reg_date            datetime     default current_timestamp() null comment '등록일시',
+    upd_date            datetime     default current_timestamp() null on update current_timestamp() comment '수정일시',
+    constraint fk_space_device_space
+        foreign key (space_seq) references tb_space (space_seq)
+            on delete cascade,
+    constraint fk_space_device_preset
+        foreign key (preset_seq) references tb_device_preset (preset_seq)
+            on delete restrict
+)
+    comment '공간-장비 매핑' charset = utf8mb4;
+
+create index idx_space_device_space
+    on tb_space_device (space_seq);
+
+create index idx_space_device_preset
+    on tb_space_device (preset_seq);
+
+create index idx_space_device_status
+    on tb_space_device (device_status);
+
+create index idx_space_device_isdel
+    on tb_space_device (device_isdel);
+
+
+-- 제어 로그
+create table tb_control_log
+(
+    log_seq             int auto_increment comment '로그 시퀀스'
+        primary key,
+    space_device_seq    int                                  not null comment '공간장비 시퀀스',
+    command_seq         int                                  not null comment '명령어 시퀀스',
+    tu_seq              int                                  not null comment '실행자 시퀀스',
+    trigger_type        enum ('MANUAL', 'NFC', 'SCHEDULE') default 'MANUAL' not null comment '트리거 유형 (MANUAL=콘솔, NFC=태깅, SCHEDULE=예약)',
+    result_status       enum ('SUCCESS', 'FAIL', 'TIMEOUT') not null comment '실행 결과',
+    result_message      text                                 null comment '응답 메시지 또는 에러 내용',
+    executed_at         datetime     default current_timestamp() not null comment '실행 시각',
+    constraint fk_log_space_device
+        foreign key (space_device_seq) references tb_space_device (space_device_seq)
+            on delete cascade,
+    constraint fk_log_command
+        foreign key (command_seq) references tb_preset_command (command_seq)
+            on delete cascade,
+    constraint fk_log_user
+        foreign key (tu_seq) references tb_users (tu_seq)
+            on delete cascade
+)
+    comment '제어 로그' charset = utf8mb4;
+
+create index idx_log_space_device
+    on tb_control_log (space_device_seq);
+
+create index idx_log_command
+    on tb_control_log (command_seq);
+
+create index idx_log_user
+    on tb_control_log (tu_seq);
+
+create index idx_log_trigger_type
+    on tb_control_log (trigger_type);
+
+create index idx_log_status
+    on tb_control_log (result_status);
+
+create index idx_log_executed_at
+    on tb_control_log (executed_at);
+
+
+-- =============================================
+-- NFC 시스템 (RFID)
+-- =============================================
+
+-- NFC 리더기 마스터
+create table tb_nfc_reader
+(
+    reader_seq          int auto_increment comment '리더기 시퀀스'
+        primary key,
+    space_seq           int                                  not null comment '설치 공간 시퀀스',
+    reader_name         varchar(100)                         not null comment '리더기명 (예: 101호 입구 리더기)',
+    reader_code         varchar(50)                          not null comment '리더기 코드 (RDR-001)',
+    reader_serial       varchar(100)                         null comment '리더기 시리얼번호 (하드웨어 고유값)',
+    reader_api_key      varchar(100)                         not null comment 'Agent 인증용 API Key',
+    reader_status       enum ('ACTIVE', 'INACTIVE') default 'ACTIVE' null comment '리더기 상태',
+    reader_isdel        char         default 'N'             null comment '삭제 여부',
+    reg_date            datetime     default current_timestamp() null comment '등록일시',
+    upd_date            datetime     default current_timestamp() null on update current_timestamp() comment '수정일시',
+    constraint uk_reader_code
+        unique (reader_code),
+    constraint uk_reader_api_key
+        unique (reader_api_key),
+    constraint fk_reader_space
+        foreign key (space_seq) references tb_space (space_seq)
+            on delete cascade
+)
+    comment 'NFC 리더기 마스터' charset = utf8mb4;
+
+create index idx_reader_space
+    on tb_nfc_reader (space_seq);
+
+create index idx_reader_status
+    on tb_nfc_reader (reader_status);
+
+create index idx_reader_isdel
+    on tb_nfc_reader (reader_isdel);
+
+
+-- NFC 카드/태그 마스터
+create table tb_nfc_card
+(
+    card_seq            int auto_increment comment '카드 시퀀스'
+        primary key,
+    tu_seq              int                                  not null comment '소유자 시퀀스',
+    card_identifier     varchar(64)                          not null comment '카드 고유 식별값 (UID 또는 앱 반환 고유값)',
+    card_aid            varchar(32)                          null comment 'Application Identifier (HEX)',
+    card_label          varchar(100)                         null comment '카드 별칭 (예: 김교수 스마트폰)',
+    card_type           enum ('CARD', 'PHONE') default 'CARD' null comment '태그 유형',
+    card_status         enum ('ACTIVE', 'INACTIVE', 'BLOCKED') default 'ACTIVE' null comment '카드 상태',
+    card_isdel          char         default 'N'             null comment '삭제 여부',
+    reg_date            datetime     default current_timestamp() null comment '등록일시',
+    upd_date            datetime     default current_timestamp() null on update current_timestamp() comment '수정일시',
+    constraint uk_card_identifier
+        unique (card_identifier),
+    constraint fk_card_user
+        foreign key (tu_seq) references tb_users (tu_seq)
+            on delete cascade
+)
+    comment 'NFC 카드/태그 마스터' charset = utf8mb4;
+
+create index idx_card_user
+    on tb_nfc_card (tu_seq);
+
+create index idx_card_aid
+    on tb_nfc_card (card_aid);
+
+create index idx_card_type
+    on tb_nfc_card (card_type);
+
+create index idx_card_status
+    on tb_nfc_card (card_status);
+
+create index idx_card_isdel
+    on tb_nfc_card (card_isdel);
+
+
+-- NFC 태깅 로그
+create table tb_nfc_log
+(
+    nfc_log_seq         int auto_increment comment 'NFC 로그 시퀀스'
+        primary key,
+    reader_seq          int                                  not null comment '리더기 시퀀스',
+    card_seq            int                                  null comment '카드 시퀀스 (미등록 카드 시 null)',
+    tu_seq              int                                  null comment '사용자 시퀀스 (미등록 시 null)',
+    space_seq           int                                  not null comment '공간 시퀀스 (비정규화, 조회 편의)',
+    log_type            enum ('ENTER', 'EXIT', 'DENIED', 'UNKNOWN') not null comment '태깅 유형',
+    tag_identifier      varchar(64)                          not null comment '태깅 시 읽힌 식별값 (raw)',
+    tag_aid             varchar(32)                          null comment '태깅 시 읽힌 AID (raw)',
+    control_result      enum ('SUCCESS', 'FAIL', 'PARTIAL', 'SKIPPED') null comment '장비 제어 결과 요약',
+    control_detail      text                                 null comment '제어 상세 JSON (장비별 실행 결과)',
+    tagged_at           datetime     default current_timestamp() not null comment '태깅 시각',
+    constraint fk_nfc_log_reader
+        foreign key (reader_seq) references tb_nfc_reader (reader_seq)
+            on delete cascade,
+    constraint fk_nfc_log_card
+        foreign key (card_seq) references tb_nfc_card (card_seq)
+            on delete set null,
+    constraint fk_nfc_log_user
+        foreign key (tu_seq) references tb_users (tu_seq)
+            on delete set null,
+    constraint fk_nfc_log_space
+        foreign key (space_seq) references tb_space (space_seq)
+            on delete cascade
+)
+    comment 'NFC 태깅 로그' charset = utf8mb4;
+
+create index idx_nfc_log_reader
+    on tb_nfc_log (reader_seq);
+
+create index idx_nfc_log_card
+    on tb_nfc_log (card_seq);
+
+create index idx_nfc_log_user
+    on tb_nfc_log (tu_seq);
+
+create index idx_nfc_log_space
+    on tb_nfc_log (space_seq);
+
+create index idx_nfc_log_type
+    on tb_nfc_log (log_type);
+
+create index idx_nfc_log_control_result
+    on tb_nfc_log (control_result);
+
+create index idx_nfc_log_tagged_at
+    on tb_nfc_log (tagged_at);

@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { Public } from '@common/decorators/public.decorator';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -19,13 +20,14 @@ export class AuthController {
     schema: {
       example: {
         accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+        refreshToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
         user: {
           seq: 1,
           id: 'admin',
           name: '관리자',
           email: 'admin@example.com',
           type: 'ADMIN',
-          step: '01',
+          step: 'OK',
         },
       },
     },
@@ -36,6 +38,28 @@ export class AuthController {
   })
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
+  }
+
+  @Public()
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '토큰 갱신 (Refresh Token으로 새 토큰 쌍 발급)' })
+  @ApiResponse({
+    status: 200,
+    description: '토큰 갱신 성공',
+    schema: {
+      example: {
+        accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+        refreshToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: '리프레시 토큰이 만료되었거나 유효하지 않습니다',
+  })
+  async refresh(@Body() refreshTokenDto: RefreshTokenDto) {
+    return this.authService.refresh(refreshTokenDto);
   }
 
   @Post('logout')

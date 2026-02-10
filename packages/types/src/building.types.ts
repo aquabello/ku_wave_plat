@@ -9,6 +9,7 @@ export interface BuildingListItem {
   buildingFloorCount: number | null;
   playerCount: number;
   assignedUserCount: number;
+  spaceCount: number;
 }
 
 /**

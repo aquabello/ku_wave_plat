@@ -42,7 +42,7 @@ const summaryCards = [
     icon: Zap,
   },
   {
-    title: 'RFID 태그',
+    title: 'NFC 태그',
     value: '1,240개',
     sub: '오늘 인식 328건',
     icon: Radio,
@@ -80,7 +80,7 @@ const aiSummaryData = [
 const activityLog = [
   {
     icon: ScanLine,
-    text: 'RFID 태그 #1234 인식 - 공학관 2층',
+    text: 'NFC 태그 #1234 인식 - 공학관 2층',
     time: '3분 전',
   },
   {
@@ -105,7 +105,7 @@ const activityLog = [
   },
   {
     icon: ScanLine,
-    text: 'RFID 태그 #0987 인식 - 과학관 B1',
+    text: 'NFC 태그 #0987 인식 - 과학관 B1',
     time: '42분 전',
   },
   {

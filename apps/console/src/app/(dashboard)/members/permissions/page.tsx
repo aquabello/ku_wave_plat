@@ -40,7 +40,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
-import { getPermissions } from '@/lib/api/permissions';
+import { getPermissions, assignBuildings } from '@/lib/api/permissions';
 import { getMenuTree, getUserMenus, updateUserMenus } from '@/lib/api/menus';
 import { getBuildings } from '@/lib/api/buildings';
 import { showToast } from '@/lib/toast';
@@ -236,7 +236,14 @@ function AssignmentForm({
     return initial;
   });
 
-  const [selectedBuildings, setSelectedBuildings] = useState<Set<number>>(() => new Set());
+  const [selectedBuildings, setSelectedBuildings] = useState<Set<number>>(() => {
+    // user.assignedBuildings (건물 이름 배열)을 buildings 목록과 매칭하여 seq 초기화
+    const assignedNames = new Set(user.assignedBuildings);
+    const initialSeqs = buildings
+      .filter((b) => assignedNames.has(b.buildingName))
+      .map((b) => b.buildingSeq);
+    return new Set(initialSeqs);
+  });
 
   const handleBuildingToggle = (buildingSeq: number, checked: boolean) => {
     setSelectedBuildings((prev) => {
@@ -259,7 +266,12 @@ function AssignmentForm({
   };
 
   const mutation = useMutation({
-    mutationFn: (menuSeqs: number[]) => updateUserMenus(user.seq, { menuSeqs }),
+    mutationFn: async ({ menuSeqs, buildingSeqs }: { menuSeqs: number[]; buildingSeqs: number[] }) => {
+      await Promise.all([
+        updateUserMenus(user.seq, { menuSeqs }),
+        assignBuildings(user.seq, buildingSeqs),
+      ]);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['permissions'] });
       queryClient.invalidateQueries({ queryKey: ['userMenus', user.seq] });
@@ -267,12 +279,12 @@ function AssignmentForm({
       setTimeout(() => {
         showToast.success(
           '저장 완료',
-          `${user.name}의 메뉴 권한이 저장되었습니다. 해당 사용자는 재로그인이 필요합니다.`
+          `${user.name}의 건물 및 메뉴 권한이 저장되었습니다. 해당 사용자는 재로그인이 필요합니다.`
         );
       }, 100);
     },
     onError: (error) => {
-      showToast.apiError(error, '메뉴 권한 저장 중 오류가 발생했습니다.');
+      showToast.apiError(error, '권한 저장 중 오류가 발생했습니다.');
     },
   });
 
@@ -310,7 +322,10 @@ function AssignmentForm({
   };
 
   const handleSave = () => {
-    mutation.mutate(Array.from(selectedMenus));
+    mutation.mutate({
+      menuSeqs: Array.from(selectedMenus),
+      buildingSeqs: Array.from(selectedBuildings),
+    });
   };
 
   const isSuperUser = user.userType === 'SUPER';

@@ -18,6 +18,9 @@ import { BuildingsModule } from '@modules/buildings/buildings.module';
 import { MenusModule } from '@modules/menus/menus.module';
 import { PermissionsModule } from '@modules/permissions/permissions.module';
 import { ActivityLogsModule } from '@modules/activity-logs/activity-logs.module';
+import { SpacesModule } from '@modules/spaces/spaces.module';
+import { PresetsModule } from '@modules/controller/presets/presets.module';
+import { ControlModule } from '@modules/controller/control/control.module';
 import { ActivityLogInterceptor } from '@modules/activity-logs/interceptors/activity-log.interceptor';
 
 // Common modules
@@ -82,6 +85,9 @@ import { AppService } from './app.service';
     MenusModule,
     PermissionsModule,
     ActivityLogsModule,
+    SpacesModule,
+    PresetsModule,
+    ControlModule,
   ],
   controllers: [AppController],
   providers: [

@@ -11,7 +11,9 @@ import {
   Trash2,
   Monitor,
   Users,
+  DoorOpen,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -434,6 +436,7 @@ export default function BuildingsPage() {
                 <TableHead>건물명</TableHead>
                 <TableHead>위치</TableHead>
                 <TableHead className="w-[80px] text-center">층수</TableHead>
+                <TableHead className="w-[80px] text-center">공간수</TableHead>
                 <TableHead className="w-[100px] text-center">플레이어</TableHead>
                 <TableHead className="w-[100px] text-center">할당사용자</TableHead>
                 <TableHead className="w-[100px] text-center">관리</TableHead>
@@ -443,7 +446,7 @@ export default function BuildingsPage() {
               {isLoading ? (
                 <TableRow>
                   <TableCell
-                    colSpan={8}
+                    colSpan={9}
                     className="h-32 text-center text-muted-foreground"
                   >
                     로딩 중...
@@ -452,7 +455,7 @@ export default function BuildingsPage() {
               ) : buildings.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={8}
+                    colSpan={9}
                     className="h-32 text-center text-muted-foreground"
                   >
                     {searchQuery
@@ -472,7 +475,13 @@ export default function BuildingsPage() {
                       </span>
                     </TableCell>
                     <TableCell className="font-semibold">
-                      {building.buildingName}
+                      <Link
+                        href={`/settings/buildings/${building.buildingSeq}`}
+                        className="text-konkuk-green hover:underline"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {building.buildingName}
+                      </Link>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -482,6 +491,16 @@ export default function BuildingsPage() {
                     </TableCell>
                     <TableCell className="text-center">
                       {building.buildingFloorCount ?? '-'}층
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Link
+                        href={`/settings/buildings/${building.buildingSeq}?tab=spaces`}
+                        className="inline-flex items-center justify-center gap-1 text-sm text-muted-foreground hover:text-konkuk-green transition-colors"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <DoorOpen className="h-3.5 w-3.5" />
+                        {building.spaceCount}
+                      </Link>
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground">

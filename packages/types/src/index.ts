@@ -25,6 +25,9 @@ export * from './settings.types';
 // Building Types
 export * from './building.types';
 
+// Space Types
+export * from './space.types';
+
 // Member Types
 export * from './member.types';
 
@@ -36,3 +39,9 @@ export * from './menu.types';
 
 // Activity Log Types
 export * from './activity-log.types';
+
+// Controller Types
+export * from './controller.types';
+
+// NFC Types
+export * from './nfc.types';

@@ -13,3 +13,16 @@ export async function getPermissions(params?: {
     params,
   });
 }
+
+/**
+ * 사용자 건물 할당 (전체 교체)
+ */
+export async function assignBuildings(
+  userSeq: number,
+  buildingSeqs: number[],
+): Promise<{ message: string; assignedBuildings: string[] }> {
+  return await apiClient(`/permissions/${userSeq}/buildings`, {
+    method: 'PUT',
+    body: { buildingSeqs },
+  });
+}

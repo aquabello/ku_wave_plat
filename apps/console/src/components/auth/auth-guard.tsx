@@ -4,10 +4,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { useNavigationStore } from '@/stores/navigation';
-import { apiClient } from '@/lib/api/client';
+import { refreshTokens } from '@/lib/api/auth';
 
-const TOKEN_CHECK_INTERVAL = 30_000; // 30초 주기 토큰 검증
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+const TOKEN_CHECK_INTERVAL = 60_000; // 60초 주기 클라이언트 토큰 만료 체크
 
 type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
 
@@ -24,16 +23,30 @@ function isTokenExpired(token: string): boolean {
 }
 
 /**
- * 서버사이드 토큰 유효성 검증 (blocking)
- * apiClient의 onResponseError 우회를 위해 raw fetch 사용
- * → 401 시 window.location.href 이중 리다이렉트 방지
+ * JWT 토큰이 곧 만료되는지 체크 (만료 5분 전)
  */
-async function verifyTokenOnServer(token: string): Promise<boolean> {
+function isTokenExpiringSoon(token: string): boolean {
   try {
-    const res = await fetch(`${API_BASE_URL}/buildings?limit=1`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return res.ok;
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const fiveMinutes = 5 * 60 * 1000;
+    return payload.exp * 1000 - Date.now() < fiveMinutes;
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * Refresh Token으로 Access Token 갱신 시도
+ */
+async function tryRefresh(): Promise<boolean> {
+  const rt = localStorage.getItem('refresh_token');
+  if (!rt) return false;
+
+  try {
+    const result = await refreshTokens(rt);
+    localStorage.setItem('access_token', result.accessToken);
+    localStorage.setItem('refresh_token', result.refreshToken);
+    return true;
   } catch {
     return false;
   }
@@ -42,14 +55,10 @@ async function verifyTokenOnServer(token: string): Promise<boolean> {
 /**
  * AuthGuard - 인증 게이트 컴포넌트
  *
- * 렌더링 순서:
- * 1. loading → 로딩 스피너 표시
- * 2. JWT 클라이언트 만료 체크 (즉시)
- * 3. 서버 토큰 검증 (raw fetch, blocking)
- * 4. authenticated → children 렌더링
- * 5. unauthenticated → /login 리다이렉트
- *
- * 주기적 검증 (30초 + 탭 포커스)은 apiClient 사용 → onResponseError 자동 처리
+ * 검증 전략:
+ * - 초기 로드: accessToken 만료 시 refreshToken으로 갱신 시도
+ * - 주기적(60초) + 탭 포커스: 만료 임박(5분 전) 시 자동 갱신
+ * - 서버 측 검증(tokenVer 등): apiClient의 401 인터셉터가 자동 처리
  */
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -58,6 +67,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   const handleForceLogout = useCallback((reason?: 'token_expired' | 'session_invalid') => {
     localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');
     clearMenus();
     if (reason) {
@@ -66,50 +76,52 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     router.replace('/login');
   }, [clearMenus, router]);
 
-  // 주기적 검증용 (apiClient 사용 → onResponseError에서 401 자동 처리)
-  const verifyTokenPeriodic = useCallback(() => {
-    const token = localStorage.getItem('access_token');
-    if (!token) return Promise.resolve(false);
-    return apiClient('/buildings', { method: 'GET', params: { limit: 1 } })
-      .then(() => true)
-      .catch(() => false);
-  }, []);
-
-  // ── 초기 로드: blocking 토큰 검증 ──
-  useEffect(() => {
+  // 토큰 체크 + 만료 임박 시 자동 갱신
+  const checkAndRefreshToken = useCallback(async () => {
     const token = localStorage.getItem('access_token');
 
-    // 1) 토큰 없음 → 즉시 로그인 (reason 없음 - 자연스러운 첫 방문일 수 있음)
+    // 토큰 없음 → 로그아웃
     if (!token) {
-      handleForceLogout();
-      return;
-    }
-
-    // 2) 클라이언트 JWT 만료 체크
-    if (isTokenExpired(token)) {
       handleForceLogout('token_expired');
-      return;
+      return false;
     }
 
-    // 3) 서버사이드 검증
-    verifyTokenOnServer(token).then((valid) => {
-      if (valid) {
-        setStatus('authenticated');
-      } else {
-        handleForceLogout('session_invalid');
+    // 만료됨 → refresh 시도
+    if (isTokenExpired(token)) {
+      const refreshed = await tryRefresh();
+      if (!refreshed) {
+        handleForceLogout('token_expired');
+        return false;
       }
-    });
+      return true;
+    }
+
+    // 만료 임박(5분 전) → 백그라운드 갱신
+    if (isTokenExpiringSoon(token)) {
+      tryRefresh(); // fire-and-forget
+    }
+
+    return true;
   }, [handleForceLogout]);
 
-  // ── 주기적 토큰 검증 (30초) + 탭 포커스 시 즉시 검증 ──
+  // ── 초기 로드: 토큰 검증 + 갱신 ──
+  useEffect(() => {
+    checkAndRefreshToken().then((valid) => {
+      if (valid) {
+        setStatus('authenticated');
+      }
+    });
+  }, [checkAndRefreshToken]);
+
+  // ── 주기적 토큰 체크 (60초) + 탭 포커스 시 즉시 체크 ──
   useEffect(() => {
     if (status !== 'authenticated') return;
 
-    const interval = setInterval(verifyTokenPeriodic, TOKEN_CHECK_INTERVAL);
+    const interval = setInterval(checkAndRefreshToken, TOKEN_CHECK_INTERVAL);
 
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
-        verifyTokenPeriodic();
+        checkAndRefreshToken();
       }
     };
     document.addEventListener('visibilitychange', handleVisibility);
@@ -118,7 +130,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       clearInterval(interval);
       document.removeEventListener('visibilitychange', handleVisibility);
     };
-  }, [status, verifyTokenPeriodic]);
+  }, [status, checkAndRefreshToken]);
 
   // 로딩 중 → 인증 확인 스피너
   if (status === 'loading') {

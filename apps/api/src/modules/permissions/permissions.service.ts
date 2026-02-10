@@ -1,10 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { TbUser } from '@modules/users/entities/tb-user.entity';
 import { TbMenuUsers } from '@modules/menus/entities/tb-menu-users.entity';
 import { TbMenu } from '@modules/menus/entities/tb-menu.entity';
-import { PermissionQueryDto, PermissionListItemDto, PermissionListResponseDto } from './dto';
+import { TbUserBuilding } from './entities/tb-user-building.entity';
+import { TbBuilding } from '@modules/buildings/entities/tb-building.entity';
+import { PermissionQueryDto, PermissionListItemDto, PermissionListResponseDto, AssignBuildingsDto } from './dto';
 
 @Injectable()
 export class PermissionsService {
@@ -15,6 +17,10 @@ export class PermissionsService {
     private readonly menuUsersRepository: Repository<TbMenuUsers>,
     @InjectRepository(TbMenu)
     private readonly menuRepository: Repository<TbMenu>,
+    @InjectRepository(TbUserBuilding)
+    private readonly userBuildingRepository: Repository<TbUserBuilding>,
+    @InjectRepository(TbBuilding)
+    private readonly buildingRepository: Repository<TbBuilding>,
   ) {}
 
   /**
@@ -52,7 +58,10 @@ export class PermissionsService {
 
     // 사용자별 할당된 메뉴 조회 (한 번에)
     let menuMap = new Map<number, string[]>();
+    let buildingMap = new Map<number, string[]>();
+
     if (userSeqs.length > 0) {
+      // 메뉴 조회
       const menuResults = await this.menuUsersRepository
         .createQueryBuilder('mu')
         .innerJoin('mu.menu', 'm')
@@ -67,6 +76,21 @@ export class PermissionsService {
         seqs.push(row.menuName);
         menuMap.set(row.tuSeq, seqs);
       }
+
+      // 건물 조회
+      const buildingResults = await this.userBuildingRepository
+        .createQueryBuilder('ub')
+        .innerJoin('ub.building', 'b')
+        .select(['ub.tu_seq AS tuSeq', 'b.building_name AS buildingName'])
+        .where('ub.tu_seq IN (:...userSeqs)', { userSeqs })
+        .andWhere("(b.building_isdel IS NULL OR b.building_isdel != 'Y')")
+        .getRawMany();
+
+      for (const row of buildingResults) {
+        const names = buildingMap.get(row.tuSeq) ?? [];
+        names.push(row.buildingName);
+        buildingMap.set(row.tuSeq, names);
+      }
     }
 
     const items: PermissionListItemDto[] = users.map((u, index) => ({
@@ -76,7 +100,7 @@ export class PermissionsService {
       name: u.name,
       userType: u.type,
       step: u.step,
-      assignedBuildings: [], // TODO: 건물-사용자 매핑 테이블 연결 후
+      assignedBuildings: buildingMap.get(u.seq) ?? [],
       assignedMenus: menuMap.get(u.seq) ?? [],
     }));
 
@@ -86,6 +110,55 @@ export class PermissionsService {
       page,
       limit,
       totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  /**
+   * 사용자에게 건물 할당 (전체 교체 방식)
+   * 기존 할당을 모두 삭제하고 새로 할당
+   */
+  async assignBuildings(userSeq: number, dto: AssignBuildingsDto): Promise<{ message: string; assignedBuildings: string[] }> {
+    // 사용자 존재 확인
+    const user = await this.userRepository.findOne({ where: { seq: userSeq } });
+    if (!user || user.isDel === 'Y') {
+      throw new NotFoundException('해당 회원을 찾을 수 없습니다');
+    }
+
+    // 건물 유효성 확인 (요청된 건물이 모두 존재하는지)
+    let buildingNames: string[] = [];
+    if (dto.buildingSeqs.length > 0) {
+      const buildings = await this.buildingRepository.find({
+        where: { buildingSeq: In(dto.buildingSeqs) },
+      });
+
+      const validBuildings = buildings.filter((b) => b.buildingIsdel !== 'Y');
+      const validSeqs = validBuildings.map((b) => b.buildingSeq);
+      const invalidSeqs = dto.buildingSeqs.filter((seq) => !validSeqs.includes(seq));
+
+      if (invalidSeqs.length > 0) {
+        throw new NotFoundException(`존재하지 않는 건물: ${invalidSeqs.join(', ')}`);
+      }
+
+      buildingNames = validBuildings.map((b) => b.buildingName);
+    }
+
+    // 기존 할당 전체 삭제
+    await this.userBuildingRepository.delete({ tuSeq: userSeq });
+
+    // 새로 할당
+    if (dto.buildingSeqs.length > 0) {
+      const entities = dto.buildingSeqs.map((buildingSeq) =>
+        this.userBuildingRepository.create({
+          tuSeq: userSeq,
+          buildingSeq,
+        }),
+      );
+      await this.userBuildingRepository.save(entities);
+    }
+
+    return {
+      message: '건물 할당이 완료되었습니다',
+      assignedBuildings: buildingNames,
     };
   }
 }

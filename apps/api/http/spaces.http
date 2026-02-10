@@ -1,0 +1,170 @@
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.PASTE_YOUR_TOKEN_HERE
+@buildingSeq = 1
+
+### ──────────────────────────────────────
+### 공간 목록 조회
+### ──────────────────────────────────────
+
+### 1. 공간 목록 조회 (기본 page=1, limit=10) → 200
+GET http://localhost:8000/api/v1/buildings/{{buildingSeq}}/spaces
+Authorization: Bearer {{token}}
+
+### 1-1. 공간 목록 조회 (페이징: 1페이지, 5개) → 200
+GET http://localhost:8000/api/v1/buildings/{{buildingSeq}}/spaces?page=1&limit=5
+Authorization: Bearer {{token}}
+
+### 1-2. 공간 목록 조회 (통합검색: 공간명) → 200
+GET http://localhost:8000/api/v1/buildings/{{buildingSeq}}/spaces?search=강의실
+Authorization: Bearer {{token}}
+
+### 1-3. 공간 목록 조회 (층 필터) → 200
+GET http://localhost:8000/api/v1/buildings/{{buildingSeq}}/spaces?floor=1F
+Authorization: Bearer {{token}}
+
+### 1-4. 공간 목록 조회 (공간유형 필터) → 200
+GET http://localhost:8000/api/v1/buildings/{{buildingSeq}}/spaces?spaceType=강의실
+Authorization: Bearer {{token}}
+
+### 1-5. 공간 목록 조회 (복합 필터: 검색 + 층 + 페이징) → 200
+GET http://localhost:8000/api/v1/buildings/{{buildingSeq}}/spaces?search=강의&floor=1F&page=1&limit=5
+Authorization: Bearer {{token}}
+
+### 1-6. 존재하지 않는 건물의 공간 조회 → 404
+GET http://localhost:8000/api/v1/buildings/99999/spaces
+Authorization: Bearer {{token}}
+
+### 1-7. 토큰 없이 조회 → 401
+GET http://localhost:8000/api/v1/buildings/{{buildingSeq}}/spaces
+
+### ──────────────────────────────────────
+### 공간 상세 조회
+### ──────────────────────────────────────
+
+### 2. 공간 상세 조회 → 200
+GET http://localhost:8000/api/v1/buildings/{{buildingSeq}}/spaces/1
+Authorization: Bearer {{token}}
+
+### 2-1. 존재하지 않는 공간 조회 → 404
+GET http://localhost:8000/api/v1/buildings/{{buildingSeq}}/spaces/99999
+Authorization: Bearer {{token}}
+
+### 2-2. 존재하지 않는 건물의 공간 조회 → 404
+GET http://localhost:8000/api/v1/buildings/99999/spaces/1
+Authorization: Bearer {{token}}
+
+### ──────────────────────────────────────
+### 공간 등록
+### ──────────────────────────────────────
+
+### 3. 공간 등록 - 전체 필드 → 201
+POST http://localhost:8000/api/v1/buildings/{{buildingSeq}}/spaces
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "spaceName": "테스트 강의실 A",
+  "spaceFloor": "3F",
+  "spaceType": "강의실",
+  "spaceCapacity": 40,
+  "spaceDescription": "멀티미디어 강의실",
+  "spaceOrder": 1
+}
+
+### 3-1. 공간 등록 - 필수 필드만 → 201
+POST http://localhost:8000/api/v1/buildings/{{buildingSeq}}/spaces
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "spaceName": "테스트 공간 B"
+}
+
+### 3-2. 공간 등록 - 필수 필드 누락 → 400
+POST http://localhost:8000/api/v1/buildings/{{buildingSeq}}/spaces
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "spaceFloor": "1F"
+}
+
+### 3-3. 공간 등록 - 존재하지 않는 건물 → 404
+POST http://localhost:8000/api/v1/buildings/99999/spaces
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "spaceName": "테스트 공간"
+}
+
+### 3-4. 공간 등록 - 토큰 없이 → 401
+POST http://localhost:8000/api/v1/buildings/{{buildingSeq}}/spaces
+Content-Type: application/json
+
+{
+  "spaceName": "테스트 공간"
+}
+
+### ──────────────────────────────────────
+### 공간 수정
+### ──────────────────────────────────────
+
+### 4. 공간 수정 - 전체 필드 → 200
+PUT http://localhost:8000/api/v1/buildings/{{buildingSeq}}/spaces/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "spaceName": "수정된 강의실",
+  "spaceFloor": "2F",
+  "spaceType": "세미나실",
+  "spaceCapacity": 20,
+  "spaceDescription": "소규모 세미나실로 변경",
+  "spaceOrder": 2
+}
+
+### 4-1. 공간 수정 - 부분 필드 → 200
+PUT http://localhost:8000/api/v1/buildings/{{buildingSeq}}/spaces/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "spaceName": "이름만 수정"
+}
+
+### 4-2. 공간 수정 - 존재하지 않는 공간 → 404
+PUT http://localhost:8000/api/v1/buildings/{{buildingSeq}}/spaces/99999
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "spaceName": "수정 테스트"
+}
+
+### 4-3. 공간 수정 - 존재하지 않는 건물 → 404
+PUT http://localhost:8000/api/v1/buildings/99999/spaces/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "spaceName": "수정 테스트"
+}
+
+### ──────────────────────────────────────
+### 공간 삭제 (소프트 삭제)
+### ──────────────────────────────────────
+
+### 5. 공간 삭제 → 200
+DELETE http://localhost:8000/api/v1/buildings/{{buildingSeq}}/spaces/1
+Authorization: Bearer {{token}}
+
+### 5-1. 존재하지 않는 공간 삭제 → 404
+DELETE http://localhost:8000/api/v1/buildings/{{buildingSeq}}/spaces/99999
+Authorization: Bearer {{token}}
+
+### 5-2. 존재하지 않는 건물의 공간 삭제 → 404
+DELETE http://localhost:8000/api/v1/buildings/99999/spaces/1
+Authorization: Bearer {{token}}
+
+### 5-3. 토큰 없이 삭제 → 401
+DELETE http://localhost:8000/api/v1/buildings/{{buildingSeq}}/spaces/1

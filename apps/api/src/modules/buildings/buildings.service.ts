@@ -33,13 +33,24 @@ export class BuildingsService {
       );
     }
 
-    const [buildings, total] = await qb
+    // spaceCount LEFT JOIN subquery
+    qb.addSelect((subQuery) => {
+      return subQuery
+        .select('COUNT(s.space_seq)')
+        .from('tb_space', 's')
+        .where('s.building_seq = b.building_seq')
+        .andWhere("(s.space_isdel IS NULL OR s.space_isdel != 'Y')");
+    }, 'spaceCount');
+
+    const total = await qb.getCount();
+
+    const rawAndEntities = await qb
       .orderBy('b.building_name', 'ASC')
       .skip(skip)
       .take(limit)
-      .getManyAndCount();
+      .getRawAndEntities();
 
-    const items: BuildingListItemDto[] = buildings.map((b, index) => ({
+    const items: BuildingListItemDto[] = rawAndEntities.entities.map((b, index) => ({
       no: total - skip - index,
       buildingSeq: b.buildingSeq,
       buildingName: b.buildingName,
@@ -48,6 +59,7 @@ export class BuildingsService {
       buildingFloorCount: b.buildingFloorCount,
       playerCount: 0, // TODO: 플레이어 테이블 연결 후 카운트
       assignedUserCount: 0, // TODO: 할당사용자 테이블 연결 후 카운트
+      spaceCount: parseInt(rawAndEntities.raw[index]?.spaceCount ?? '0', 10),
     }));
 
     return {

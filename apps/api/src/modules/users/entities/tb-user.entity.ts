@@ -129,6 +129,15 @@ export class TbUser {
   accessToken: string | null;
 
   @Column({
+    name: 'tu_refresh_token',
+    type: 'varchar',
+    length: 500,
+    nullable: true,
+    comment: '리프레시토큰',
+  })
+  refreshToken: string | null;
+
+  @Column({
     name: 'tu_push_token',
     type: 'varchar',
     length: 100,

@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1770476708074,
+  "lastScanned": 1770638690996,
   "projectRoot": "/Users/aquabello/Documents/10-Dev/ku_wave_plat/apps/api",
   "techStack": {
     "languages": [
@@ -83,14 +83,14 @@
       "path": "apps",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1770476708004,
+      "lastAccessed": 1770638690945,
       "keyFiles": []
     },
     "dist": {
       "path": "dist",
       "purpose": "Distribution/build output",
       "fileCount": 1,
-      "lastAccessed": 1770476708010,
+      "lastAccessed": 1770638690947,
       "keyFiles": [
         "main.js"
       ]
@@ -98,21 +98,21 @@
     "http": {
       "path": "http",
       "purpose": null,
-      "fileCount": 6,
-      "lastAccessed": 1770476708030,
+      "fileCount": 7,
+      "lastAccessed": 1770638690959,
       "keyFiles": [
+        "activity-logs.http",
         "auth.http",
         "building.http",
         "menus.http",
-        "permissions.http",
-        "settings.http"
+        "permissions.http"
       ]
     },
     "src": {
       "path": "src",
       "purpose": "Source code",
       "fileCount": 4,
-      "lastAccessed": 1770476708032,
+      "lastAccessed": 1770638690959,
       "keyFiles": [
         "app.controller.ts",
         "app.module.ts",
@@ -124,184 +124,238 @@
       "path": "uploads",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1770476708035,
+      "lastAccessed": 1770638690960,
       "keyFiles": []
     }
   },
   "hotPaths": [
     {
       "path": "src/app.module.ts",
-      "accessCount": 7,
-      "lastAccessed": 1770476871774,
+      "accessCount": 10,
+      "lastAccessed": 1770639856664,
       "type": "file"
     },
     {
-      "path": "src/modules/activity-logs/activity-logs.controller.ts",
-      "accessCount": 6,
-      "lastAccessed": 1770480095604,
+      "path": "src/modules/controller/control/control.service.ts",
+      "accessCount": 9,
+      "lastAccessed": 1770720786235,
       "type": "file"
     },
     {
-      "path": "src/modules/activity-logs/interceptors/activity-log.interceptor.ts",
-      "accessCount": 5,
-      "lastAccessed": 1770478759449,
+      "path": "src/modules/controller/control/control.controller.ts",
+      "accessCount": 8,
+      "lastAccessed": 1770720726604,
       "type": "file"
     },
     {
-      "path": "src/modules/activity-logs/activity-logs.service.ts",
+      "path": "src/modules/controller/presets/entities/tb-device-preset.entity.ts",
       "accessCount": 4,
-      "lastAccessed": 1770480040318,
+      "lastAccessed": 1770639555490,
       "type": "file"
     },
     {
-      "path": "src/modules/auth/auth.service.ts",
+      "path": "src/modules/spaces/entities/tb-space.entity.ts",
       "accessCount": 3,
-      "lastAccessed": 1770477700810,
+      "lastAccessed": 1770639408731,
       "type": "file"
+    },
+    {
+      "path": "src/modules/spaces/spaces.service.ts",
+      "accessCount": 3,
+      "lastAccessed": 1770639438574,
+      "type": "file"
+    },
+    {
+      "path": "src/modules/spaces/spaces.controller.ts",
+      "accessCount": 3,
+      "lastAccessed": 1770639439430,
+      "type": "file"
+    },
+    {
+      "path": "src/modules/spaces/dto/create-space.dto.ts",
+      "accessCount": 3,
+      "lastAccessed": 1770639440299,
+      "type": "file"
+    },
+    {
+      "path": "src",
+      "accessCount": 3,
+      "lastAccessed": 1770639622593,
+      "type": "directory"
+    },
+    {
+      "path": "src/modules/controller",
+      "accessCount": 3,
+      "lastAccessed": 1770721483212,
+      "type": "directory"
+    },
+    {
+      "path": "src/modules/spaces/dto/space-list-response.dto.ts",
+      "accessCount": 2,
+      "lastAccessed": 1770639440681,
+      "type": "file"
+    },
+    {
+      "path": "src/modules/controller/presets/dto/update-preset.dto.ts",
+      "accessCount": 2,
+      "lastAccessed": 1770639610720,
+      "type": "file"
+    },
+    {
+      "path": "src/modules/controller/presets/presets.service.ts",
+      "accessCount": 2,
+      "lastAccessed": 1770665380777,
+      "type": "file"
+    },
+    {
+      "path": "src/modules/controller/control/entities/tb-control-log.entity.ts",
+      "accessCount": 2,
+      "lastAccessed": 1770720776813,
+      "type": "file"
+    },
+    {
+      "path": "http/controller.http",
+      "accessCount": 2,
+      "lastAccessed": 1770720819881,
+      "type": "file"
+    },
+    {
+      "path": "http/permissions.http",
+      "accessCount": 1,
+      "lastAccessed": 1770638702140,
+      "type": "file"
+    },
+    {
+      "path": "http/spaces.http",
+      "accessCount": 1,
+      "lastAccessed": 1770638730285,
+      "type": "file"
+    },
+    {
+      "path": ".env",
+      "accessCount": 1,
+      "lastAccessed": 1770639261657,
+      "type": "file"
+    },
+    {
+      "path": "src/modules/spaces/spaces.module.ts",
+      "accessCount": 1,
+      "lastAccessed": 1770639333379,
+      "type": "file"
+    },
+    {
+      "path": "src/common/http/index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1770639347242,
+      "type": "file"
+    },
+    {
+      "path": "src/modules/spaces/dto/index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1770639398866,
+      "type": "file"
+    },
+    {
+      "path": "src/modules/controller/presets/entities/tb-preset-command.entity.ts",
+      "accessCount": 1,
+      "lastAccessed": 1770639451882,
+      "type": "file"
+    },
+    {
+      "path": "src/modules/controller/presets/dto/create-preset.dto.ts",
+      "accessCount": 1,
+      "lastAccessed": 1770639463561,
+      "type": "file"
+    },
+    {
+      "path": "src/modules/controller/control/dto/execute-command.dto.ts",
+      "accessCount": 1,
+      "lastAccessed": 1770639467711,
+      "type": "file"
+    },
+    {
+      "path": "src/modules/controller/control/dto/execute-batch.dto.ts",
+      "accessCount": 1,
+      "lastAccessed": 1770639470892,
+      "type": "file"
+    },
+    {
+      "path": "src/modules/controller/presets/dto/preset-query.dto.ts",
+      "accessCount": 1,
+      "lastAccessed": 1770639472506,
+      "type": "file"
+    },
+    {
+      "path": "src/modules/controller/control/dto/control-log-query.dto.ts",
+      "accessCount": 1,
+      "lastAccessed": 1770639476699,
+      "type": "file"
+    },
+    {
+      "path": "src/modules/controller/presets/dto/preset-list-response.dto.ts",
+      "accessCount": 1,
+      "lastAccessed": 1770639478298,
+      "type": "file"
+    },
+    {
+      "path": "src/modules/controller/presets/dto/index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1770639479612,
+      "type": "file"
+    },
+    {
+      "path": "src/modules/controller/control/dto/control-log-response.dto.ts",
+      "accessCount": 1,
+      "lastAccessed": 1770639483478,
+      "type": "file"
+    },
+    {
+      "path": "src/modules/controller/control/dto/index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1770639485522,
+      "type": "file"
+    },
+    {
+      "path": "src/modules/controller/presets/presets.controller.ts",
+      "accessCount": 1,
+      "lastAccessed": 1770639538778,
+      "type": "file"
+    },
+    {
+      "path": "src/modules/controller/presets/presets.module.ts",
+      "accessCount": 1,
+      "lastAccessed": 1770639540615,
+      "type": "file"
+    },
+    {
+      "path": "src/modules/controller/control/control.module.ts",
+      "accessCount": 1,
+      "lastAccessed": 1770639581654,
+      "type": "file"
+    },
+    {
+      "path": "src/common",
+      "accessCount": 1,
+      "lastAccessed": 1770639592434,
+      "type": "directory"
     },
     {
       "path": "src/modules/auth/strategies/jwt.strategy.ts",
-      "accessCount": 3,
-      "lastAccessed": 1770480473033,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/users/users.service.ts",
-      "accessCount": 2,
-      "lastAccessed": 1770476770919,
-      "type": "file"
-    },
-    {
-      "path": "src/main.ts",
-      "accessCount": 2,
-      "lastAccessed": 1770476876749,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/auth/auth.module.ts",
-      "accessCount": 2,
-      "lastAccessed": 1770477686458,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/users/dto/update-user.dto.ts",
-      "accessCount": 2,
-      "lastAccessed": 1770478235862,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/menus/menus.service.ts",
-      "accessCount": 2,
-      "lastAccessed": 1770478490149,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/permissions/permissions.service.ts",
-      "accessCount": 2,
-      "lastAccessed": 1770478588164,
-      "type": "file"
-    },
-    {
-      "path": "src/common/dto/pagination-query.dto.ts",
       "accessCount": 1,
-      "lastAccessed": 1770476731499,
+      "lastAccessed": 1770639626705,
       "type": "file"
     },
     {
-      "path": "src/modules/activity-logs/activity-logs.module.ts",
+      "path": "src/modules/controller/presets",
       "accessCount": 1,
-      "lastAccessed": 1770476844683,
-      "type": "file"
+      "lastAccessed": 1770665361814,
+      "type": "directory"
     },
     {
-      "path": "http/activity-logs.http",
+      "path": "src/modules",
       "accessCount": 1,
-      "lastAccessed": 1770476892241,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/auth/auth.controller.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770477672053,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/menus/menus.module.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770477678583,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/menus/menus.controller.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770478217709,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/users/users.controller.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770478218986,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/permissions/permissions.controller.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770478219267,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/users/dto/create-user.dto.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770478226228,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/users/dto/user-list-response.dto.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770478236534,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/permissions/dto/permission-list-response.dto.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770478237399,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/menus/entities/tb-menu.entity.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770478439318,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/menus/entities/tb-menu-users.entity.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770478439901,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/menus/dto/index.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770478440496,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/menus/dto/menu-tree-response.dto.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770478444161,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/menus/dto/user-menu-response.dto.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770478444603,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/menus/dto/update-user-menus.dto.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770478445247,
-      "type": "file"
+      "lastAccessed": 1770721484364,
+      "type": "directory"
     }
   ],
   "userDirectives": []

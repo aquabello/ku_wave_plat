@@ -64,6 +64,7 @@ export default function LoginPage() {
     try {
       const response = await login(data);
       localStorage.setItem('access_token', response.accessToken);
+      localStorage.setItem('refresh_token', response.refreshToken);
       localStorage.setItem('user', JSON.stringify(response.user));
       useNavigationStore.getState().setMenus(response.menus ?? []);
       router.push('/dashboard');

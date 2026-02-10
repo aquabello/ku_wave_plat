@@ -14,6 +14,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useNavigationStore } from '@/stores/navigation';
+import { logout } from '@/lib/api/auth';
 import type { CurrentUser } from '@ku/types';
 
 export function UserMenu() {
@@ -36,11 +37,15 @@ export function UserMenu() {
   const displayEmail = user?.email || '';
   const initials = displayName.slice(0, 1).toUpperCase();
 
-  const handleLogout = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user');
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch {
+      // 토큰 만료 등으로 실패해도 로컬 정리 진행
     }
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user');
     clearMenus();
     router.replace('/login');
   };

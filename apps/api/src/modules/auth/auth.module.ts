@@ -11,6 +11,7 @@ import { MenusModule } from '@modules/menus/menus.module';
 
 @Module({
   imports: [
+    ConfigModule,
     UsersModule,
     MenusModule,
     PassportModule,

@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+import { TbSpace } from '@modules/spaces/entities/tb-space.entity';
 
 @Entity('tb_building')
 export class TbBuilding {
@@ -94,4 +95,7 @@ export class TbBuilding {
     comment: '수정일시',
   })
   updDate: Date | null;
+
+  @OneToMany(() => TbSpace, (space) => space.building)
+  spaces: TbSpace[];
 }

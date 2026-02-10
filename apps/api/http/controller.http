@@ -1,0 +1,243 @@
+### ============================================================
+### Controller API 테스트
+### ============================================================
+### 사용법: @token 에 로그인 API에서 발급받은 accessToken 붙여넣기
+### ============================================================
+
+@baseUrl = http://localhost:8000/api/v1
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.PASTE_YOUR_TOKEN_HERE
+
+
+### ============================================================
+### 1. 프리셋 관리 (Presets)
+### ============================================================
+
+### 1-1. 프리셋 목록 조회 (기본)
+GET {{baseUrl}}/controller/presets?page=1&limit=10
+Authorization: Bearer {{token}}
+
+### 1-2. 프리셋 목록 조회 (검색)
+GET {{baseUrl}}/controller/presets?page=1&limit=10&search=프로젝터
+Authorization: Bearer {{token}}
+
+### 1-3. 프리셋 목록 조회 (프로토콜 필터)
+GET {{baseUrl}}/controller/presets?page=1&limit=10&protocol=TCP
+Authorization: Bearer {{token}}
+
+### 1-4. 프리셋 등록 (TCP 프로젝터)
+POST {{baseUrl}}/controller/presets
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "presetName": "강의실 프로젝터",
+  "protocolType": "TCP",
+  "commIp": "192.168.1.100",
+  "commPort": 4001,
+  "presetDescription": "엡손 EB-X51 프로젝터",
+  "presetOrder": 1,
+  "commands": [
+    {
+      "commandName": "전원 ON",
+      "commandCode": "PWR ON\\r",
+      "commandType": "POWER_ON",
+      "commandOrder": 1
+    },
+    {
+      "commandName": "전원 OFF",
+      "commandCode": "PWR OFF\\r",
+      "commandType": "POWER_OFF",
+      "commandOrder": 2
+    },
+    {
+      "commandName": "입력 HDMI1",
+      "commandCode": "SOURCE 30\\r",
+      "commandType": "INPUT_CHANGE",
+      "commandOrder": 3
+    }
+  ]
+}
+
+### 1-5. 프리셋 상세 조회 (presetSeq 변경 필요)
+@presetSeq = 1
+GET {{baseUrl}}/controller/presets/{{presetSeq}}
+Authorization: Bearer {{token}}
+
+### 1-6. 프리셋 수정 (명령어 동기화 - commandSeq 있으면 수정, 없으면 추가, 누락시 삭제)
+PUT {{baseUrl}}/controller/presets/{{presetSeq}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "presetName": "강의실 프로젝터 (업데이트)",
+  "presetDescription": "엡손 EB-X51 프로젝터 펌웨어 업데이트",
+  "commands": [
+    {
+      "commandSeq": 1,
+      "commandName": "전원 ON",
+      "commandCode": "PWR ON\\r",
+      "commandType": "POWER_ON",
+      "commandOrder": 1
+    },
+    {
+      "commandName": "입력 HDMI2",
+      "commandCode": "SOURCE 31\\r",
+      "commandType": "INPUT_CHANGE",
+      "commandOrder": 3
+    }
+  ]
+}
+
+### 1-7. 프리셋 삭제 (소프트 삭제)
+DELETE {{baseUrl}}/controller/presets/{{presetSeq}}
+Authorization: Bearer {{token}}
+
+
+### ============================================================
+### 2. 제어관리 - 공간 조회
+### ============================================================
+
+### 2-1. 공간 목록 조회 (건물 기준, 장비 수 포함)
+@buildingSeq = 1
+GET {{baseUrl}}/controller/control/spaces?buildingSeq={{buildingSeq}}
+Authorization: Bearer {{token}}
+
+### 2-2. 공간 목록 조회 (공간명 검색)
+GET {{baseUrl}}/controller/control/spaces?buildingSeq={{buildingSeq}}&search=101
+Authorization: Bearer {{token}}
+
+### 2-3. 공간별 장비 목록 조회 (장비등록/장비제어 공용, 명령어 포함)
+@spaceSeq = 1
+GET {{baseUrl}}/controller/control/spaces/{{spaceSeq}}/devices
+Authorization: Bearer {{token}}
+
+
+### ============================================================
+### 3. 제어관리 - 장비 등록 (Devices)
+### ============================================================
+
+### 3-1. 장비 단건 등록
+POST {{baseUrl}}/controller/control/devices
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "spaceSeq": 1,
+  "presetSeq": 1,
+  "deviceName": "101호 프로젝터",
+  "deviceIp": "192.168.1.101",
+  "devicePort": 4001,
+  "deviceOrder": 1
+}
+
+### 3-2. 장비 일괄 등록 (하나의 프리셋으로 여러 공간에 등록)
+POST {{baseUrl}}/controller/control/devices/bulk
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "presetSeq": 1,
+  "devices": [
+    {
+      "spaceSeq": 1,
+      "deviceName": "101호 프로젝터",
+      "deviceIp": "192.168.1.101",
+      "devicePort": 4001
+    },
+    {
+      "spaceSeq": 2,
+      "deviceName": "102호 프로젝터",
+      "deviceIp": "192.168.1.102",
+      "devicePort": 4001
+    },
+    {
+      "spaceSeq": 3,
+      "deviceName": "103호 프로젝터",
+      "deviceIp": "192.168.1.103",
+      "devicePort": 4001
+    }
+  ]
+}
+
+### 3-3. 장비 수정 (spaceSeq는 수정 불가)
+@spaceDeviceSeq = 1
+PUT {{baseUrl}}/controller/control/devices/{{spaceDeviceSeq}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "presetSeq": 2,
+  "deviceName": "101호 프로젝터 (교체)",
+  "deviceIp": "192.168.1.201",
+  "devicePort": 4002,
+  "deviceStatus": "ACTIVE",
+  "deviceOrder": 1
+}
+
+### 3-4. 장비 삭제 (소프트 삭제)
+DELETE {{baseUrl}}/controller/control/devices/{{spaceDeviceSeq}}
+Authorization: Bearer {{token}}
+
+
+### ============================================================
+### 4. 제어관리 - 장비 제어 (Control)
+### ============================================================
+
+### 4-1. 단일 장비 명령어 실행
+POST {{baseUrl}}/controller/control/execute
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "spaceDeviceSeq": 1,
+  "commandSeq": 1
+}
+
+### 4-2. 공간 일괄 제어 (전원 ON)
+POST {{baseUrl}}/controller/control/execute-batch
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "spaceSeq": 1,
+  "commandType": "POWER_ON"
+}
+
+### 4-3. 공간 일괄 제어 (전원 OFF)
+POST {{baseUrl}}/controller/control/execute-batch
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "spaceSeq": 1,
+  "commandType": "POWER_OFF"
+}
+
+
+### ============================================================
+### 5. 제어관리 - 로그 조회
+### ============================================================
+
+### 5-1. 제어 로그 조회 (기본)
+GET {{baseUrl}}/controller/control/logs?page=1&limit=20
+Authorization: Bearer {{token}}
+
+### 5-2. 제어 로그 조회 (건물 필터)
+GET {{baseUrl}}/controller/control/logs?buildingSeq={{buildingSeq}}&page=1&limit=20
+Authorization: Bearer {{token}}
+
+### 5-3. 제어 로그 조회 (결과 상태 필터)
+GET {{baseUrl}}/controller/control/logs?resultStatus=SUCCESS&page=1&limit=20
+Authorization: Bearer {{token}}
+
+### 5-4. 제어 로그 조회 (날짜 범위)
+GET {{baseUrl}}/controller/control/logs?startDate=2026-02-01&endDate=2026-02-09&page=1&limit=20
+Authorization: Bearer {{token}}
+
+### 5-5. 제어 로그 조회 (복합 필터)
+GET {{baseUrl}}/controller/control/logs?buildingSeq={{buildingSeq}}&spaceSeq={{spaceSeq}}&resultStatus=FAIL&startDate=2026-02-01&endDate=2026-02-09&page=1&limit=20
+Authorization: Bearer {{token}}
+
+### 5-6. 제어 로그 초기화 (전체 삭제)
+DELETE {{baseUrl}}/controller/control/logs
+Authorization: Bearer {{token}}

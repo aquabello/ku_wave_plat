@@ -13,6 +13,7 @@ import type { GNBMenuItem } from './menu.types';
  */
 export interface LoginResponse {
   accessToken: string;
+  refreshToken: string;
   user: {
     seq: number;
     id: string;
@@ -22,6 +23,14 @@ export interface LoginResponse {
     step: string;
   };
   menus: GNBMenuItem[];
+}
+
+/**
+ * 토큰 갱신 응답
+ */
+export interface RefreshResponse {
+  accessToken: string;
+  refreshToken: string;
 }
 
 /**

@@ -92,6 +92,25 @@ export class UsersService {
   }
 
   /**
+   * 리프레시 토큰 저장
+   */
+  async saveRefreshToken(seq: number, refreshToken: string): Promise<void> {
+    await this.userRepository.update(seq, {
+      refreshToken,
+    });
+  }
+
+  /**
+   * 모든 토큰 초기화 (로그아웃 시)
+   */
+  async clearAllTokens(seq: number): Promise<void> {
+    await this.userRepository.update(seq, {
+      accessToken: null,
+      refreshToken: null,
+    });
+  }
+
+  /**
    * seq로 사용자 조회 (삭제되지 않은 사용자만)
    */
   async findBySeq(seq: number): Promise<TbUser | null> {
