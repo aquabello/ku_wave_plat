@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1770457001137,
+  "lastScanned": 1770901669964,
   "projectRoot": "/Users/aquabello/Documents/10-Dev/ku_wave_plat/apps/console",
   "techStack": {
     "languages": [
@@ -76,21 +76,21 @@
       "path": "public",
       "purpose": "Public files",
       "fileCount": 0,
-      "lastAccessed": 1770457001073,
+      "lastAccessed": 1770901669938,
       "keyFiles": []
     },
     "src": {
       "path": "src",
       "purpose": "Source code",
       "fileCount": 0,
-      "lastAccessed": 1770457001074,
+      "lastAccessed": 1770901669939,
       "keyFiles": []
     },
     "src/app": {
       "path": "src/app",
       "purpose": "Application code",
       "fileCount": 3,
-      "lastAccessed": 1770457001094,
+      "lastAccessed": 1770901669946,
       "keyFiles": [
         "globals.css",
         "layout.tsx",
@@ -101,7 +101,7 @@
       "path": "src/components",
       "purpose": "UI components",
       "fileCount": 1,
-      "lastAccessed": 1770457001096,
+      "lastAccessed": 1770901669946,
       "keyFiles": [
         "providers.tsx"
       ]
@@ -109,9 +109,10 @@
     "src/lib": {
       "path": "src/lib",
       "purpose": "Library code",
-      "fileCount": 1,
-      "lastAccessed": 1770457001096,
+      "fileCount": 2,
+      "lastAccessed": 1770901669947,
       "keyFiles": [
+        "toast.ts",
         "utils.ts"
       ]
     },
@@ -119,7 +120,7 @@
       "path": "src/types",
       "purpose": "Type definitions",
       "fileCount": 1,
-      "lastAccessed": 1770457001097,
+      "lastAccessed": 1770901669947,
       "keyFiles": [
         "settings.ts"
       ]
@@ -127,63 +128,21 @@
   },
   "hotPaths": [
     {
-      "path": "src/app/(dashboard)/settings/page.tsx",
+      "path": "src/app/(dashboard)/rfid/tags/page.tsx",
+      "accessCount": 15,
+      "lastAccessed": 1770933241075,
+      "type": "file"
+    },
+    {
+      "path": "src/app/(dashboard)/rfid/readers/page.tsx",
+      "accessCount": 12,
+      "lastAccessed": 1770933546596,
+      "type": "file"
+    },
+    {
+      "path": "src/hooks/useNfcWebSocket.ts",
       "accessCount": 5,
-      "lastAccessed": 1770458338944,
-      "type": "file"
-    },
-    {
-      "path": "src",
-      "accessCount": 4,
-      "lastAccessed": 1770458249801,
-      "type": "directory"
-    },
-    {
-      "path": "src/app/(auth)/login/page.tsx",
-      "accessCount": 4,
-      "lastAccessed": 1770458314711,
-      "type": "file"
-    },
-    {
-      "path": "src/components/ui/toast.tsx",
-      "accessCount": 3,
-      "lastAccessed": 1770458268145,
-      "type": "file"
-    },
-    {
-      "path": "src/lib/toast.ts",
-      "accessCount": 3,
-      "lastAccessed": 1770458281219,
-      "type": "file"
-    },
-    {
-      "path": "src/hooks/use-toast.ts",
-      "accessCount": 2,
-      "lastAccessed": 1770458403176,
-      "type": "file"
-    },
-    {
-      "path": "src/lib/api/client.ts",
-      "accessCount": 2,
-      "lastAccessed": 1770458927018,
-      "type": "file"
-    },
-    {
-      "path": "src/lib/api",
-      "accessCount": 1,
-      "lastAccessed": 1770457639640,
-      "type": "directory"
-    },
-    {
-      "path": "src/app",
-      "accessCount": 1,
-      "lastAccessed": 1770458111962,
-      "type": "directory"
-    },
-    {
-      "path": "src/components/layout/sidebar.tsx",
-      "accessCount": 1,
-      "lastAccessed": 1770458572211,
+      "lastAccessed": 1770933548179,
       "type": "file"
     }
   ],

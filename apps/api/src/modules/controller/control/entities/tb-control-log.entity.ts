@@ -30,6 +30,15 @@ export class TbControlLog {
   tuSeq: number;
 
   @Column({
+    name: 'trigger_type',
+    type: 'enum',
+    enum: ['MANUAL', 'NFC', 'SCHEDULE'],
+    default: 'MANUAL',
+    comment: '트리거 유형',
+  })
+  triggerType: string;
+
+  @Column({
     name: 'result_status',
     type: 'enum',
     enum: ['SUCCESS', 'FAIL', 'TIMEOUT'],

@@ -485,3 +485,39 @@ create index idx_nfc_log_control_result
 
 create index idx_nfc_log_tagged_at
     on tb_nfc_log (tagged_at);
+
+
+-- NFC 리더기 명령어 매핑
+create table tb_nfc_reader_command
+(
+    reader_command_seq  int auto_increment comment '리더기 명령어 매핑 시퀀스'
+        primary key,
+    reader_seq          int                                  not null comment '리더기 시퀀스',
+    space_device_seq    int                                  not null comment '공간장비 시퀀스',
+    enter_command_seq   int                                  null comment '입실 시 실행 명령어 시퀀스',
+    exit_command_seq    int                                  null comment '퇴실 시 실행 명령어 시퀀스',
+    command_isdel       char         default 'N'             not null comment '삭제 여부',
+    reg_date            datetime     default current_timestamp() not null comment '등록일시',
+    upd_date            datetime     default current_timestamp() not null on update current_timestamp() comment '수정일시',
+    constraint uk_reader_device
+        unique (reader_seq, space_device_seq),
+    constraint fk_rc_reader
+        foreign key (reader_seq) references tb_nfc_reader (reader_seq)
+            on delete cascade,
+    constraint fk_rc_space_device
+        foreign key (space_device_seq) references tb_space_device (space_device_seq)
+            on delete cascade,
+    constraint fk_rc_enter_command
+        foreign key (enter_command_seq) references tb_preset_command (command_seq)
+            on delete set null,
+    constraint fk_rc_exit_command
+        foreign key (exit_command_seq) references tb_preset_command (command_seq)
+            on delete set null
+)
+    comment 'NFC 리더기 명령어 매핑' charset = utf8mb4;
+
+create index idx_rc_reader
+    on tb_nfc_reader_command (reader_seq, command_isdel);
+
+create index idx_rc_device
+    on tb_nfc_reader_command (space_device_seq);

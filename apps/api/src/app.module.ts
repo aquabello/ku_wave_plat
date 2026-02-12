@@ -21,6 +21,7 @@ import { ActivityLogsModule } from '@modules/activity-logs/activity-logs.module'
 import { SpacesModule } from '@modules/spaces/spaces.module';
 import { PresetsModule } from '@modules/controller/presets/presets.module';
 import { ControlModule } from '@modules/controller/control/control.module';
+import { NfcModule } from '@modules/nfc/nfc.module';
 import { ActivityLogInterceptor } from '@modules/activity-logs/interceptors/activity-log.interceptor';
 
 // Common modules
@@ -88,6 +89,7 @@ import { AppService } from './app.service';
     SpacesModule,
     PresetsModule,
     ControlModule,
+    NfcModule,
   ],
   controllers: [AppController],
   providers: [

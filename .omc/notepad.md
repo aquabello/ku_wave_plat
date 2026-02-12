@@ -3,7 +3,7 @@
 
 ## Priority Context
 <!-- ALWAYS loaded. Keep under 500 chars. Critical discoveries only. -->
-SESSION ROLE: Architecture & DB Design ONLY. No FE/BE code. All work via agents. Design artifacts only (ERD, schema, API spec, data flow). User is the architect lead - deliver design documents.
+SESSION ROLE: BE Development ONLY (NestJS). No FE code. Use ku-api agent and OMC modules for all backend work. Follow CRITICAL RULES: no table creation, check existing DB first, Bearer token in .http files, single API call per page.
 
 ## Working Memory
 <!-- Session notes. Auto-pruned after 7 days. -->

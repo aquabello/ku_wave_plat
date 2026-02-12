@@ -1,0 +1,60 @@
+### NFC 리더기 명령어 매핑 테스트
+@baseUrl = http://localhost:8000/api/v1
+@token = PASTE_YOUR_ACCESS_TOKEN_HERE
+
+### 1. NFC 리더기 명령어 매핑 조회
+GET {{baseUrl}}/nfc/readers/1/commands
+Authorization: Bearer {{token}}
+
+### 2. NFC 리더기 명령어 매핑 등록/수정 (개별 매핑)
+PUT {{baseUrl}}/nfc/readers/1/commands
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "mappings": [
+    {
+      "spaceDeviceSeq": 1,
+      "enterCommandSeq": 1,
+      "exitCommandSeq": 2
+    },
+    {
+      "spaceDeviceSeq": 2,
+      "enterCommandSeq": 3,
+      "exitCommandSeq": 4
+    }
+  ]
+}
+
+### 3. NFC 리더기 명령어 매핑 전체 삭제
+PUT {{baseUrl}}/nfc/readers/1/commands
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "mappings": []
+}
+
+### 4. NFC 리더기 명령어 자동 매핑 (모든 ACTIVE 장비에 POWER_ON/POWER_OFF 자동 설정)
+PUT {{baseUrl}}/nfc/readers/1/commands
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "mapAll": true
+}
+
+### 5. NFC 리더기 명령어 매핑 부분 설정 (일부 장비만 제어)
+PUT {{baseUrl}}/nfc/readers/1/commands
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "mappings": [
+    {
+      "spaceDeviceSeq": 1,
+      "enterCommandSeq": 1,
+      "exitCommandSeq": null
+    }
+  ]
+}
