@@ -1,0 +1,192 @@
+@token = PASTE_YOUR_ACCESS_TOKEN_HERE
+@baseUrl = http://localhost:8000/api/v1
+
+### 1. 플레이리스트 목록 조회
+GET {{baseUrl}}/playlists?page=1&limit=10
+Authorization: Bearer {{token}}
+
+### 2. 플레이리스트 목록 조회 (필터링)
+GET {{baseUrl}}/playlists?type=NORMAL&search=기본
+Authorization: Bearer {{token}}
+
+### 3. 플레이리스트 상세 조회
+GET {{baseUrl}}/playlists/1
+Authorization: Bearer {{token}}
+
+### 4. 플레이리스트 등록
+POST {{baseUrl}}/playlists
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "playlist_name": "기본 플레이리스트",
+  "playlist_code": "PLAYLIST-001",
+  "playlist_type": "NORMAL",
+  "playlist_priority": 5,
+  "playlist_loop": "Y",
+  "playlist_random": "N",
+  "playlist_screen_layout": "1x1",
+  "playlist_status": "ACTIVE",
+  "playlist_description": "기본 콘텐츠 재생 목록",
+  "contents": [
+    {
+      "content_seq": 1,
+      "play_order": 1,
+      "play_duration": 10,
+      "transition_effect": "fade",
+      "transition_duration": 500,
+      "zone_number": 1,
+      "zone_width": 100,
+      "zone_height": 100,
+      "zone_x_position": 0,
+      "zone_y_position": 0
+    },
+    {
+      "content_seq": 2,
+      "play_order": 2,
+      "play_duration": 15,
+      "transition_effect": "slide",
+      "transition_duration": 1000,
+      "zone_number": 1,
+      "zone_width": 100,
+      "zone_height": 100,
+      "zone_x_position": 0,
+      "zone_y_position": 0
+    }
+  ]
+}
+
+### 5. 플레이리스트 등록 (콘텐츠 없이)
+POST {{baseUrl}}/playlists
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "playlist_name": "긴급 공지",
+  "playlist_code": "EMERGENCY-001",
+  "playlist_type": "EMERGENCY",
+  "playlist_priority": 99,
+  "playlist_loop": "Y",
+  "playlist_random": "N",
+  "playlist_screen_layout": "1x1",
+  "playlist_status": "ACTIVE"
+}
+
+### 6. 플레이리스트 수정
+PUT {{baseUrl}}/playlists/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "playlist_name": "기본 플레이리스트 (수정)",
+  "playlist_priority": 10,
+  "playlist_random": "Y",
+  "playlist_screen_layout": "2x2",
+  "playlist_status": "INACTIVE",
+  "playlist_description": "업데이트된 설명"
+}
+
+### 7. 플레이리스트 수정 (콘텐츠 전체 교체)
+PUT {{baseUrl}}/playlists/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "contents": [
+    {
+      "content_seq": 2,
+      "play_order": 1,
+      "play_duration": 20,
+      "transition_effect": "fade",
+      "transition_duration": 800,
+      "zone_number": 1,
+      "zone_width": 50,
+      "zone_height": 50,
+      "zone_x_position": 0,
+      "zone_y_position": 0
+    },
+    {
+      "content_seq": 3,
+      "play_order": 2,
+      "play_duration": 25,
+      "transition_effect": "slide",
+      "transition_duration": 1200,
+      "zone_number": 2,
+      "zone_width": 50,
+      "zone_height": 50,
+      "zone_x_position": 50,
+      "zone_y_position": 0
+    }
+  ]
+}
+
+### 8. 플레이리스트 삭제
+DELETE {{baseUrl}}/playlists/1
+Authorization: Bearer {{token}}
+
+### 9. 플레이리스트 등록 (Phase 1-B: 멀티존 화면 레이아웃)
+POST {{baseUrl}}/playlists
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "playlist_name": "멀티존 플레이리스트",
+  "playlist_code": "MULTIZONE-001",
+  "playlist_type": "NORMAL",
+  "playlist_priority": 15,
+  "playlist_loop": "Y",
+  "playlist_random": "N",
+  "playlist_screen_layout": "2x2",
+  "playlist_status": "ACTIVE",
+  "playlist_description": "2x2 화면 분할 테스트",
+  "contents": [
+    {
+      "content_seq": 1,
+      "play_order": 1,
+      "play_duration": 30,
+      "transition_effect": "fade",
+      "transition_duration": 500,
+      "zone_number": 1,
+      "zone_width": 50,
+      "zone_height": 50,
+      "zone_x_position": 0,
+      "zone_y_position": 0
+    },
+    {
+      "content_seq": 2,
+      "play_order": 2,
+      "play_duration": 30,
+      "transition_effect": "slide",
+      "transition_duration": 500,
+      "zone_number": 2,
+      "zone_width": 50,
+      "zone_height": 50,
+      "zone_x_position": 50,
+      "zone_y_position": 0
+    },
+    {
+      "content_seq": 3,
+      "play_order": 3,
+      "play_duration": 30,
+      "transition_effect": "fade",
+      "transition_duration": 500,
+      "zone_number": 3,
+      "zone_width": 50,
+      "zone_height": 50,
+      "zone_x_position": 0,
+      "zone_y_position": 50
+    },
+    {
+      "content_seq": 4,
+      "play_order": 4,
+      "play_duration": 30,
+      "transition_effect": "slide",
+      "transition_duration": 500,
+      "zone_number": 4,
+      "zone_width": 50,
+      "zone_height": 50,
+      "zone_x_position": 50,
+      "zone_y_position": 50
+    }
+  ]
+}
