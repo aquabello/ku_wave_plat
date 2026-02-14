@@ -83,7 +83,7 @@ export class ActivityLogsService {
     }
 
     const [logs, total] = await qb
-      .orderBy('log.log_seq', 'DESC')
+      .orderBy('log.logSeq', 'DESC')
       .skip(skip)
       .take(limit)
       .getManyAndCount();

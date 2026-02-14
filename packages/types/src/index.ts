@@ -45,3 +45,12 @@ export * from './controller.types';
 
 // NFC Types
 export * from './nfc.types';
+
+// Player Types
+export * from './player.types';
+
+// Playlist Types
+export * from './playlist.types';
+
+// Content Types
+export * from './content.types';

@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1770935108311,
+  "lastScanned": 1771027003930,
   "projectRoot": "/Users/aquabello/Documents/10-Dev/ku_wave_plat/apps/api",
   "techStack": {
     "languages": [
@@ -85,23 +85,24 @@
       "path": "apps",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1770935108267,
+      "lastAccessed": 1771027003823,
       "keyFiles": []
     },
     "dist": {
       "path": "dist",
       "purpose": "Distribution/build output",
-      "fileCount": 1,
-      "lastAccessed": 1770935108269,
+      "fileCount": 2,
+      "lastAccessed": 1771027003833,
       "keyFiles": [
-        "main.js"
+        "main.js",
+        "tsconfig.tsbuildinfo"
       ]
     },
     "docs": {
       "path": "docs",
       "purpose": "Documentation",
       "fileCount": 1,
-      "lastAccessed": 1770935108277,
+      "lastAccessed": 1771027003858,
       "keyFiles": [
         "nfc-reader-command-mapping.md"
       ]
@@ -110,7 +111,7 @@
       "path": "http",
       "purpose": null,
       "fileCount": 9,
-      "lastAccessed": 1770935108278,
+      "lastAccessed": 1771027003863,
       "keyFiles": [
         "activity-logs.http",
         "auth.http",
@@ -123,7 +124,7 @@
       "path": "src",
       "purpose": "Source code",
       "fileCount": 4,
-      "lastAccessed": 1770935108280,
+      "lastAccessed": 1771027003866,
       "keyFiles": [
         "app.controller.ts",
         "app.module.ts",
@@ -134,38 +135,41 @@
     "test": {
       "path": "test",
       "purpose": "Test files",
-      "fileCount": 2,
-      "lastAccessed": 1770935108280,
+      "fileCount": 6,
+      "lastAccessed": 1771027003870,
       "keyFiles": [
+        "contents.http",
+        "jest-e2e.json",
         "nfc-reader-commands.http",
-        "nfc.http"
+        "nfc.http",
+        "players.http"
       ]
     },
     "uploads": {
       "path": "uploads",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1770935108281,
+      "lastAccessed": 1771027003874,
       "keyFiles": []
     }
   },
   "hotPaths": [
     {
-      "path": "src/modules/nfc/services/nfc-reader-command.service.ts",
-      "accessCount": 3,
-      "lastAccessed": 1770936172356,
+      "path": "src/modules/players/dto/create-player.dto.ts",
+      "accessCount": 2,
+      "lastAccessed": 1771038439543,
       "type": "file"
     },
     {
-      "path": "src/modules/nfc/dto/nfc-reader-command.dto.ts",
+      "path": "src/modules/players/dto/update-player.dto.ts",
       "accessCount": 1,
-      "lastAccessed": 1770936129484,
+      "lastAccessed": 1771036596632,
       "type": "file"
     },
     {
-      "path": "src/modules/nfc/entities/tb-nfc-reader-command.entity.ts",
+      "path": "src/modules/players/entities/tb-player.entity.ts",
       "accessCount": 1,
-      "lastAccessed": 1770936151315,
+      "lastAccessed": 1771036610556,
       "type": "file"
     }
   ],

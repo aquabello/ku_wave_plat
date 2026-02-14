@@ -3,7 +3,7 @@
 
 ## Priority Context
 <!-- ALWAYS loaded. Keep under 500 chars. Critical discoveries only. -->
-SESSION ROLE: BE Development ONLY (NestJS). No FE code. Use ku-api agent and OMC modules for all backend work. Follow CRITICAL RULES: no table creation, check existing DB first, Bearer token in .http files, single API call per page.
+SESSION ROLE: BE Development ONLY (NestJS). NO FE/NFC code modification. Use ku-api agent and OMC modules for all backend work. Follow CRITICAL RULES: no table creation, check existing DB first, Bearer token in .http files, single API call per page. MANDATORY: Get user confirmation before ANY development.
 
 ## Working Memory
 <!-- Session notes. Auto-pruned after 7 days. -->

@@ -45,7 +45,7 @@ export class BuildingsService {
     const total = await qb.getCount();
 
     const rawAndEntities = await qb
-      .orderBy('b.building_name', 'ASC')
+      .orderBy('b.buildingName', 'ASC')
       .skip(skip)
       .take(limit)
       .getRawAndEntities();
