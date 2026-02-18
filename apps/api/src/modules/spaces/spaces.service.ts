@@ -86,8 +86,8 @@ export class SpacesService {
     }
 
     const [spaces, total] = await qb
-      .orderBy('s.space_order', 'ASC')
-      .addOrderBy('s.space_name', 'ASC')
+      .orderBy('s.spaceOrder', 'ASC')
+      .addOrderBy('s.spaceName', 'ASC')
       .skip(skip)
       .take(limit)
       .getManyAndCount();

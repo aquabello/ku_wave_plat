@@ -197,6 +197,7 @@ export class ControlService {
       spaceDeviceSeq: dto.spaceDeviceSeq,
       commandSeq: dto.commandSeq,
       tuSeq,
+      triggerType: 'MANUAL',
       resultStatus,
       resultMessage,
     });
@@ -284,6 +285,7 @@ export class ControlService {
           spaceDeviceSeq: device.spaceDeviceSeq,
           commandSeq: command.commandSeq,
           tuSeq,
+          triggerType: 'MANUAL',
           resultStatus,
           resultMessage,
         }),
@@ -305,6 +307,217 @@ export class ControlService {
       successCount,
       failCount,
       executedAt: new Date(),
+    };
+  }
+
+  // =============================================
+  // NFC 트리거 장비 제어
+  // =============================================
+
+  async executeForNfc(
+    spaceSeq: number,
+    commandType: 'POWER_ON' | 'POWER_OFF',
+    tuSeq: number,
+  ): Promise<{
+    results: Array<{
+      spaceDeviceSeq: number;
+      deviceName: string;
+      commandType: string;
+      resultStatus: 'SUCCESS' | 'FAIL' | 'TIMEOUT';
+      resultMessage: string | null;
+    }>;
+    successCount: number;
+    failCount: number;
+  }> {
+    // Get all active devices in the space
+    const devices = await this.spaceDeviceRepository
+      .createQueryBuilder('sd')
+      .leftJoinAndSelect('sd.preset', 'p')
+      .where('sd.space_seq = :spaceSeq', { spaceSeq })
+      .andWhere("(sd.device_isdel IS NULL OR sd.device_isdel != 'Y')")
+      .andWhere("sd.device_status = 'ACTIVE'")
+      .getMany();
+
+    const results = [];
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const device of devices) {
+      // Find the matching command type for this device's preset
+      const command = await this.commandRepository
+        .createQueryBuilder('c')
+        .where('c.preset_seq = :presetSeq', { presetSeq: device.presetSeq })
+        .andWhere('c.command_type = :commandType', { commandType })
+        .andWhere("(c.command_isdel IS NULL OR c.command_isdel != 'Y')")
+        .getOne();
+
+      if (!command) {
+        results.push({
+          spaceDeviceSeq: device.spaceDeviceSeq,
+          deviceName: device.deviceName,
+          commandType,
+          resultStatus: 'FAIL' as const,
+          resultMessage: `${commandType} 유형의 명령어가 없습니다`,
+        });
+        failCount++;
+        continue;
+      }
+
+      const ip = device.deviceIp ?? device.preset?.commIp;
+      const port = device.devicePort ?? device.preset?.commPort;
+      const protocol = device.preset?.protocolType ?? 'TCP';
+
+      let resultStatus: 'SUCCESS' | 'FAIL' | 'TIMEOUT' = 'FAIL';
+      let resultMessage = '';
+
+      try {
+        resultMessage = await this.sendCommand(protocol, ip, port, command.commandCode);
+        resultStatus = 'SUCCESS';
+        successCount++;
+      } catch (error: any) {
+        if (error.message?.includes('TIMEOUT')) {
+          resultStatus = 'TIMEOUT';
+          resultMessage = '장비 응답 시간 초과';
+        } else {
+          resultStatus = 'FAIL';
+          resultMessage = error.message || '명령어 전송 실패';
+        }
+        failCount++;
+      }
+
+      // Save log with triggerType='NFC'
+      await this.logRepository.save(
+        this.logRepository.create({
+          spaceDeviceSeq: device.spaceDeviceSeq,
+          commandSeq: command.commandSeq,
+          tuSeq,
+          triggerType: 'NFC',
+          resultStatus,
+          resultMessage,
+        }),
+      );
+
+      results.push({
+        spaceDeviceSeq: device.spaceDeviceSeq,
+        deviceName: device.deviceName,
+        commandType,
+        resultStatus,
+        resultMessage,
+      });
+    }
+
+    return {
+      results,
+      successCount,
+      failCount,
+    };
+  }
+
+  // =============================================
+  // NFC 트리거 장비 제어 (매핑 기반)
+  // =============================================
+
+  async executeForNfcWithMappings(
+    mappings: Array<{ spaceDeviceSeq: number; commandSeq: number }>,
+    tuSeq: number,
+  ): Promise<{
+    results: Array<{
+      spaceDeviceSeq: number;
+      deviceName: string;
+      commandType: string;
+      resultStatus: 'SUCCESS' | 'FAIL' | 'TIMEOUT';
+      resultMessage: string | null;
+    }>;
+    successCount: number;
+    failCount: number;
+  }> {
+    const results = [];
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const mapping of mappings) {
+      // Get device info
+      const device = await this.spaceDeviceRepository.findOne({
+        where: { spaceDeviceSeq: mapping.spaceDeviceSeq },
+        relations: ['preset'],
+      });
+
+      if (!device || device.deviceIsdel === 'Y' || device.deviceStatus !== 'ACTIVE') {
+        results.push({
+          spaceDeviceSeq: mapping.spaceDeviceSeq,
+          deviceName: device?.deviceName ?? '알 수 없음',
+          commandType: 'UNKNOWN',
+          resultStatus: 'FAIL' as const,
+          resultMessage: '장비를 찾을 수 없거나 비활성 상태입니다',
+        });
+        failCount++;
+        continue;
+      }
+
+      // Get command info
+      const command = await this.commandRepository.findOne({
+        where: { commandSeq: mapping.commandSeq },
+      });
+
+      if (!command || command.commandIsdel === 'Y') {
+        results.push({
+          spaceDeviceSeq: device.spaceDeviceSeq,
+          deviceName: device.deviceName,
+          commandType: 'UNKNOWN',
+          resultStatus: 'FAIL' as const,
+          resultMessage: '명령어를 찾을 수 없습니다',
+        });
+        failCount++;
+        continue;
+      }
+
+      const ip = device.deviceIp ?? device.preset?.commIp;
+      const port = device.devicePort ?? device.preset?.commPort;
+      const protocol = device.preset?.protocolType ?? 'TCP';
+
+      let resultStatus: 'SUCCESS' | 'FAIL' | 'TIMEOUT' = 'FAIL';
+      let resultMessage = '';
+
+      try {
+        resultMessage = await this.sendCommand(protocol, ip, port, command.commandCode);
+        resultStatus = 'SUCCESS';
+        successCount++;
+      } catch (error: any) {
+        if (error.message?.includes('TIMEOUT')) {
+          resultStatus = 'TIMEOUT';
+          resultMessage = '장비 응답 시간 초과';
+        } else {
+          resultStatus = 'FAIL';
+          resultMessage = error.message || '명령어 전송 실패';
+        }
+        failCount++;
+      }
+
+      // Save log with triggerType='NFC'
+      await this.logRepository.save(
+        this.logRepository.create({
+          spaceDeviceSeq: device.spaceDeviceSeq,
+          commandSeq: command.commandSeq,
+          tuSeq,
+          triggerType: 'NFC',
+          resultStatus,
+          resultMessage,
+        }),
+      );
+
+      results.push({
+        spaceDeviceSeq: device.spaceDeviceSeq,
+        deviceName: device.deviceName,
+        commandType: command.commandType ?? 'CUSTOM',
+        resultStatus,
+        resultMessage,
+      });
+    }
+
+    return {
+      results,
+      successCount,
+      failCount,
     };
   }
 

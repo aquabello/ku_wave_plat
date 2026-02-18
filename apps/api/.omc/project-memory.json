@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1770638690996,
+  "lastScanned": 1771027003930,
   "projectRoot": "/Users/aquabello/Documents/10-Dev/ku_wave_plat/apps/api",
   "techStack": {
     "languages": [
@@ -73,7 +73,9 @@
     "isMonorepo": false,
     "workspaces": [],
     "mainDirectories": [
-      "src"
+      "docs",
+      "src",
+      "test"
     ],
     "gitBranches": null
   },
@@ -83,36 +85,46 @@
       "path": "apps",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1770638690945,
+      "lastAccessed": 1771027003823,
       "keyFiles": []
     },
     "dist": {
       "path": "dist",
       "purpose": "Distribution/build output",
-      "fileCount": 1,
-      "lastAccessed": 1770638690947,
+      "fileCount": 2,
+      "lastAccessed": 1771027003833,
       "keyFiles": [
-        "main.js"
+        "main.js",
+        "tsconfig.tsbuildinfo"
+      ]
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 1,
+      "lastAccessed": 1771027003858,
+      "keyFiles": [
+        "nfc-reader-command-mapping.md"
       ]
     },
     "http": {
       "path": "http",
       "purpose": null,
-      "fileCount": 7,
-      "lastAccessed": 1770638690959,
+      "fileCount": 9,
+      "lastAccessed": 1771027003863,
       "keyFiles": [
         "activity-logs.http",
         "auth.http",
         "building.http",
-        "menus.http",
-        "permissions.http"
+        "controller.http",
+        "menus.http"
       ]
     },
     "src": {
       "path": "src",
       "purpose": "Source code",
       "fileCount": 4,
-      "lastAccessed": 1770638690959,
+      "lastAccessed": 1771027003866,
       "keyFiles": [
         "app.controller.ts",
         "app.module.ts",
@@ -120,242 +132,45 @@
         "main.ts"
       ]
     },
+    "test": {
+      "path": "test",
+      "purpose": "Test files",
+      "fileCount": 6,
+      "lastAccessed": 1771027003870,
+      "keyFiles": [
+        "contents.http",
+        "jest-e2e.json",
+        "nfc-reader-commands.http",
+        "nfc.http",
+        "players.http"
+      ]
+    },
     "uploads": {
       "path": "uploads",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1770638690960,
+      "lastAccessed": 1771027003874,
       "keyFiles": []
     }
   },
   "hotPaths": [
     {
-      "path": "src/app.module.ts",
-      "accessCount": 10,
-      "lastAccessed": 1770639856664,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/controller/control/control.service.ts",
-      "accessCount": 9,
-      "lastAccessed": 1770720786235,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/controller/control/control.controller.ts",
-      "accessCount": 8,
-      "lastAccessed": 1770720726604,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/controller/presets/entities/tb-device-preset.entity.ts",
-      "accessCount": 4,
-      "lastAccessed": 1770639555490,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/spaces/entities/tb-space.entity.ts",
-      "accessCount": 3,
-      "lastAccessed": 1770639408731,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/spaces/spaces.service.ts",
-      "accessCount": 3,
-      "lastAccessed": 1770639438574,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/spaces/spaces.controller.ts",
-      "accessCount": 3,
-      "lastAccessed": 1770639439430,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/spaces/dto/create-space.dto.ts",
-      "accessCount": 3,
-      "lastAccessed": 1770639440299,
-      "type": "file"
-    },
-    {
-      "path": "src",
-      "accessCount": 3,
-      "lastAccessed": 1770639622593,
-      "type": "directory"
-    },
-    {
-      "path": "src/modules/controller",
-      "accessCount": 3,
-      "lastAccessed": 1770721483212,
-      "type": "directory"
-    },
-    {
-      "path": "src/modules/spaces/dto/space-list-response.dto.ts",
+      "path": "src/modules/players/dto/create-player.dto.ts",
       "accessCount": 2,
-      "lastAccessed": 1770639440681,
+      "lastAccessed": 1771038439543,
       "type": "file"
     },
     {
-      "path": "src/modules/controller/presets/dto/update-preset.dto.ts",
-      "accessCount": 2,
-      "lastAccessed": 1770639610720,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/controller/presets/presets.service.ts",
-      "accessCount": 2,
-      "lastAccessed": 1770665380777,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/controller/control/entities/tb-control-log.entity.ts",
-      "accessCount": 2,
-      "lastAccessed": 1770720776813,
-      "type": "file"
-    },
-    {
-      "path": "http/controller.http",
-      "accessCount": 2,
-      "lastAccessed": 1770720819881,
-      "type": "file"
-    },
-    {
-      "path": "http/permissions.http",
+      "path": "src/modules/players/dto/update-player.dto.ts",
       "accessCount": 1,
-      "lastAccessed": 1770638702140,
+      "lastAccessed": 1771036596632,
       "type": "file"
     },
     {
-      "path": "http/spaces.http",
+      "path": "src/modules/players/entities/tb-player.entity.ts",
       "accessCount": 1,
-      "lastAccessed": 1770638730285,
+      "lastAccessed": 1771036610556,
       "type": "file"
-    },
-    {
-      "path": ".env",
-      "accessCount": 1,
-      "lastAccessed": 1770639261657,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/spaces/spaces.module.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770639333379,
-      "type": "file"
-    },
-    {
-      "path": "src/common/http/index.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770639347242,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/spaces/dto/index.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770639398866,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/controller/presets/entities/tb-preset-command.entity.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770639451882,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/controller/presets/dto/create-preset.dto.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770639463561,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/controller/control/dto/execute-command.dto.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770639467711,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/controller/control/dto/execute-batch.dto.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770639470892,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/controller/presets/dto/preset-query.dto.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770639472506,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/controller/control/dto/control-log-query.dto.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770639476699,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/controller/presets/dto/preset-list-response.dto.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770639478298,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/controller/presets/dto/index.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770639479612,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/controller/control/dto/control-log-response.dto.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770639483478,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/controller/control/dto/index.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770639485522,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/controller/presets/presets.controller.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770639538778,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/controller/presets/presets.module.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770639540615,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/controller/control/control.module.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770639581654,
-      "type": "file"
-    },
-    {
-      "path": "src/common",
-      "accessCount": 1,
-      "lastAccessed": 1770639592434,
-      "type": "directory"
-    },
-    {
-      "path": "src/modules/auth/strategies/jwt.strategy.ts",
-      "accessCount": 1,
-      "lastAccessed": 1770639626705,
-      "type": "file"
-    },
-    {
-      "path": "src/modules/controller/presets",
-      "accessCount": 1,
-      "lastAccessed": 1770665361814,
-      "type": "directory"
-    },
-    {
-      "path": "src/modules",
-      "accessCount": 1,
-      "lastAccessed": 1770721484364,
-      "type": "directory"
     }
   ],
   "userDirectives": []

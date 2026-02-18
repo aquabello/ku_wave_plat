@@ -1,0 +1,143 @@
+@token = PASTE_YOUR_ACCESS_TOKEN_HERE
+@playerApiKey = PASTE_PLAYER_API_KEY_HERE
+@baseUrl = http://localhost:8000/api/v1
+
+### 1. 플레이어 목록 조회
+GET {{baseUrl}}/players?page=1&limit=10
+Authorization: Bearer {{token}}
+
+### 2. 플레이어 목록 조회 (필터링)
+GET {{baseUrl}}/players?building_seq=1&status=ONLINE&approval=APPROVED
+Authorization: Bearer {{token}}
+
+### 3. 플레이어 상세 조회
+GET {{baseUrl}}/players/1
+Authorization: Bearer {{token}}
+
+### 4. 플레이어 등록
+POST {{baseUrl}}/players
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "player_name": "본관 1층 로비 디스플레이",
+  "player_code": "PLAYER-001",
+  "player_did": "DID-12345",
+  "player_mac": "AA:BB:CC:DD:EE:FF",
+  "building_seq": 1,
+  "space_seq": 1,
+  "player_ip": "192.168.1.100",
+  "player_port": 9090,
+  "player_resolution": "1920x1080",
+  "player_orientation": "LANDSCAPE",
+  "player_description": "본관 입구 안내 디스플레이"
+}
+
+### 5. 플레이어 수정
+PUT {{baseUrl}}/players/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "player_name": "본관 1층 로비 디스플레이 (수정)",
+  "playlist_seq": 1,
+  "player_description": "업데이트된 설명"
+}
+
+### 6. 플레이어 삭제
+DELETE {{baseUrl}}/players/1
+Authorization: Bearer {{token}}
+
+### 7. 플레이어 승인
+POST {{baseUrl}}/players/1/approve
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{}
+
+### 8. 플레이어 반려
+POST {{baseUrl}}/players/1/reject
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "reject_reason": "설치 위치가 부적절합니다."
+}
+
+### 9. Health Check 전송 (플레이어 API Key 사용)
+POST {{baseUrl}}/players/heartbeat
+Authorization: Bearer {{playerApiKey}}
+Content-Type: application/json
+
+{
+  "player_seq": 1,
+  "player_version": "1.0.0",
+  "cpu_usage": 45.5,
+  "memory_usage": 68.2,
+  "disk_usage": 35.7,
+  "current_playlist": 1,
+  "current_content": "CONTENT-001"
+}
+
+### 10. Health Check 로그 조회
+GET {{baseUrl}}/players/1/heartbeat-logs?page=1&limit=20
+Authorization: Bearer {{token}}
+
+### 11. Health Check 로그 조회 (날짜 필터)
+GET {{baseUrl}}/players/1/heartbeat-logs?from=2026-02-01T00:00:00Z&to=2026-02-14T23:59:59Z
+Authorization: Bearer {{token}}
+
+################################################################################
+### IP 재등록 프로세스 테스트
+################################################################################
+
+### [재등록 프로세스] 1. 플레이어 생성
+POST {{baseUrl}}/players
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "player_name": "재등록 테스트 플레이어",
+  "player_ip": "192.168.99.100",
+  "building_seq": 1,
+  "player_resolution": "1920x1080"
+}
+
+# 응답에서 player_seq를 확인하여 아래 변수에 설정하세요
+# @test_player_seq = <PLAYER_SEQ>
+
+### [재등록 프로세스] 2. 플레이어 삭제
+DELETE {{baseUrl}}/players/{{test_player_seq}}
+Authorization: Bearer {{token}}
+
+### [재등록 프로세스] 3. 같은 IP로 재등록 (재활성화)
+POST {{baseUrl}}/players
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "player_name": "재등록된 플레이어",
+  "player_ip": "192.168.99.100",
+  "building_seq": 1,
+  "player_resolution": "3840x2160",
+  "player_description": "재활성화된 플레이어입니다"
+}
+
+# 응답 검증:
+# - player_seq가 이전과 동일해야 함
+# - message: "삭제된 플레이어가 재등록되었습니다."
+# - player_api_key가 새로 생성됨
+
+### [재등록 프로세스] 4. 활성 IP 중복 시도 (에러 확인)
+POST {{baseUrl}}/players
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "player_name": "중복 시도",
+  "player_ip": "192.168.1.100",
+  "building_seq": 1
+}
+
+# 예상 결과: 409 Conflict
+# 에러 메시지: "이미 사용 중인 IP 주소입니다."

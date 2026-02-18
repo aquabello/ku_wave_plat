@@ -48,7 +48,7 @@ export class PermissionsService {
     }
 
     const [users, total] = await qb
-      .orderBy('u.tu_seq', 'DESC')
+      .orderBy('u.seq', 'DESC')
       .skip(skip)
       .take(limit)
       .getManyAndCount();

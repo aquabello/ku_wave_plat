@@ -1,0 +1,6 @@
+{"t":0,"agent":"a5b0028","agent_type":"ku-api","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"a5b0028","agent_type":"ku-api","event":"agent_stop","success":true,"duration_ms":389954}
+{"t":0,"agent":"a43d9a6","agent_type":"unknown","event":"agent_stop","success":true}
+{"t":0,"agent":"a516673","agent_type":"unknown","event":"agent_stop","success":true}
+{"t":0,"agent":"aec91ee","agent_type":"unknown","event":"agent_stop","success":true}
+{"t":0,"agent":"ae99981","agent_type":"unknown","event":"agent_stop","success":true}

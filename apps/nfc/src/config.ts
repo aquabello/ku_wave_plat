@@ -30,5 +30,8 @@ export function loadConfig(): NfcAgentConfig {
     offlineQueueMax: config.offlineQueueMax ?? 100,
     buzzerEnabled: config.buzzerEnabled ?? true,
     logLevel: config.logLevel ?? 'info',
+    wsEnabled: config.wsEnabled ?? true,
+    wsPort: config.wsPort ?? 9100,
+    aidList: config.aidList ?? ['D4100000030001'],
   };
 }

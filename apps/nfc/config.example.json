@@ -4,5 +4,8 @@
   "retryInterval": 5000,
   "offlineQueueMax": 100,
   "buzzerEnabled": true,
-  "logLevel": "info"
+  "logLevel": "info",
+  "wsEnabled": true,
+  "wsPort": 9100,
+  "aidList": ["D4100000030001"]
 }
