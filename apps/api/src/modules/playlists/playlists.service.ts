@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, Like } from 'typeorm';
 import { TbPlayList } from './entities/tb-play-list.entity';
 import { TbPlayListContent } from './entities/tb-play-list-content.entity';
 import { TbContent } from '@modules/contents/entities/tb-content.entity';
@@ -147,9 +147,12 @@ export class PlaylistsService {
   }
 
   async create(createPlaylistDto: CreatePlaylistDto) {
+    // 플레이리스트 코드: 입력값 없으면 자동생성
+    const playlistCode = createPlaylistDto.playlist_code || await this.generatePlaylistCode();
+
     // 플레이리스트 코드 중복 확인
     const existing = await this.playlistRepository.findOne({
-      where: { playlistCode: createPlaylistDto.playlist_code },
+      where: { playlistCode },
     });
 
     if (existing) {
@@ -171,7 +174,7 @@ export class PlaylistsService {
     // 플레이리스트 생성
     const playlist = this.playlistRepository.create({
       playlistName: createPlaylistDto.playlist_name,
-      playlistCode: createPlaylistDto.playlist_code,
+      playlistCode: playlistCode,
       playlistType: createPlaylistDto.playlist_type || 'NORMAL',
       playlistPriority: createPlaylistDto.playlist_priority ?? 0,
       playlistLoop: createPlaylistDto.playlist_loop || 'Y',
@@ -297,6 +300,33 @@ export class PlaylistsService {
     await this.playlistRepository.save(playlist);
 
     return { message: '플레이리스트가 삭제되었습니다.' };
+  }
+
+  /**
+   * 플레이리스트 코드 자동생성 (PL-YYYYMMDD-NNN)
+   * 당일 마지막 순번 +1, 없으면 001부터 시작
+   */
+  private async generatePlaylistCode(): Promise<string> {
+    const now = new Date();
+    const dateStr = now.getFullYear().toString()
+      + (now.getMonth() + 1).toString().padStart(2, '0')
+      + now.getDate().toString().padStart(2, '0');
+    const prefix = `PL-${dateStr}-`;
+
+    const lastPlaylist = await this.playlistRepository.findOne({
+      where: { playlistCode: Like(`${prefix}%`) },
+      order: { playlistCode: 'DESC' },
+    });
+
+    let seq = 1;
+    if (lastPlaylist) {
+      const lastSeq = parseInt(lastPlaylist.playlistCode.replace(prefix, ''), 10);
+      if (!isNaN(lastSeq)) {
+        seq = lastSeq + 1;
+      }
+    }
+
+    return `${prefix}${seq.toString().padStart(3, '0')}`;
   }
 
   private async updatePlaylistDuration(playlistSeq: number) {

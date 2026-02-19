@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1771027003930,
+  "lastScanned": 1771484057188,
   "projectRoot": "/Users/aquabello/Documents/10-Dev/ku_wave_plat/apps/api",
   "techStack": {
     "languages": [
@@ -85,24 +85,34 @@
       "path": "apps",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1771027003823,
+      "lastAccessed": 1771484056968,
       "keyFiles": []
+    },
+    "coverage": {
+      "path": "coverage",
+      "purpose": null,
+      "fileCount": 3,
+      "lastAccessed": 1771484056974,
+      "keyFiles": [
+        "clover.xml",
+        "coverage-final.json",
+        "lcov.info"
+      ]
     },
     "dist": {
       "path": "dist",
       "purpose": "Distribution/build output",
-      "fileCount": 2,
-      "lastAccessed": 1771027003833,
+      "fileCount": 1,
+      "lastAccessed": 1771484057047,
       "keyFiles": [
-        "main.js",
-        "tsconfig.tsbuildinfo"
+        "main.js"
       ]
     },
     "docs": {
       "path": "docs",
       "purpose": "Documentation",
       "fileCount": 1,
-      "lastAccessed": 1771027003858,
+      "lastAccessed": 1771484057055,
       "keyFiles": [
         "nfc-reader-command-mapping.md"
       ]
@@ -111,7 +121,7 @@
       "path": "http",
       "purpose": null,
       "fileCount": 9,
-      "lastAccessed": 1771027003863,
+      "lastAccessed": 1771484057062,
       "keyFiles": [
         "activity-logs.http",
         "auth.http",
@@ -124,7 +134,7 @@
       "path": "src",
       "purpose": "Source code",
       "fileCount": 4,
-      "lastAccessed": 1771027003866,
+      "lastAccessed": 1771484057070,
       "keyFiles": [
         "app.controller.ts",
         "app.module.ts",
@@ -136,7 +146,7 @@
       "path": "test",
       "purpose": "Test files",
       "fileCount": 6,
-      "lastAccessed": 1771027003870,
+      "lastAccessed": 1771484057073,
       "keyFiles": [
         "contents.http",
         "jest-e2e.json",
@@ -149,27 +159,51 @@
       "path": "uploads",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1771027003874,
+      "lastAccessed": 1771484057075,
       "keyFiles": []
     }
   },
   "hotPaths": [
     {
-      "path": "src/modules/players/dto/create-player.dto.ts",
+      "path": "src/modules/controller/control/entities/tb-control-log.entity.ts",
+      "accessCount": 4,
+      "lastAccessed": 1771487460127,
+      "type": "file"
+    },
+    {
+      "path": "run-ai-ddl.ts",
+      "accessCount": 3,
+      "lastAccessed": 1771487437733,
+      "type": "file"
+    },
+    {
+      "path": "src/modules/controller/control/control.service.ts",
       "accessCount": 2,
-      "lastAccessed": 1771038439543,
+      "lastAccessed": 1771484375680,
       "type": "file"
     },
     {
-      "path": "src/modules/players/dto/update-player.dto.ts",
+      "path": "src/modules/controller/control/control.controller.ts",
       "accessCount": 1,
-      "lastAccessed": 1771036596632,
+      "lastAccessed": 1771484182449,
       "type": "file"
     },
     {
-      "path": "src/modules/players/entities/tb-player.entity.ts",
+      "path": "src/modules/controller/presets/entities/tb-preset-command.entity.ts",
       "accessCount": 1,
-      "lastAccessed": 1771036610556,
+      "lastAccessed": 1771484376423,
+      "type": "file"
+    },
+    {
+      "path": "src/modules/controller/devices/entities/tb-space-device.entity.ts",
+      "accessCount": 1,
+      "lastAccessed": 1771484376946,
+      "type": "file"
+    },
+    {
+      "path": ".env",
+      "accessCount": 1,
+      "lastAccessed": 1771487159703,
       "type": "file"
     }
   ],

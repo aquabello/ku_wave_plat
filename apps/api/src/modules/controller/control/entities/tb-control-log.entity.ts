@@ -32,7 +32,7 @@ export class TbControlLog {
   @Column({
     name: 'trigger_type',
     type: 'enum',
-    enum: ['MANUAL', 'NFC', 'SCHEDULE'],
+    enum: ['MANUAL', 'NFC', 'SCHEDULE', 'VOICE'],
     default: 'MANUAL',
     comment: '트리거 유형',
   })

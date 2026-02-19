@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { List, Search, Plus } from 'lucide-react';
+import { useState } from 'react';
+import { List, Search, Plus, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -15,128 +15,36 @@ import { PlaylistTable } from './components/playlist-table';
 import { PlaylistRegisterDialog } from './components/playlist-register-dialog';
 import { PlaylistEditDialog } from './components/playlist-edit-dialog';
 import { PlaylistDeleteDialog } from './components/playlist-delete-dialog';
-import {
-  mockPlaylists,
-  type MockPlaylist,
-  type Orientation,
-  type PlayOrder,
-} from './mock-data';
-import { toast } from 'sonner';
+import { usePlaylistsListQuery } from '@/hooks/use-playlists';
+import type { PlaylistListItem, PlaylistType } from '@ku/types';
 
-type OrientationFilter = 'all' | Orientation;
-type PlayOrderFilter = 'all' | PlayOrder;
+type TypeFilter = 'all' | PlaylistType;
 
 export default function PlaylistPage() {
-  const [playlists, setPlaylists] = useState<MockPlaylist[]>(mockPlaylists);
-  const [orientationFilter, setOrientationFilter] =
-    useState<OrientationFilter>('all');
-  const [playOrderFilter, setPlayOrderFilter] = useState<PlayOrderFilter>('all');
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Dialog states
   const [registerDialogOpen, setRegisterDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedPlaylist, setSelectedPlaylist] = useState<MockPlaylist | null>(
-    null
-  );
+  const [selectedPlaylist, setSelectedPlaylist] = useState<PlaylistListItem | null>(null);
 
-  // Filtered playlists
-  const filteredPlaylists = useMemo(() => {
-    return playlists.filter((playlist) => {
-      // Orientation filter
-      if (
-        orientationFilter !== 'all' &&
-        playlist.orientation !== orientationFilter
-      ) {
-        return false;
-      }
+  // 실제 API 호출
+  const { data, isLoading } = usePlaylistsListQuery({
+    limit: 100,
+    type: typeFilter !== 'all' ? typeFilter : undefined,
+    search: searchQuery.trim() || undefined,
+  });
 
-      // Play order filter
-      if (playOrderFilter !== 'all' && playlist.playOrder !== playOrderFilter) {
-        return false;
-      }
+  const playlists = data?.items ?? [];
 
-      // Search filter
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase();
-        return playlist.name.toLowerCase().includes(query);
-      }
-
-      return true;
-    });
-  }, [playlists, orientationFilter, playOrderFilter, searchQuery]);
-
-  // Handlers
-  const handleRegister = (data: {
-    name: string;
-    orientation: Orientation;
-    screenLayout: string;
-    playOrder: PlayOrder;
-    isActive: boolean;
-    description?: string;
-  }) => {
-    const newPlaylist: MockPlaylist = {
-      id: String(
-        Math.max(...playlists.map((p) => parseInt(p.id))) + 1
-      ),
-      name: data.name,
-      orientation: data.orientation,
-      screenLayout: data.screenLayout as MockPlaylist['screenLayout'],
-      playOrder: data.playOrder,
-      isActive: data.isActive,
-      description: data.description,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    setPlaylists([...playlists, newPlaylist]);
-    toast.success('플레이리스트가 등록되었습니다.');
-  };
-
-  const handleEdit = (
-    id: string,
-    data: {
-      name: string;
-      orientation: Orientation;
-      screenLayout: string;
-      playOrder: PlayOrder;
-      isActive: boolean;
-      description?: string;
-    }
-  ) => {
-    setPlaylists(
-      playlists.map((playlist) =>
-        playlist.id === id
-          ? {
-              ...playlist,
-              name: data.name,
-              orientation: data.orientation,
-              screenLayout: data.screenLayout as MockPlaylist['screenLayout'],
-              playOrder: data.playOrder,
-              isActive: data.isActive,
-              description: data.description,
-              updatedAt: new Date(),
-            }
-          : playlist
-      )
-    );
-    toast.success('플레이리스트가 수정되었습니다.');
-  };
-
-  const handleDelete = () => {
-    if (selectedPlaylist) {
-      setPlaylists(playlists.filter((p) => p.id !== selectedPlaylist.id));
-      toast.success('플레이리스트가 삭제되었습니다.');
-    }
-  };
-
-  const openEditDialog = (playlist: MockPlaylist) => {
+  const openEditDialog = (playlist: PlaylistListItem) => {
     setSelectedPlaylist(playlist);
     setEditDialogOpen(true);
   };
 
-  const openDeleteDialog = (playlist: MockPlaylist) => {
+  const openDeleteDialog = (playlist: PlaylistListItem) => {
     setSelectedPlaylist(playlist);
     setDeleteDialogOpen(true);
   };
@@ -164,37 +72,33 @@ export default function PlaylistPage() {
 
         {/* Right: Filters */}
         <Select
-          value={orientationFilter}
-          onValueChange={(v) => setOrientationFilter(v as OrientationFilter)}
+          value={typeFilter}
+          onValueChange={(v) => setTypeFilter(v as TypeFilter)}
         >
           <SelectTrigger className="w-full md:w-[150px]">
-            <SelectValue placeholder="화면유형" />
+            <SelectValue placeholder="유형" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">전체 유형</SelectItem>
-            <SelectItem value="vertical">세로</SelectItem>
-            <SelectItem value="horizontal">가로</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select
-          value={playOrderFilter}
-          onValueChange={(v) => setPlayOrderFilter(v as PlayOrderFilter)}
-        >
-          <SelectTrigger className="w-full md:w-[150px]">
-            <SelectValue placeholder="재생 순서" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">전체</SelectItem>
-            <SelectItem value="sequential">순차</SelectItem>
-            <SelectItem value="random">랜덤</SelectItem>
+            <SelectItem value="NORMAL">일반</SelectItem>
+            <SelectItem value="EMERGENCY">긴급</SelectItem>
+            <SelectItem value="ANNOUNCEMENT">공지</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       {/* Total count + Actions */}
       <div className="flex items-center justify-between mb-4">
-        <p className="text-sm text-muted-foreground">총 {filteredPlaylists.length}개</p>
+        <p className="text-sm text-muted-foreground">
+          {isLoading ? (
+            <span className="flex items-center gap-1">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              로딩 중...
+            </span>
+          ) : (
+            `총 ${playlists.length}개`
+          )}
+        </p>
         <Button onClick={() => setRegisterDialogOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           리스트 추가
@@ -202,31 +106,34 @@ export default function PlaylistPage() {
       </div>
 
       {/* Table */}
-      <PlaylistTable
-        playlists={filteredPlaylists}
-        onEdit={openEditDialog}
-        onDelete={openDeleteDialog}
-      />
+      {isLoading ? (
+        <div className="flex justify-center items-center h-48">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      ) : (
+        <PlaylistTable
+          playlists={playlists}
+          onEdit={openEditDialog}
+          onDelete={openDeleteDialog}
+        />
+      )}
 
       {/* Dialogs */}
       <PlaylistRegisterDialog
         open={registerDialogOpen}
         onOpenChange={setRegisterDialogOpen}
-        onSubmit={handleRegister}
       />
 
       <PlaylistEditDialog
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
         playlist={selectedPlaylist}
-        onSubmit={handleEdit}
       />
 
       <PlaylistDeleteDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         playlist={selectedPlaylist}
-        onConfirm={handleDelete}
       />
     </div>
   );

@@ -5,7 +5,6 @@ import {
   useReactTable,
   getCoreRowModel,
   getSortedRowModel,
-  getFilteredRowModel,
   flexRender,
   type ColumnDef,
 } from '@tanstack/react-table';
@@ -22,17 +21,27 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import type { MockPlaylist } from '../mock-data';
-import {
-  orientationLabels,
-  screenLayoutLabels,
-  playOrderLabels,
-} from '../mock-data';
+import type { PlaylistListItem } from '@ku/types';
+
+/** 스크린 레이아웃 라벨 */
+const screenLayoutLabels: Record<string, string> = {
+  '1x1': '1x1',
+  '1x2': '1x2',
+  '1x4': '1x4',
+  '1x8': '1x8',
+};
+
+/** 플레이리스트 유형 라벨 */
+const typeLabels: Record<string, string> = {
+  NORMAL: '일반',
+  EMERGENCY: '긴급',
+  ANNOUNCEMENT: '공지',
+};
 
 interface PlaylistTableProps {
-  playlists: MockPlaylist[];
-  onEdit: (playlist: MockPlaylist) => void;
-  onDelete: (playlist: MockPlaylist) => void;
+  playlists: PlaylistListItem[];
+  onEdit: (playlist: PlaylistListItem) => void;
+  onDelete: (playlist: PlaylistListItem) => void;
 }
 
 export function PlaylistTable({
@@ -40,43 +49,57 @@ export function PlaylistTable({
   onEdit,
   onDelete,
 }: PlaylistTableProps) {
-  const columns = useMemo<ColumnDef<MockPlaylist>[]>(
+  const columns = useMemo<ColumnDef<PlaylistListItem>[]>(
     () => [
       {
-        accessorKey: 'name',
+        accessorKey: 'playlist_name',
         header: '플레이리스트명',
         cell: ({ row }) => (
-          <div className="font-medium">{row.original.name}</div>
+          <div className="font-medium">{row.original.playlist_name}</div>
         ),
       },
       {
-        accessorKey: 'orientation',
-        header: '화면유형',
-        cell: ({ row }) => (
-          <div>{orientationLabels[row.original.orientation]}</div>
-        ),
+        accessorKey: 'playlist_type',
+        header: '유형',
+        cell: ({ row }) => {
+          const type = row.original.playlist_type;
+          return (
+            <Badge
+              variant="outline"
+              className={
+                type === 'EMERGENCY'
+                  ? 'border-red-300 text-red-700'
+                  : type === 'ANNOUNCEMENT'
+                    ? 'border-blue-300 text-blue-700'
+                    : 'border-gray-300 text-gray-700'
+              }
+            >
+              {typeLabels[type] || type}
+            </Badge>
+          );
+        },
       },
       {
-        accessorKey: 'screenLayout',
+        accessorKey: 'playlist_screen_layout',
         header: '스크린구성',
         cell: ({ row }) => (
           <div className="font-mono text-sm">
-            {screenLayoutLabels[row.original.screenLayout]}
+            {screenLayoutLabels[row.original.playlist_screen_layout] || row.original.playlist_screen_layout}
           </div>
         ),
       },
       {
-        accessorKey: 'playOrder',
+        accessorKey: 'playlist_random',
         header: '랜덤여부',
         cell: ({ row }) => (
-          <div>{playOrderLabels[row.original.playOrder]}</div>
+          <div>{row.original.playlist_random === 'Y' ? '랜덤' : '순차'}</div>
         ),
       },
       {
-        accessorKey: 'isActive',
+        accessorKey: 'playlist_status',
         header: '사용여부',
         cell: ({ row }) => {
-          const isActive = row.original.isActive;
+          const isActive = row.original.playlist_status === 'ACTIVE';
           return (
             <Badge
               className={
@@ -91,26 +114,39 @@ export function PlaylistTable({
         },
       },
       {
-        accessorKey: 'createdAt',
-        header: '등록일',
+        accessorKey: 'content_count',
+        header: '콘텐츠',
         cell: ({ row }) => (
           <div className="text-sm text-muted-foreground">
-            {formatDistanceToNow(row.original.createdAt, {
-              addSuffix: true,
-              locale: ko,
-            })}
+            {row.original.content_count}개
           </div>
         ),
       },
       {
-        accessorKey: 'updatedAt',
+        accessorKey: 'reg_date',
+        header: '등록일',
+        cell: ({ row }) => (
+          <div className="text-sm text-muted-foreground">
+            {row.original.reg_date
+              ? formatDistanceToNow(new Date(row.original.reg_date), {
+                  addSuffix: true,
+                  locale: ko,
+                })
+              : '-'}
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'upd_date',
         header: '수정일',
         cell: ({ row }) => (
           <div className="text-sm text-muted-foreground">
-            {formatDistanceToNow(row.original.updatedAt, {
-              addSuffix: true,
-              locale: ko,
-            })}
+            {row.original.upd_date
+              ? formatDistanceToNow(new Date(row.original.upd_date), {
+                  addSuffix: true,
+                  locale: ko,
+                })
+              : '-'}
           </div>
         ),
       },
@@ -147,7 +183,6 @@ export function PlaylistTable({
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
   });
 
   return (

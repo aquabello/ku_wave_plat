@@ -18,6 +18,7 @@ import {
   Play,
   ListOrdered,
   FolderOpen,
+  ClipboardCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigationStore } from '@/stores/navigation';
@@ -37,6 +38,7 @@ const LNB_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   'display-player': Play,
   'display-list': ListOrdered,
   'display-content': FolderOpen,
+  'display-content-approval': ClipboardCheck,
   'member-list': Users,
   'member-permissions': Shield,
   'member-activity': Activity,

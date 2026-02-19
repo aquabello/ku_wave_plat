@@ -4,6 +4,16 @@
 export type PlaylistType = 'NORMAL' | 'EMERGENCY' | 'ANNOUNCEMENT';
 
 /**
+ * 화면 분할 레이아웃
+ */
+export type PlaylistScreenLayout = '1x1' | '1x2' | '1x4' | '1x8';
+
+/**
+ * 플레이리스트 사용 상태
+ */
+export type PlaylistStatus = 'ACTIVE' | 'INACTIVE';
+
+/**
  * 플레이리스트 목록 아이템 (목록 조회용)
  */
 export interface PlaylistListItem {
@@ -11,8 +21,12 @@ export interface PlaylistListItem {
   playlist_name: string;
   playlist_code: string;
   playlist_type: PlaylistType;
+  playlist_priority: number;
   playlist_duration: number | null;
   playlist_loop: 'Y' | 'N';
+  playlist_random: 'Y' | 'N';
+  playlist_screen_layout: PlaylistScreenLayout;
+  playlist_status: PlaylistStatus;
   playlist_description: string | null;
   content_count: number;
   player_count: number;
@@ -35,6 +49,12 @@ export interface PlaylistContent {
   play_order: number;
   play_duration: number | null;
   transition_effect: string | null;
+  transition_duration: number | null;
+  zone_number: number;
+  zone_width: number;
+  zone_height: number;
+  zone_x_position: number;
+  zone_y_position: number;
 }
 
 /**
@@ -45,8 +65,12 @@ export interface Playlist {
   playlist_name: string;
   playlist_code: string;
   playlist_type: PlaylistType;
+  playlist_priority: number;
   playlist_duration: number | null;
   playlist_loop: 'Y' | 'N';
+  playlist_random: 'Y' | 'N';
+  playlist_screen_layout: PlaylistScreenLayout;
+  playlist_status: PlaylistStatus;
   playlist_description: string | null;
   playlist_order: number;
   playlist_isdel: 'Y' | 'N';
@@ -60,15 +84,25 @@ export interface Playlist {
  */
 export interface CreatePlaylistDto {
   playlist_name: string;
-  playlist_code: string;
+  playlist_code?: string;
   playlist_type?: PlaylistType;
+  playlist_priority?: number;
   playlist_loop?: 'Y' | 'N';
+  playlist_random?: 'Y' | 'N';
+  playlist_screen_layout?: PlaylistScreenLayout;
+  playlist_status?: PlaylistStatus;
   playlist_description?: string;
   contents?: Array<{
     content_seq: number;
     play_order: number;
     play_duration?: number;
     transition_effect?: string;
+    transition_duration?: number;
+    zone_number?: number;
+    zone_width?: number;
+    zone_height?: number;
+    zone_x_position?: number;
+    zone_y_position?: number;
   }>;
 }
 
@@ -78,7 +112,11 @@ export interface CreatePlaylistDto {
 export interface UpdatePlaylistDto {
   playlist_name?: string;
   playlist_type?: PlaylistType;
+  playlist_priority?: number;
   playlist_loop?: 'Y' | 'N';
+  playlist_random?: 'Y' | 'N';
+  playlist_screen_layout?: PlaylistScreenLayout;
+  playlist_status?: PlaylistStatus;
   playlist_description?: string;
   playlist_order?: number;
   contents?: Array<{
@@ -86,5 +124,11 @@ export interface UpdatePlaylistDto {
     play_order: number;
     play_duration?: number;
     transition_effect?: string;
+    transition_duration?: number;
+    zone_number?: number;
+    zone_width?: number;
+    zone_height?: number;
+    zone_x_position?: number;
+    zone_y_position?: number;
   }>;
 }

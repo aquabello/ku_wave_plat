@@ -71,11 +71,11 @@ export class TbPlayList {
   @Column({
     name: 'playlist_screen_layout',
     type: 'enum',
-    enum: ['1x1', '1x2', '1x3', '1x4', '2x2', '2x4', '1x8'],
+    enum: ['1x1', '1x2', '1x4', '1x8'],
     default: '1x1',
     comment: '화면 분할 레이아웃',
   })
-  playlistScreenLayout: '1x1' | '1x2' | '1x3' | '1x4' | '2x2' | '2x4' | '1x8';
+  playlistScreenLayout: '1x1' | '1x2' | '1x4' | '1x8';
 
   @Column({
     name: 'playlist_status',

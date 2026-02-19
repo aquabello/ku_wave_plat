@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1771031442422,
+  "lastScanned": 1771481735414,
   "projectRoot": "/Users/aquabello/Documents/10-Dev/ku_wave_plat",
   "techStack": {
     "languages": [
@@ -58,46 +58,48 @@
       "path": "_bmad",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1771031442394,
+      "lastAccessed": 1771481735171,
       "keyFiles": []
     },
     "_bmad-output": {
       "path": "_bmad-output",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1771031442395,
+      "lastAccessed": 1771481735172,
       "keyFiles": []
     },
     "apps": {
       "path": "apps",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1771031442403,
+      "lastAccessed": 1771481735191,
       "keyFiles": []
     },
     "docs": {
       "path": "docs",
       "purpose": "Documentation",
-      "fileCount": 3,
-      "lastAccessed": 1771031442403,
+      "fileCount": 7,
+      "lastAccessed": 1771481735191,
       "keyFiles": [
-        "deployment-architecture.md",
-        "implementation-system-settings-api.md",
-        "init_database.sql"
+        "00-sys-agent-prompt.md",
+        "01-fe-agent-prompt.md",
+        "02-be-agent-prompt.md",
+        "ai-system-architecture.md",
+        "deployment-architecture.md"
       ]
     },
     "packages": {
       "path": "packages",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1771031442404,
+      "lastAccessed": 1771481735191,
       "keyFiles": []
     },
     "scripts": {
       "path": "scripts",
       "purpose": "Build/utility scripts",
       "fileCount": 2,
-      "lastAccessed": 1771031442404,
+      "lastAccessed": 1771481735192,
       "keyFiles": [
         "check-db.js",
         "dev-wrapper.js"
@@ -107,14 +109,14 @@
       "path": "tools",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1771031442404,
+      "lastAccessed": 1771481735192,
       "keyFiles": []
     },
     "apps/api": {
       "path": "apps/api",
       "purpose": "API routes",
       "fileCount": 10,
-      "lastAccessed": 1771031442405,
+      "lastAccessed": 1771481735195,
       "keyFiles": [
         "README.md",
         "nest-cli.json",
@@ -125,7 +127,7 @@
       "path": "docs/api",
       "purpose": "API routes",
       "fileCount": 12,
-      "lastAccessed": 1771031442405,
+      "lastAccessed": 1771481735196,
       "keyFiles": [
         "activity-logs.api.md",
         "auth.api.md",
@@ -136,7 +138,7 @@
       "path": "docs/migrations",
       "purpose": "Database migrations",
       "fileCount": 2,
-      "lastAccessed": 1771031442406,
+      "lastAccessed": 1771481735196,
       "keyFiles": [
         "001_create_player_tables.sql",
         "002_update_playlist_system.sql"
@@ -146,7 +148,7 @@
       "path": "packages/config",
       "purpose": "Configuration files",
       "fileCount": 4,
-      "lastAccessed": 1771031442407,
+      "lastAccessed": 1771481735197,
       "keyFiles": [
         "eslint-preset.js",
         "package.json",
@@ -157,7 +159,7 @@
       "path": "packages/types",
       "purpose": "Type definitions",
       "fileCount": 3,
-      "lastAccessed": 1771031442407,
+      "lastAccessed": 1771481735198,
       "keyFiles": [
         "package.json",
         "tsconfig.json"
@@ -166,285 +168,303 @@
   },
   "hotPaths": [
     {
-      "path": "apps/api/src/modules/players/players.service.ts",
-      "accessCount": 50,
-      "lastAccessed": 1771039149407,
-      "type": "file"
-    },
-    {
-      "path": "apps/console/src/app/(dashboard)/display/player/components/player-register-dialog.tsx",
-      "accessCount": 27,
-      "lastAccessed": 1771036178922,
-      "type": "file"
-    },
-    {
-      "path": "apps/console/src/app/(dashboard)/display/player/page.tsx",
-      "accessCount": 16,
-      "lastAccessed": 1771035594915,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/playlists/playlists.service.ts",
-      "accessCount": 16,
-      "lastAccessed": 1771048099559,
-      "type": "file"
-    },
-    {
-      "path": "apps/console/src/app/(dashboard)/display/player/components/player-edit-dialog.tsx",
-      "accessCount": 13,
-      "lastAccessed": 1771036000725,
-      "type": "file"
-    },
-    {
-      "path": "apps/console/src/app/(dashboard)/display/player/components/player-table.tsx",
-      "accessCount": 12,
-      "lastAccessed": 1771035536708,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/players/dto/create-player.dto.ts",
-      "accessCount": 12,
-      "lastAccessed": 1771039066614,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/test/playlists.http",
-      "accessCount": 7,
-      "lastAccessed": 1771048308424,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/players/players.service.spec.ts",
-      "accessCount": 6,
-      "lastAccessed": 1771037088960,
-      "type": "file"
-    },
-    {
-      "path": "apps/console/src",
-      "accessCount": 5,
-      "lastAccessed": 1771035929754,
-      "type": "directory"
-    },
-    {
-      "path": "apps/api/src/modules/players/entities/tb-player.entity.ts",
-      "accessCount": 5,
-      "lastAccessed": 1771038873905,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/test/e2e/players.e2e-spec.ts",
-      "accessCount": 5,
-      "lastAccessed": 1771038975826,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/players/dto/update-player.dto.ts",
-      "accessCount": 5,
-      "lastAccessed": 1771039057421,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/test/players.http",
-      "accessCount": 4,
-      "lastAccessed": 1771037158864,
-      "type": "file"
-    },
-    {
       "path": "docs/init_database.sql",
-      "accessCount": 4,
-      "lastAccessed": 1771047651774,
+      "accessCount": 9,
+      "lastAccessed": 1771486382335,
       "type": "file"
     },
     {
-      "path": "docs/api/player.api.md",
-      "accessCount": 4,
-      "lastAccessed": 1771047875027,
-      "type": "file"
-    },
-    {
-      "path": "packages/types/src/player.types.ts",
-      "accessCount": 3,
-      "lastAccessed": 1771034083245,
-      "type": "file"
-    },
-    {
-      "path": "apps/api",
-      "accessCount": 3,
-      "lastAccessed": 1771047948970,
-      "type": "directory"
-    },
-    {
-      "path": "apps/api/src/modules/contents/contents.service.ts",
-      "accessCount": 2,
-      "lastAccessed": 1771032315399,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/spaces/spaces.service.ts",
-      "accessCount": 2,
-      "lastAccessed": 1771032319804,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/play-logs/play-logs.service.ts",
-      "accessCount": 2,
-      "lastAccessed": 1771032366151,
-      "type": "file"
-    },
-    {
-      "path": "apps/console/src/app/(dashboard)/display/player/_components/player-create-sheet.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1771034253704,
-      "type": "file"
-    },
-    {
-      "path": "packages/types/src",
-      "accessCount": 2,
-      "lastAccessed": 1771035660264,
-      "type": "directory"
-    },
-    {
-      "path": "docs",
-      "accessCount": 2,
-      "lastAccessed": 1771036546808,
-      "type": "directory"
-    },
-    {
-      "path": "apps/console",
-      "accessCount": 2,
-      "lastAccessed": 1771036656846,
-      "type": "directory"
-    },
-    {
-      "path": "apps/api/src/modules/playlists/entities/tb-play-list.entity.ts",
-      "accessCount": 2,
-      "lastAccessed": 1771047875830,
+      "path": "packages/types/src/content-approval.types.ts",
+      "accessCount": 6,
+      "lastAccessed": 1771486459716,
       "type": "file"
     },
     {
       "path": "apps/api/src/modules/playlists/entities/tb-play-list-content.entity.ts",
-      "accessCount": 2,
-      "lastAccessed": 1771047876499,
+      "accessCount": 5,
+      "lastAccessed": 1771484108218,
       "type": "file"
     },
     {
-      "path": "apps/api/http/auth.http",
-      "accessCount": 2,
-      "lastAccessed": 1771048308282,
+      "path": "apps/console/src/app/(dashboard)/display/content-approval/components/approval-table.tsx",
+      "accessCount": 5,
+      "lastAccessed": 1771485938589,
       "type": "file"
     },
     {
-      "path": "apps/api/src/modules/player-groups/player-groups.service.ts",
-      "accessCount": 1,
-      "lastAccessed": 1771032256607,
+      "path": "apps/console/src/components/layout/sidebar.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1771482195936,
       "type": "file"
     },
     {
-      "path": "apps/api/src/modules/play-logs/entities/tb-play-log.entity.ts",
-      "accessCount": 1,
-      "lastAccessed": 1771032351278,
+      "path": "packages/types/src/index.ts",
+      "accessCount": 4,
+      "lastAccessed": 1771482819331,
       "type": "file"
     },
     {
-      "path": "apps/api/src/modules/activity-logs/activity-logs.service.ts",
-      "accessCount": 1,
-      "lastAccessed": 1771032359045,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/permissions/permissions.service.ts",
-      "accessCount": 1,
-      "lastAccessed": 1771032360465,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/users/users.service.ts",
-      "accessCount": 1,
-      "lastAccessed": 1771032362363,
-      "type": "file"
-    },
-    {
-      "path": "docs/api/auth.api.md",
-      "accessCount": 1,
-      "lastAccessed": 1771033545823,
-      "type": "file"
-    },
-    {
-      "path": ".env",
-      "accessCount": 1,
-      "lastAccessed": 1771033576673,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/users/entities/tb-user.entity.ts",
-      "accessCount": 1,
-      "lastAccessed": 1771033602962,
-      "type": "file"
-    },
-    {
-      "path": "apps/console/src/components",
-      "accessCount": 1,
-      "lastAccessed": 1771033921091,
+      "path": "apps/api/src/modules/auth",
+      "accessCount": 4,
+      "lastAccessed": 1771485430528,
       "type": "directory"
     },
     {
-      "path": "apps/console/src/components/ui/dialog.tsx",
-      "accessCount": 1,
-      "lastAccessed": 1771035412146,
+      "path": "apps/api/src/modules/contents/entities/tb-content.entity.ts",
+      "accessCount": 4,
+      "lastAccessed": 1771486407697,
       "type": "file"
     },
     {
-      "path": "apps/console/src/app/(dashboard)/display/player/components/player-approve-dialog.tsx",
-      "accessCount": 1,
-      "lastAccessed": 1771035479843,
+      "path": "apps/console/src",
+      "accessCount": 3,
+      "lastAccessed": 1771482020544,
+      "type": "directory"
+    },
+    {
+      "path": "apps/console/src/app/(dashboard)/display/content-approval/page.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1771483035532,
       "type": "file"
     },
     {
-      "path": "apps/console/src/lib/api/playlists.ts",
+      "path": "apps/api/src",
+      "accessCount": 3,
+      "lastAccessed": 1771484040883,
+      "type": "directory"
+    },
+    {
+      "path": "apps/api/src/modules/auth/auth.service.ts",
+      "accessCount": 3,
+      "lastAccessed": 1771485546933,
+      "type": "file"
+    },
+    {
+      "path": "apps/console/src/lib/api/content-approvals.ts",
+      "accessCount": 3,
+      "lastAccessed": 1771485928869,
+      "type": "file"
+    },
+    {
+      "path": "packages/types/src/content.types.ts",
+      "accessCount": 3,
+      "lastAccessed": 1771486447510,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/menus/entities/tb-menu.entity.ts",
+      "accessCount": 2,
+      "lastAccessed": 1771482378633,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/menus/menus.service.ts",
+      "accessCount": 2,
+      "lastAccessed": 1771482378674,
+      "type": "file"
+    },
+    {
+      "path": "apps/console/src/app/(dashboard)/display/list/components/playlist-table.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1771482799400,
+      "type": "file"
+    },
+    {
+      "path": "apps/console/src/app/(dashboard)/display/list/page.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1771482799706,
+      "type": "file"
+    },
+    {
+      "path": "",
+      "accessCount": 2,
+      "lastAccessed": 1771482937295,
+      "type": "directory"
+    },
+    {
+      "path": "apps/api/src/modules/players/entities/tb-player.entity.ts",
+      "accessCount": 2,
+      "lastAccessed": 1771483423562,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/playlists/entities/tb-play-list.entity.ts",
+      "accessCount": 2,
+      "lastAccessed": 1771484050537,
+      "type": "file"
+    },
+    {
+      "path": "apps/console/src/hooks/use-content-approvals.ts",
+      "accessCount": 2,
+      "lastAccessed": 1771485799091,
+      "type": "file"
+    },
+    {
+      "path": "apps/console/src/lib/api/client.ts",
+      "accessCount": 2,
+      "lastAccessed": 1771485852337,
+      "type": "file"
+    },
+    {
+      "path": "apps/console/src/app/(dashboard)/display/content-approval/components/approval-filters.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1771485939551,
+      "type": "file"
+    },
+    {
+      "path": "apps/console/src/app/(dashboard)/display/content-approval/components/approval-stats.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1771485939581,
+      "type": "file"
+    },
+    {
+      "path": "apps/console/src/app/(dashboard)/display/content-approval/components/reject-dialog.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1771485939585,
+      "type": "file"
+    },
+    {
+      "path": "apps/console/src/app/(dashboard)/display/content-approval/components/history-dialog.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1771485940258,
+      "type": "file"
+    },
+    {
+      "path": "apps/console/src/lib/api/menus.ts",
       "accessCount": 1,
-      "lastAccessed": 1771035667791,
+      "lastAccessed": 1771482003176,
+      "type": "file"
+    },
+    {
+      "path": "apps/console/src/stores/navigation.ts",
+      "accessCount": 1,
+      "lastAccessed": 1771482025580,
+      "type": "file"
+    },
+    {
+      "path": "apps/console/src/components/layout/header.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1771482025954,
+      "type": "file"
+    },
+    {
+      "path": "packages/types/src/menu.types.ts",
+      "accessCount": 1,
+      "lastAccessed": 1771482031549,
+      "type": "file"
+    },
+    {
+      "path": "apps/console/src/app/(auth)/login/page.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1771482031670,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/menus/menus.controller.ts",
+      "accessCount": 1,
+      "lastAccessed": 1771482050417,
+      "type": "file"
+    },
+    {
+      "path": "apps/console/src/app/(dashboard)/display/content/page.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1771482168474,
+      "type": "file"
+    },
+    {
+      "path": "docs",
+      "accessCount": 1,
+      "lastAccessed": 1771482226645,
+      "type": "directory"
+    },
+    {
+      "path": "docs/migrations/001_create_player_tables.sql",
+      "accessCount": 1,
+      "lastAccessed": 1771482241370,
+      "type": "file"
+    },
+    {
+      "path": "docs/api/player.api.md",
+      "accessCount": 1,
+      "lastAccessed": 1771482242013,
+      "type": "file"
+    },
+    {
+      "path": "docs/diagrams/player-erd.md",
+      "accessCount": 1,
+      "lastAccessed": 1771482242264,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/players/players.controller.ts",
+      "accessCount": 1,
+      "lastAccessed": 1771482250035,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/players/players.service.ts",
+      "accessCount": 1,
+      "lastAccessed": 1771482250520,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/players/players.module.ts",
+      "accessCount": 1,
+      "lastAccessed": 1771482251933,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/players/dto/reject-player.dto.ts",
+      "accessCount": 1,
+      "lastAccessed": 1771482262512,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/players/dto/create-player.dto.ts",
+      "accessCount": 1,
+      "lastAccessed": 1771482262890,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/players/dto/update-player.dto.ts",
+      "accessCount": 1,
+      "lastAccessed": 1771482262982,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/players/dto/heartbeat.dto.ts",
+      "accessCount": 1,
+      "lastAccessed": 1771482262992,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/players/guards/player-api-key.guard.ts",
+      "accessCount": 1,
+      "lastAccessed": 1771482263628,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/test/players.http",
+      "accessCount": 1,
+      "lastAccessed": 1771482297355,
       "type": "file"
     },
     {
       "path": "apps/console/src/hooks/use-playlists.ts",
       "accessCount": 1,
-      "lastAccessed": 1771035685045,
+      "lastAccessed": 1771482795084,
       "type": "file"
     },
     {
-      "path": "apps/console/src/app/(dashboard)/controller/hardware/page.tsx",
+      "path": "apps/api/.env",
       "accessCount": 1,
-      "lastAccessed": 1771035935586,
+      "lastAccessed": 1771483625355,
       "type": "file"
     },
     {
-      "path": "apps/api/test/nfc.http",
+      "path": "apps/api/src/database/data-source.ts",
       "accessCount": 1,
-      "lastAccessed": 1771036359672,
-      "type": "file"
-    },
-    {
-      "path": "docs/migrations/001_create_player_tables.sql",
-      "accessCount": 1,
-      "lastAccessed": 1771036551419,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/playlists/playlists.controller.ts",
-      "accessCount": 1,
-      "lastAccessed": 1771047686804,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/playlists/dto/create-playlist.dto.ts",
-      "accessCount": 1,
-      "lastAccessed": 1771047881731,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/playlists/dto/update-playlist.dto.ts",
-      "accessCount": 1,
-      "lastAccessed": 1771047882327,
+      "lastAccessed": 1771483691752,
       "type": "file"
     }
   ],

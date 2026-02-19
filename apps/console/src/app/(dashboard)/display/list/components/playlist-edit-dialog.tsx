@@ -1,20 +1,28 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { Loader2 } from 'lucide-react';
+import { useUpdatePlaylistMutation } from '@/hooks/use-playlists';
+import type { PlaylistListItem, UpdatePlaylistDto } from '@ku/types';
 import {
   Sheet,
   SheetContent,
-  SheetFooter,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -22,207 +30,249 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { MockPlaylist, Orientation, ScreenLayout, PlayOrder } from '../mock-data';
+import { Textarea } from '@/components/ui/textarea';
 
-const playlistSchema = z.object({
-  name: z
+const updatePlaylistSchema = z.object({
+  playlist_name: z
     .string()
     .min(2, '플레이리스트명은 2자 이상이어야 합니다')
-    .max(50, '플레이리스트명은 50자 이하여야 합니다'),
-  description: z
+    .max(100, '플레이리스트명은 100자 이하여야 합니다'),
+  playlist_type: z.enum(['NORMAL', 'EMERGENCY', 'ANNOUNCEMENT']),
+  playlist_screen_layout: z.enum(['1x1', '1x2', '1x4', '1x8']),
+  playlist_random: z.enum(['Y', 'N']),
+  playlist_status: z.enum(['ACTIVE', 'INACTIVE']),
+  playlist_description: z
     .string()
     .max(200, '설명은 200자 이하로 입력해주세요')
-    .optional(),
+    .optional()
+    .or(z.literal('')),
 });
 
-type PlaylistFormData = z.infer<typeof playlistSchema>;
+type UpdatePlaylistFormData = z.infer<typeof updatePlaylistSchema>;
 
 interface PlaylistEditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  playlist: MockPlaylist | null;
-  onSubmit: (
-    id: string,
-    data: {
-      name: string;
-      orientation: Orientation;
-      screenLayout: ScreenLayout;
-      playOrder: PlayOrder;
-      isActive: boolean;
-      description?: string;
-    }
-  ) => void;
+  playlist: PlaylistListItem | null;
+}
+
+/**
+ * 자식 컴포넌트 패턴: 데이터 로드 후 form 초기화
+ * (useEffect + form.reset() 안티패턴 방지)
+ */
+function PlaylistEditForm({
+  playlist,
+  onSuccess,
+  onCancel,
+}: {
+  playlist: PlaylistListItem;
+  onSuccess: () => void;
+  onCancel: () => void;
+}) {
+  const { mutate: updatePlaylist, isPending } = useUpdatePlaylistMutation();
+
+  const form = useForm<UpdatePlaylistFormData>({
+    resolver: zodResolver(updatePlaylistSchema),
+    defaultValues: {
+      playlist_name: playlist.playlist_name,
+      playlist_type: playlist.playlist_type,
+      playlist_screen_layout: playlist.playlist_screen_layout,
+      playlist_random: playlist.playlist_random,
+      playlist_status: playlist.playlist_status,
+      playlist_description: playlist.playlist_description || '',
+    },
+  });
+
+  const onSubmit = (data: UpdatePlaylistFormData) => {
+    const payload: UpdatePlaylistDto = {
+      ...data,
+      playlist_description: data.playlist_description || undefined,
+    };
+
+    updatePlaylist(
+      { playlistSeq: playlist.playlist_seq, data: payload },
+      {
+        onSuccess: () => {
+          form.reset();
+          onSuccess();
+        },
+      }
+    );
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 space-y-4">
+        {/* 코드 (읽기 전용) */}
+        <div className="grid gap-2">
+          <FormLabel>플레이리스트 코드</FormLabel>
+          <div className="text-sm font-medium px-3 py-2 border rounded-md bg-muted font-mono">
+            {playlist.playlist_code}
+          </div>
+          <p className="text-sm text-muted-foreground">코드는 수정할 수 없습니다</p>
+        </div>
+
+        <FormField
+          control={form.control}
+          name="playlist_name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>플레이리스트명 *</FormLabel>
+              <FormControl>
+                <Input placeholder="플레이리스트명 입력 (2-100자)" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="playlist_type"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>유형 *</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="NORMAL">일반</SelectItem>
+                  <SelectItem value="EMERGENCY">긴급</SelectItem>
+                  <SelectItem value="ANNOUNCEMENT">공지</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="playlist_screen_layout"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>스크린구성 *</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="1x1">1x1</SelectItem>
+                  <SelectItem value="1x2">1x2</SelectItem>
+                  <SelectItem value="1x4">1x4</SelectItem>
+                  <SelectItem value="1x8">1x8</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="playlist_random"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>랜덤여부 *</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="N">순차</SelectItem>
+                  <SelectItem value="Y">랜덤</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="playlist_status"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>사용여부</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="ACTIVE">활성</SelectItem>
+                  <SelectItem value="INACTIVE">비활성</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="playlist_description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>설명</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="설명 입력 (최대 200자)"
+                  rows={3}
+                  maxLength={200}
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="flex justify-end gap-3 pt-4">
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>
+            취소
+          </Button>
+          <Button type="submit" disabled={isPending}>
+            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            수정
+          </Button>
+        </div>
+      </form>
+    </Form>
+  );
 }
 
 export function PlaylistEditDialog({
   open,
   onOpenChange,
   playlist,
-  onSubmit,
 }: PlaylistEditDialogProps) {
-  const [orientation, setOrientation] = useState<Orientation>('vertical');
-  const [screenLayout, setScreenLayout] = useState<ScreenLayout>('1x1');
-  const [playOrder, setPlayOrder] = useState<PlayOrder>('sequential');
-  const [isActive, setIsActive] = useState<boolean>(true);
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm<PlaylistFormData>({
-    resolver: zodResolver(playlistSchema),
-  });
-
-  useEffect(() => {
-    if (playlist) {
-      reset({
-        name: playlist.name,
-        description: playlist.description || '',
-      });
-      setOrientation(playlist.orientation);
-      setScreenLayout(playlist.screenLayout);
-      setPlayOrder(playlist.playOrder);
-      setIsActive(playlist.isActive);
-    }
-  }, [playlist, reset]);
-
-  const handleFormSubmit = (data: PlaylistFormData) => {
-    if (playlist) {
-      onSubmit(playlist.id, {
-        name: data.name,
-        description: data.description,
-        orientation,
-        screenLayout,
-        playOrder,
-        isActive,
-      });
-      onOpenChange(false);
-    }
-  };
-
-  const handleCancel = () => {
-    reset();
-    onOpenChange(false);
-  };
+  if (!playlist) return null;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-[500px] sm:w-[600px] overflow-y-auto">
         <SheetHeader>
           <SheetTitle>플레이리스트 수정</SheetTitle>
+          <SheetDescription>
+            플레이리스트 정보를 수정합니다.
+          </SheetDescription>
         </SheetHeader>
-        <form onSubmit={handleSubmit(handleFormSubmit)}>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="edit-name">
-                플레이리스트명 <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="edit-name"
-                placeholder="플레이리스트명 입력 (2-50자)"
-                {...register('name')}
-              />
-              {errors.name && (
-                <p className="text-sm text-red-500">{errors.name.message}</p>
-              )}
-            </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="edit-orientation">
-                화면유형 <span className="text-red-500">*</span>
-              </Label>
-              <Select
-                value={orientation}
-                onValueChange={(value) => setOrientation(value as Orientation)}
-              >
-                <SelectTrigger id="edit-orientation">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="vertical">세로</SelectItem>
-                  <SelectItem value="horizontal">가로</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="edit-screenLayout">
-                스크린구성 <span className="text-red-500">*</span>
-              </Label>
-              <Select
-                value={screenLayout}
-                onValueChange={(value) => setScreenLayout(value as ScreenLayout)}
-              >
-                <SelectTrigger id="edit-screenLayout">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1x1">1x1</SelectItem>
-                  <SelectItem value="2x2">2x2</SelectItem>
-                  <SelectItem value="3x3">3x3</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="edit-playOrder">
-                랜덤여부 <span className="text-red-500">*</span>
-              </Label>
-              <Select
-                value={playOrder}
-                onValueChange={(value) => setPlayOrder(value as PlayOrder)}
-              >
-                <SelectTrigger id="edit-playOrder">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="sequential">순차</SelectItem>
-                  <SelectItem value="random">랜덤</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="edit-isActive">사용여부</Label>
-              <Select
-                value={isActive ? 'true' : 'false'}
-                onValueChange={(value) => setIsActive(value === 'true')}
-              >
-                <SelectTrigger id="edit-isActive">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="true">활성</SelectItem>
-                  <SelectItem value="false">비활성</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="edit-description">설명</Label>
-              <Textarea
-                id="edit-description"
-                placeholder="설명 입력 (최대 200자)"
-                rows={3}
-                maxLength={200}
-                {...register('description')}
-              />
-              {errors.description && (
-                <p className="text-sm text-red-500">
-                  {errors.description.message}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <SheetFooter>
-            <Button type="button" variant="outline" onClick={handleCancel}>
-              취소
-            </Button>
-            <Button type="submit">수정</Button>
-          </SheetFooter>
-        </form>
+        <PlaylistEditForm
+          key={playlist.playlist_seq}
+          playlist={playlist}
+          onSuccess={() => onOpenChange(false)}
+          onCancel={() => onOpenChange(false)}
+        />
       </SheetContent>
     </Sheet>
   );

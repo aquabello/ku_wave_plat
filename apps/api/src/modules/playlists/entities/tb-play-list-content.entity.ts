@@ -1,6 +1,7 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { TbPlayList } from './tb-play-list.entity';
 import { TbContent } from '@modules/contents/entities/tb-content.entity';
+import { TbUser } from '@modules/users/entities/tb-user.entity';
 
 @Entity('tb_play_list_content')
 export class TbPlayListContent {
@@ -122,6 +123,49 @@ export class TbPlayListContent {
   })
   regDate: Date | null;
 
+  // 승인 시스템 컬럼
+  @Column({
+    name: 'requester_seq',
+    type: 'int',
+    nullable: true,
+    comment: '콘텐츠 등록 요청자 시퀀스',
+  })
+  requesterSeq: number | null;
+
+  @Column({
+    name: 'approval_status',
+    type: 'enum',
+    enum: ['PENDING', 'APPROVED', 'REJECTED'],
+    default: 'PENDING',
+    comment: '승인 상태',
+  })
+  approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
+
+  @Column({
+    name: 'reviewer_seq',
+    type: 'int',
+    nullable: true,
+    comment: '승인/반려자 시퀀스',
+  })
+  reviewerSeq: number | null;
+
+  @Column({
+    name: 'reviewed_date',
+    type: 'datetime',
+    nullable: true,
+    comment: '승인/반려 일시',
+  })
+  reviewedDate: Date | null;
+
+  @Column({
+    name: 'reject_reason',
+    type: 'text',
+    nullable: true,
+    comment: '반려 사유',
+  })
+  rejectReason: string | null;
+
+  // Relations
   @ManyToOne(() => TbPlayList, (playlist) => playlist.playlistContents, {
     onDelete: 'CASCADE',
   })
@@ -133,4 +177,12 @@ export class TbPlayListContent {
   })
   @JoinColumn({ name: 'content_seq' })
   content: TbContent;
+
+  @ManyToOne(() => TbUser, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'requester_seq' })
+  requester: TbUser | null;
+
+  @ManyToOne(() => TbUser, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'reviewer_seq' })
+  reviewer: TbUser | null;
 }

@@ -28,6 +28,7 @@ import { ContentsModule } from '@modules/contents/contents.module';
 import { PlayerGroupsModule } from '@modules/player-groups/player-groups.module';
 import { PlayerPlaylistsModule } from '@modules/player-playlists/player-playlists.module';
 import { PlayLogsModule } from '@modules/play-logs/play-logs.module';
+import { ContentApprovalsModule } from '@modules/content-approvals/content-approvals.module';
 import { ActivityLogInterceptor } from '@modules/activity-logs/interceptors/activity-log.interceptor';
 
 // Common modules
@@ -102,6 +103,7 @@ import { AppService } from './app.service';
     PlayerGroupsModule,
     PlayerPlaylistsModule,
     PlayLogsModule,
+    ContentApprovalsModule,
   ],
   controllers: [AppController],
   providers: [

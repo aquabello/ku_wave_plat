@@ -54,3 +54,6 @@ export * from './playlist.types';
 
 // Content Types
 export * from './content.types';
+
+// Content Approval Types
+export * from './content-approval.types';

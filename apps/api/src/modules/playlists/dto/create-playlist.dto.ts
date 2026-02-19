@@ -55,11 +55,11 @@ export class CreatePlaylistDto {
   @MaxLength(100)
   playlist_name: string;
 
-  @ApiProperty({ description: '플레이리스트 코드', example: 'PLAYLIST-001', maxLength: 50 })
+  @ApiPropertyOptional({ description: '플레이리스트 코드 (미입력시 자동생성: PL-YYYYMMDD-001)', example: 'PL-20260218-001', maxLength: 50 })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MaxLength(50)
-  playlist_code: string;
+  playlist_code?: string;
 
   @ApiPropertyOptional({ description: '플레이리스트 유형', enum: ['NORMAL', 'EMERGENCY', 'ANNOUNCEMENT'], default: 'NORMAL' })
   @IsOptional()
@@ -81,10 +81,10 @@ export class CreatePlaylistDto {
   @IsEnum(['Y', 'N'])
   playlist_random?: 'Y' | 'N';
 
-  @ApiPropertyOptional({ description: '화면 분할 레이아웃', enum: ['1x1', '1x2', '1x3', '1x4', '2x2', '2x4', '1x8'], default: '1x1' })
+  @ApiPropertyOptional({ description: '화면 분할 레이아웃', enum: ['1x1', '1x2', '1x4', '1x8'], default: '1x1' })
   @IsOptional()
-  @IsEnum(['1x1', '1x2', '1x3', '1x4', '2x2', '2x4', '1x8'])
-  playlist_screen_layout?: '1x1' | '1x2' | '1x3' | '1x4' | '2x2' | '2x4' | '1x8';
+  @IsEnum(['1x1', '1x2', '1x4', '1x8'])
+  playlist_screen_layout?: '1x1' | '1x2' | '1x4' | '1x8';
 
   @ApiPropertyOptional({ description: '사용 상태', enum: ['ACTIVE', 'INACTIVE'], default: 'ACTIVE' })
   @IsOptional()

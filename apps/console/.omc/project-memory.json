@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1770901669964,
+  "lastScanned": 1771387673061,
   "projectRoot": "/Users/aquabello/Documents/10-Dev/ku_wave_plat/apps/console",
   "techStack": {
     "languages": [
@@ -76,21 +76,21 @@
       "path": "public",
       "purpose": "Public files",
       "fileCount": 0,
-      "lastAccessed": 1770901669938,
+      "lastAccessed": 1771387673013,
       "keyFiles": []
     },
     "src": {
       "path": "src",
       "purpose": "Source code",
       "fileCount": 0,
-      "lastAccessed": 1770901669939,
+      "lastAccessed": 1771387673015,
       "keyFiles": []
     },
     "src/app": {
       "path": "src/app",
       "purpose": "Application code",
       "fileCount": 3,
-      "lastAccessed": 1770901669946,
+      "lastAccessed": 1771387673022,
       "keyFiles": [
         "globals.css",
         "layout.tsx",
@@ -101,7 +101,7 @@
       "path": "src/components",
       "purpose": "UI components",
       "fileCount": 1,
-      "lastAccessed": 1770901669946,
+      "lastAccessed": 1771387673023,
       "keyFiles": [
         "providers.tsx"
       ]
@@ -110,7 +110,7 @@
       "path": "src/lib",
       "purpose": "Library code",
       "fileCount": 2,
-      "lastAccessed": 1770901669947,
+      "lastAccessed": 1771387673023,
       "keyFiles": [
         "toast.ts",
         "utils.ts"
@@ -120,31 +120,12 @@
       "path": "src/types",
       "purpose": "Type definitions",
       "fileCount": 1,
-      "lastAccessed": 1770901669947,
+      "lastAccessed": 1771387673023,
       "keyFiles": [
         "settings.ts"
       ]
     }
   },
-  "hotPaths": [
-    {
-      "path": "src/app/(dashboard)/rfid/tags/page.tsx",
-      "accessCount": 15,
-      "lastAccessed": 1770933241075,
-      "type": "file"
-    },
-    {
-      "path": "src/app/(dashboard)/rfid/readers/page.tsx",
-      "accessCount": 12,
-      "lastAccessed": 1770933546596,
-      "type": "file"
-    },
-    {
-      "path": "src/hooks/useNfcWebSocket.ts",
-      "accessCount": 5,
-      "lastAccessed": 1770933548179,
-      "type": "file"
-    }
-  ],
+  "hotPaths": [],
   "userDirectives": []
 }

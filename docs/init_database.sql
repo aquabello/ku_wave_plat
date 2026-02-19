@@ -324,7 +324,7 @@ create table tb_control_log
     space_device_seq    int                                  not null comment '공간장비 시퀀스',
     command_seq         int                                  not null comment '명령어 시퀀스',
     tu_seq              int                                  not null comment '실행자 시퀀스',
-    trigger_type        enum ('MANUAL', 'NFC', 'SCHEDULE') default 'MANUAL' not null comment '트리거 유형 (MANUAL=콘솔, NFC=태깅, SCHEDULE=예약)',
+    trigger_type        enum ('MANUAL', 'NFC', 'SCHEDULE', 'VOICE') default 'MANUAL' not null comment '트리거 유형 (MANUAL=콘솔, NFC=태깅, SCHEDULE=예약, VOICE=음성명령)',
     result_status       enum ('SUCCESS', 'FAIL', 'TIMEOUT') not null comment '실행 결과',
     result_message      text                                 null comment '응답 메시지 또는 에러 내용',
     executed_at         datetime     default current_timestamp() not null comment '실행 시각',
@@ -521,3 +521,209 @@ create index idx_rc_reader
 
 create index idx_rc_device
     on tb_nfc_reader_command (space_device_seq);
+
+
+-- =============================================
+-- 디스플레이 콘텐츠 승인 시스템
+-- =============================================
+
+-- tb_play_list_content 승인 컬럼 추가
+ALTER TABLE tb_play_list_content
+  ADD COLUMN requester_seq    INT NULL COMMENT '콘텐츠 등록 요청자 시퀀스',
+  ADD COLUMN approval_status  ENUM('PENDING','APPROVED','REJECTED') DEFAULT 'PENDING' COMMENT '승인 상태',
+  ADD COLUMN reviewer_seq     INT NULL COMMENT '승인/반려자 시퀀스',
+  ADD COLUMN reviewed_date    DATETIME NULL COMMENT '승인/반려 일시',
+  ADD COLUMN reject_reason    TEXT NULL COMMENT '반려 사유',
+  ADD CONSTRAINT fk_plc_requester FOREIGN KEY (requester_seq) REFERENCES tb_users(tu_seq) ON DELETE SET NULL,
+  ADD CONSTRAINT fk_plc_reviewer FOREIGN KEY (reviewer_seq) REFERENCES tb_users(tu_seq) ON DELETE SET NULL;
+
+CREATE INDEX idx_plc_approval_status ON tb_play_list_content (approval_status);
+CREATE INDEX idx_plc_reviewer ON tb_play_list_content (reviewer_seq);
+CREATE INDEX idx_plc_requester ON tb_play_list_content (requester_seq);
+
+
+-- 콘텐츠 승인 이력
+create table tb_content_approval_log
+(
+    log_seq        int auto_increment comment '로그 시퀀스' primary key,
+    plc_seq        int                                  not null comment '플레이리스트콘텐츠 시퀀스',
+    action         enum ('APPROVED','REJECTED','CANCELLED') not null comment '수행 액션',
+    actor_seq      int                                  null comment '수행자 시퀀스 (삭제 시 NULL 보존)',
+    reason         text                                 null comment '사유',
+    created_at     datetime default current_timestamp() comment '수행 일시',
+    constraint fk_cal_plc
+        foreign key (plc_seq) references tb_play_list_content (plc_seq)
+            on delete cascade,
+    constraint fk_cal_user
+        foreign key (actor_seq) references tb_users (tu_seq)
+            on delete set null
+)
+    comment '콘텐츠 승인 이력' charset = utf8mb4;
+
+create index idx_cal_plc
+    on tb_content_approval_log (plc_seq);
+
+create index idx_cal_actor
+    on tb_content_approval_log (actor_seq);
+
+create index idx_cal_created
+    on tb_content_approval_log (created_at);
+
+
+-- =============================================
+-- AI 시스템 테이블 (실시간 음성인식 + 강의요약)
+-- 작성일: 2026-02-19
+-- 관련문서: docs/ai-realtime-speech-design.md
+-- =============================================
+
+-- 음성 명령어 매핑
+create table tb_ai_voice_command
+(
+    voice_command_seq int auto_increment comment '음성명령 시퀀스' primary key,
+    space_seq         int                                  not null comment '공간 시퀀스',
+    keyword           varchar(100)                         not null comment '음성 키워드',
+    keyword_aliases   text                                 null     comment '별칭 JSON',
+    space_device_seq  int                                  not null comment '제어 대상 장비 시퀀스',
+    command_seq       int                                  not null comment '실행할 명령어 시퀀스',
+    min_confidence    float        default 0.85            not null comment '즉시실행 임계값',
+    command_priority  int          default 0               null     comment '우선순위',
+    command_isdel     char         default 'N'             not null comment '삭제 여부',
+    reg_date          datetime     default current_timestamp() not null comment '등록일시',
+    upd_date          datetime     default current_timestamp() not null on update current_timestamp() comment '수정일시',
+    constraint fk_vc_space
+        foreign key (space_seq) references tb_space (space_seq) on delete cascade,
+    constraint fk_vc_space_device
+        foreign key (space_device_seq) references tb_space_device (space_device_seq) on delete cascade,
+    constraint fk_vc_command
+        foreign key (command_seq) references tb_preset_command (command_seq) on delete cascade
+)
+    comment '음성 명령어 매핑' charset = utf8mb4;
+
+create index idx_vc_space    on tb_ai_voice_command (space_seq);
+create index idx_vc_keyword  on tb_ai_voice_command (keyword);
+create index idx_vc_device   on tb_ai_voice_command (space_device_seq);
+create index idx_vc_isdel    on tb_ai_voice_command (command_isdel);
+
+
+-- 음성인식 세션
+create table tb_ai_speech_session
+(
+    session_seq        int auto_increment comment '세션 시퀀스' primary key,
+    space_seq          int                                  not null comment '공간 시퀀스',
+    tu_seq             int                                  null     comment '강의자 시퀀스',
+    session_status     enum ('ACTIVE','PAUSED','ENDED') default 'ACTIVE' not null comment '세션 상태',
+    stt_engine         varchar(50)  default 'faster-whisper' null   comment 'STT 엔진명',
+    stt_model          varchar(50)  default 'small'          null   comment 'STT 모델명',
+    started_at         datetime     default current_timestamp() not null comment '시작 시각',
+    ended_at           datetime                             null     comment '종료 시각',
+    total_duration_sec int                                  null     comment '총 세션 시간 (초)',
+    total_segments     int          default 0               null     comment '총 인식 구간 수',
+    total_commands     int          default 0               null     comment '총 명령 실행 수',
+    recording_filename varchar(255)                         null     comment '녹음 파일명',
+    summary_seq        int                                  null     comment '연결된 강의요약 시퀀스',
+    session_isdel      char         default 'N'             not null comment '삭제 여부',
+    reg_date           datetime     default current_timestamp() not null comment '등록일시',
+    upd_date           datetime     default current_timestamp() not null on update current_timestamp() comment '수정일시',
+    constraint fk_ss_space
+        foreign key (space_seq) references tb_space (space_seq) on delete cascade,
+    constraint fk_ss_user
+        foreign key (tu_seq) references tb_users (tu_seq) on delete set null
+)
+    comment '음성인식 세션' charset = utf8mb4;
+
+create index idx_ss_space   on tb_ai_speech_session (space_seq);
+create index idx_ss_user    on tb_ai_speech_session (tu_seq);
+create index idx_ss_status  on tb_ai_speech_session (session_status);
+create index idx_ss_started on tb_ai_speech_session (started_at);
+create index idx_ss_isdel   on tb_ai_speech_session (session_isdel);
+
+
+-- 음성인식 로그
+create table tb_ai_speech_log
+(
+    speech_log_seq    int auto_increment comment '음성로그 시퀀스' primary key,
+    session_seq       int                                  not null comment '세션 시퀀스',
+    segment_text      text                                 not null comment '인식된 텍스트',
+    segment_start_sec float                                null     comment '구간 시작 (초)',
+    segment_end_sec   float                                null     comment '구간 종료 (초)',
+    confidence        float                                null     comment 'STT 신뢰도',
+    is_command        char         default 'N'             not null comment '명령어 인식 여부',
+    created_at        datetime     default current_timestamp() not null comment '생성일시',
+    constraint fk_sl_session
+        foreign key (session_seq) references tb_ai_speech_session (session_seq) on delete cascade
+)
+    comment '음성인식 로그' charset = utf8mb4;
+
+create index idx_sl_session on tb_ai_speech_log (session_seq);
+create index idx_sl_command on tb_ai_speech_log (is_command);
+create index idx_sl_created on tb_ai_speech_log (created_at);
+
+
+-- 음성 명령 실행 로그
+create table tb_ai_command_log
+(
+    command_log_seq   int auto_increment comment '명령로그 시퀀스' primary key,
+    session_seq       int                                  not null comment '세션 시퀀스',
+    voice_command_seq int                                  null     comment '매칭된 음성명령 시퀀스',
+    recognized_text   varchar(200)                         not null comment '인식된 원문',
+    matched_keyword   varchar(100)                         null     comment '매칭된 키워드',
+    match_score       float                                null     comment '매칭 점수',
+    verify_source     enum ('LOCAL_VOSK','REMOTE_WHISPER') null     comment '확정 소스',
+    execution_status  enum ('MATCHED','EXECUTED','FAILED','NO_MATCH') not null comment '실행 상태',
+    execution_result  text                                 null     comment '실행 결과 JSON',
+    created_at        datetime     default current_timestamp() not null comment '실행 시각',
+    constraint fk_cl_session
+        foreign key (session_seq) references tb_ai_speech_session (session_seq) on delete cascade,
+    constraint fk_cl_voice_command
+        foreign key (voice_command_seq) references tb_ai_voice_command (voice_command_seq) on delete set null
+)
+    comment '음성 명령 실행 로그' charset = utf8mb4;
+
+create index idx_cl_session       on tb_ai_command_log (session_seq);
+create index idx_cl_voice_command on tb_ai_command_log (voice_command_seq);
+create index idx_cl_status        on tb_ai_command_log (execution_status);
+create index idx_cl_created       on tb_ai_command_log (created_at);
+
+
+-- 강의요약 결과
+create table tb_ai_lecture_summary
+(
+    summary_seq        int auto_increment comment '시퀀스' primary key,
+    space_seq          int                                  not null comment '공간 시퀀스',
+    tu_seq             int                                  null     comment '강의자 시퀀스',
+    device_code        varchar(50)                          not null comment '미니PC 식별자',
+    job_id             varchar(36)                          not null comment 'ku_ai_worker Job UUID',
+    recording_title    varchar(200)                         null     comment '강의 제목',
+    recording_filename varchar(255)                         not null comment '원본 파일명',
+    duration_seconds   int                                  null     comment '녹음 길이 (초)',
+    recorded_at        datetime                             null     comment '녹음 시각',
+    stt_text           longtext                             null     comment 'STT 전체 텍스트',
+    stt_language       varchar(10)                          null     comment '감지 언어',
+    stt_confidence     float                                null     comment 'STT 신뢰도',
+    summary_text       longtext                             null     comment '요약 텍스트',
+    summary_keywords   text                                 null     comment '키워드 JSON',
+    process_status     enum ('UPLOADING','PROCESSING','COMPLETED','FAILED') default 'UPLOADING' not null comment '처리 상태',
+    completed_at       datetime                             null     comment '처리 완료 시각',
+    session_seq        int                                  null     comment '연결된 STT 세션 시퀀스',
+    summary_isdel      char         default 'N'             not null comment '삭제 여부',
+    reg_date           datetime     default current_timestamp() not null comment '등록일시',
+    upd_date           datetime     default current_timestamp() not null on update current_timestamp() comment '수정일시',
+    constraint uk_job_id unique (job_id),
+    constraint fk_summary_space
+        foreign key (space_seq) references tb_space (space_seq) on delete cascade,
+    constraint fk_summary_user
+        foreign key (tu_seq) references tb_users (tu_seq) on delete set null
+)
+    comment '강의요약 결과' charset = utf8mb4;
+
+create index idx_summary_space  on tb_ai_lecture_summary (space_seq);
+create index idx_summary_user   on tb_ai_lecture_summary (tu_seq);
+create index idx_summary_device on tb_ai_lecture_summary (device_code);
+create index idx_summary_status on tb_ai_lecture_summary (process_status);
+create index idx_summary_date   on tb_ai_lecture_summary (recorded_at);
+create index idx_summary_isdel  on tb_ai_lecture_summary (summary_isdel);
+
+
+-- AI시스템 > 실시간 음성인식 LNB 메뉴
+insert into tb_menu (menu_seq, menu_name, menu_code, menu_path, menu_type, parent_seq, menu_order)
+values (42, '실시간 음성인식', 'ai-speech', '/ai-system/speech', 'LNB', 4, 2);

@@ -13,14 +13,13 @@ Authorization: Bearer {{token}}
 GET {{baseUrl}}/playlists/1
 Authorization: Bearer {{token}}
 
-### 4. 플레이리스트 등록
+### 4. 플레이리스트 등록 (코드 자동생성: PL-YYYYMMDD-NNN)
 POST {{baseUrl}}/playlists
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "playlist_name": "기본 플레이리스트",
-  "playlist_code": "PLAYLIST-001",
   "playlist_type": "NORMAL",
   "playlist_priority": 5,
   "playlist_loop": "Y",
@@ -56,14 +55,13 @@ Content-Type: application/json
   ]
 }
 
-### 5. 플레이리스트 등록 (콘텐츠 없이)
+### 5. 플레이리스트 등록 (콘텐츠 없이, 코드 자동생성)
 POST {{baseUrl}}/playlists
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "playlist_name": "긴급 공지",
-  "playlist_code": "EMERGENCY-001",
   "playlist_type": "EMERGENCY",
   "playlist_priority": 99,
   "playlist_loop": "Y",
@@ -124,14 +122,13 @@ Content-Type: application/json
 DELETE {{baseUrl}}/playlists/1
 Authorization: Bearer {{token}}
 
-### 9. 플레이리스트 등록 (Phase 1-B: 멀티존 화면 레이아웃)
+### 9. 플레이리스트 등록 (멀티존 레이아웃, 코드 자동생성)
 POST {{baseUrl}}/playlists
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "playlist_name": "멀티존 플레이리스트",
-  "playlist_code": "MULTIZONE-001",
   "playlist_type": "NORMAL",
   "playlist_priority": 15,
   "playlist_loop": "Y",

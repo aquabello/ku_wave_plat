@@ -75,10 +75,10 @@ export class UpdatePlaylistDto {
   @IsEnum(['Y', 'N'])
   playlist_random?: 'Y' | 'N';
 
-  @ApiPropertyOptional({ description: '화면 분할 레이아웃', enum: ['1x1', '1x2', '1x3', '1x4', '2x2', '2x4', '1x8'] })
+  @ApiPropertyOptional({ description: '화면 분할 레이아웃', enum: ['1x1', '1x2', '1x4', '1x8'] })
   @IsOptional()
-  @IsEnum(['1x1', '1x2', '1x3', '1x4', '2x2', '2x4', '1x8'])
-  playlist_screen_layout?: '1x1' | '1x2' | '1x3' | '1x4' | '2x2' | '2x4' | '1x8';
+  @IsEnum(['1x1', '1x2', '1x4', '1x8'])
+  playlist_screen_layout?: '1x1' | '1x2' | '1x4' | '1x8';
 
   @ApiPropertyOptional({ description: '사용 상태', enum: ['ACTIVE', 'INACTIVE'] })
   @IsOptional()
