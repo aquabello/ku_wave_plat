@@ -1,0 +1,343 @@
+### ============================================================
+### NFC API 테스트
+### ============================================================
+### 통합: 태깅, 리더기 CRUD, 리더기 명령어 매핑,
+###       AID 조회, 카드 관리, 로그/통계, 시나리오
+### ============================================================
+
+@baseUrl = http://localhost:8000/api/v1
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.PASTE_YOUR_TOKEN_HERE
+@nfcApiKey = rdr_PASTE_YOUR_READER_API_KEY_HERE
+
+
+### ============================================================
+### 1. NFC 태깅 처리 (API Key 인증, JWT 불필요)
+### - POST /nfc/tag (X-NFC-Api-Key 헤더)
+### ============================================================
+
+### 1-1. 태깅 - 미등록 카드 (UNKNOWN 응답 예상)
+POST {{baseUrl}}/nfc/tag
+Content-Type: application/json
+X-NFC-Api-Key: {{nfcApiKey}}
+
+{
+  "identifier": "04A1B2C3D4E5F6",
+  "aid": "D4100000030001"
+}
+
+### 1-2. 태깅 - 등록된 카드 (ENTER/EXIT 응답 예상)
+POST {{baseUrl}}/nfc/tag
+Content-Type: application/json
+X-NFC-Api-Key: {{nfcApiKey}}
+
+{
+  "identifier": "04A1B2C3D4E5F6"
+}
+
+
+### ============================================================
+### 2. NFC 리더기 관리
+### - GET /nfc/readers — 목록 조회
+### - GET/POST /nfc/readers/:seq — 상세/등록
+### - PUT/DELETE /nfc/readers/:seq — 수정/삭제
+### - POST /nfc/readers/:seq/regenerate-key — API Key 재발급
+### ============================================================
+
+### 2-1. 리더기 목록 조회
+GET {{baseUrl}}/nfc/readers?page=1&limit=20
+Authorization: Bearer {{token}}
+
+### 2-2. 리더기 목록 - 검색
+GET {{baseUrl}}/nfc/readers?search=A동&page=1&limit=20
+Authorization: Bearer {{token}}
+
+### 2-3. 리더기 목록 - 상태 필터
+GET {{baseUrl}}/nfc/readers?status=ACTIVE&page=1&limit=20
+Authorization: Bearer {{token}}
+
+### 2-4. 리더기 상세 조회
+GET {{baseUrl}}/nfc/readers/1
+Authorization: Bearer {{token}}
+
+### 2-5. 리더기 등록
+POST {{baseUrl}}/nfc/readers
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "spaceSeq": 1,
+  "readerName": "NFC 리더기 A동 101호",
+  "readerSerial": "ACR122U-001"
+}
+
+### 2-6. 리더기 수정
+PUT {{baseUrl}}/nfc/readers/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "readerName": "NFC 리더기 A동 102호",
+  "readerStatus": "ACTIVE"
+}
+
+### 2-7. 리더기 삭제
+DELETE {{baseUrl}}/nfc/readers/1
+Authorization: Bearer {{token}}
+
+### 2-8. API Key 재발급
+POST {{baseUrl}}/nfc/readers/1/regenerate-key
+Authorization: Bearer {{token}}
+
+
+### ============================================================
+### 3. NFC 리더기 명령어 매핑
+### - GET /nfc/readers/:seq/commands — 매핑 조회
+### - PUT /nfc/readers/:seq/commands — 매핑 등록/수정/삭제
+### ============================================================
+
+### 3-1. 리더기 명령어 매핑 조회
+GET {{baseUrl}}/nfc/readers/1/commands
+Authorization: Bearer {{token}}
+
+### 3-2. 리더기 명령어 매핑 등록/수정 (개별 매핑)
+PUT {{baseUrl}}/nfc/readers/1/commands
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "mappings": [
+    {
+      "spaceDeviceSeq": 1,
+      "enterCommandSeq": 1,
+      "exitCommandSeq": 2
+    },
+    {
+      "spaceDeviceSeq": 2,
+      "enterCommandSeq": 3,
+      "exitCommandSeq": 4
+    }
+  ]
+}
+
+### 3-3. 리더기 명령어 매핑 전체 삭제
+PUT {{baseUrl}}/nfc/readers/1/commands
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "mappings": []
+}
+
+### 3-4. 리더기 명령어 자동 매핑 (모든 ACTIVE 장비에 POWER_ON/POWER_OFF 자동 설정)
+PUT {{baseUrl}}/nfc/readers/1/commands
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "mapAll": true
+}
+
+### 3-5. 리더기 명령어 부분 설정 (일부 장비만 제어)
+PUT {{baseUrl}}/nfc/readers/1/commands
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "mappings": [
+    {
+      "spaceDeviceSeq": 1,
+      "enterCommandSeq": 1,
+      "exitCommandSeq": null
+    }
+  ]
+}
+
+
+### ============================================================
+### 4. AID 통합 조회
+### - GET /nfc/aid-lookup — AID로 카드+로그 통합 조회
+### ============================================================
+
+### 4-1. AID로 카드+로그 통합 조회
+GET {{baseUrl}}/nfc/aid-lookup?aid=D4100000030001
+Authorization: Bearer {{token}}
+
+### 4-2. 카드 목록 - AID 필터
+GET {{baseUrl}}/nfc/cards?aid=D4100000030001&page=1&limit=20
+Authorization: Bearer {{token}}
+
+### 4-3. 로그 목록 - AID 필터
+GET {{baseUrl}}/nfc/logs?aid=D4100000030001&page=1&limit=20
+Authorization: Bearer {{token}}
+
+
+### ============================================================
+### 5. NFC 카드 관리
+### - GET /nfc/cards/unregistered — 미등록 태그 목록
+### - GET /nfc/cards — 카드 목록
+### - GET/POST /nfc/cards/:seq — 상세/등록
+### - PUT/DELETE /nfc/cards/:seq — 수정/삭제
+### ============================================================
+
+### 5-1. 미등록 태그 목록 조회
+GET {{baseUrl}}/nfc/cards/unregistered?page=1&limit=20
+Authorization: Bearer {{token}}
+
+### 5-2. 카드 목록 조회
+GET {{baseUrl}}/nfc/cards?page=1&limit=20
+Authorization: Bearer {{token}}
+
+### 5-3. 카드 목록 - 유형 필터
+GET {{baseUrl}}/nfc/cards?type=CARD&page=1&limit=20
+Authorization: Bearer {{token}}
+
+### 5-4. 카드 목록 - 상태 필터
+GET {{baseUrl}}/nfc/cards?status=ACTIVE&page=1&limit=20
+Authorization: Bearer {{token}}
+
+### 5-5. 카드 상세 조회
+GET {{baseUrl}}/nfc/cards/1
+Authorization: Bearer {{token}}
+
+### 5-6. 카드 등록/승인 (미등록 태그 승인 시)
+POST {{baseUrl}}/nfc/cards
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "tuSeq": 1,
+  "cardIdentifier": "04A1B2C3D4E5F6",
+  "cardAid": "D4100000030001",
+  "cardLabel": "김교수 카드",
+  "cardType": "CARD",
+  "buildingSeqs": [1, 2]
+}
+
+### 5-7. 카드 수정
+PUT {{baseUrl}}/nfc/cards/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "cardLabel": "김교수 출입카드",
+  "cardStatus": "ACTIVE"
+}
+
+### 5-8. 카드 차단
+PUT {{baseUrl}}/nfc/cards/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "cardStatus": "BLOCKED"
+}
+
+### 5-9. 카드 삭제
+DELETE {{baseUrl}}/nfc/cards/1
+Authorization: Bearer {{token}}
+
+
+### ============================================================
+### 6. 태깅 로그 & 통계
+### - GET /nfc/logs — 로그 목록
+### - GET /nfc/logs/:seq — 로그 상세
+### - GET /nfc/stats — 대시보드 통계
+### ============================================================
+
+### 6-1. 태깅 로그 목록
+GET {{baseUrl}}/nfc/logs?page=1&limit=20
+Authorization: Bearer {{token}}
+
+### 6-2. 로그 - 날짜 범위 필터
+GET {{baseUrl}}/nfc/logs?startDate=2026-02-01&endDate=2026-02-28&page=1&limit=20
+Authorization: Bearer {{token}}
+
+### 6-3. 로그 - 로그 유형 필터
+GET {{baseUrl}}/nfc/logs?logType=ENTER&page=1&limit=20
+Authorization: Bearer {{token}}
+
+### 6-4. 로그 - 제어 결과 필터
+GET {{baseUrl}}/nfc/logs?controlResult=SUCCESS&page=1&limit=20
+Authorization: Bearer {{token}}
+
+### 6-5. 태깅 로그 상세
+GET {{baseUrl}}/nfc/logs/1
+Authorization: Bearer {{token}}
+
+### 6-6. NFC 대시보드 통계
+GET {{baseUrl}}/nfc/stats
+Authorization: Bearer {{token}}
+
+
+### ============================================================
+### 7. 시나리오 테스트 (순서대로 실행)
+### - 로그인 → 리더기 등록 → 미등록 태깅 → 카드 승인 → 태깅
+### ============================================================
+
+### S1. 로그인 (토큰 발급)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "id": "admin",
+  "password": "admin1234"
+}
+
+### S2. 리더기 등록 (101호에 매핑)
+POST {{baseUrl}}/nfc/readers
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "spaceSeq": 1,
+  "readerName": "101호 입구 리더기",
+  "readerSerial": "ACR122U-TEST-001"
+}
+
+### S3. 미등록 카드 태깅 (리더기 등록 후 API Key로 태깅)
+POST {{baseUrl}}/nfc/tag
+Content-Type: application/json
+X-NFC-Api-Key: {{nfcApiKey}}
+
+{
+  "identifier": "TEST_CARD_UID_001"
+}
+
+### S4. 미등록 태그 확인
+GET {{baseUrl}}/nfc/cards/unregistered?page=1&limit=20
+Authorization: Bearer {{token}}
+
+### S5. 카드 승인 (사용자 매핑 + 건물 권한)
+POST {{baseUrl}}/nfc/cards
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "tuSeq": 1,
+  "cardIdentifier": "TEST_CARD_UID_001",
+  "cardLabel": "테스트 카드",
+  "cardType": "CARD",
+  "buildingSeqs": [1]
+}
+
+### S6. 승인된 카드로 태깅 (ENTER 예상)
+POST {{baseUrl}}/nfc/tag
+Content-Type: application/json
+X-NFC-Api-Key: {{nfcApiKey}}
+
+{
+  "identifier": "TEST_CARD_UID_001"
+}
+
+### S7. 같은 카드로 재태깅 (EXIT 예상)
+POST {{baseUrl}}/nfc/tag
+Content-Type: application/json
+X-NFC-Api-Key: {{nfcApiKey}}
+
+{
+  "identifier": "TEST_CARD_UID_001"
+}
+
+### S8. 통계 확인
+GET {{baseUrl}}/nfc/stats
+Authorization: Bearer {{token}}

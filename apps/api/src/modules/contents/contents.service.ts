@@ -123,10 +123,19 @@ export class ContentsService {
     };
   }
 
+  private generateContentCode(): string {
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+    return `CONTENT-${timestamp}-${random}`;
+  }
+
   async create(createContentDto: CreateContentDto, file?: Express.Multer.File) {
+    // 콘텐츠 코드 자동 생성 (미입력 시)
+    const contentCode = createContentDto.content_code || this.generateContentCode();
+
     // 콘텐츠 코드 중복 확인
     const existing = await this.contentRepository.findOne({
-      where: { contentCode: createContentDto.content_code },
+      where: { contentCode },
     });
 
     if (existing) {
@@ -161,7 +170,7 @@ export class ContentsService {
     // 콘텐츠 생성
     const content = this.contentRepository.create({
       contentName: createContentDto.content_name,
-      contentCode: createContentDto.content_code,
+      contentCode: contentCode,
       contentType: createContentDto.content_type,
       contentFilePath: filePath,
       contentUrl: createContentDto.content_url,

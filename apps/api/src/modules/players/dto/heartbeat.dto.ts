@@ -1,17 +1,13 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsNotEmpty, IsOptional, IsString, IsNumber, Min, Max } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsString, IsNumber, IsInt, Min, Max, IsIn } from 'class-validator';
 
 export class HeartbeatDto {
-  @ApiProperty({ description: '플레이어 시퀀스', example: 1 })
-  @IsInt()
-  @IsNotEmpty()
-  player_seq: number;
-
   @ApiPropertyOptional({ description: '플레이어 SW 버전', example: '1.0.0' })
   @IsOptional()
   @IsString()
   player_version?: string;
 
+  // 시스템 리소스
   @ApiPropertyOptional({ description: 'CPU 사용률 (%)', example: 45.5 })
   @IsOptional()
   @IsNumber()
@@ -33,16 +29,65 @@ export class HeartbeatDto {
   @Max(100)
   disk_usage?: number;
 
-  @ApiPropertyOptional({ description: '현재 재생 중인 플레이리스트', example: 1 })
-  @IsOptional()
-  @IsInt()
-  current_playlist?: number;
-
-  @ApiPropertyOptional({ description: '현재 재생 중인 콘텐츠', example: 'CONTENT-001' })
+  // 디스플레이 정보
+  @ApiPropertyOptional({ description: '화면 상태', example: 'ON', enum: ['ON', 'OFF', 'STANDBY'] })
   @IsOptional()
   @IsString()
-  current_content?: string;
+  @IsIn(['ON', 'OFF', 'STANDBY'])
+  display_status?: string;
 
+  @ApiPropertyOptional({ description: '현재 해상도', example: '1920x1080' })
+  @IsOptional()
+  @IsString()
+  resolution?: string;
+
+  @ApiPropertyOptional({ description: '화면 방향', example: 'LANDSCAPE', enum: ['LANDSCAPE', 'PORTRAIT'] })
+  @IsOptional()
+  @IsString()
+  @IsIn(['LANDSCAPE', 'PORTRAIT'])
+  orientation?: string;
+
+  @ApiPropertyOptional({ description: '볼륨 레벨 (0-100)', example: 50 })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  volume?: number;
+
+  // 네트워크 정보
+  @ApiPropertyOptional({ description: '네트워크 종류', example: 'ETHERNET', enum: ['ETHERNET', 'WIFI'] })
+  @IsOptional()
+  @IsString()
+  @IsIn(['ETHERNET', 'WIFI'])
+  network_type?: string;
+
+  @ApiPropertyOptional({ description: '네트워크 속도 (Mbps)', example: 100 })
+  @IsOptional()
+  @IsInt()
+  network_speed?: number;
+
+  // 기기 정보
+  @ApiPropertyOptional({ description: '가동 시간 (초)', example: 86400 })
+  @IsOptional()
+  @IsInt()
+  uptime?: number;
+
+  @ApiPropertyOptional({ description: '남은 저장공간 (MB)', example: 2048 })
+  @IsOptional()
+  @IsInt()
+  storage_free?: number;
+
+  @ApiPropertyOptional({ description: 'OS 버전', example: 'Windows 11 23H2' })
+  @IsOptional()
+  @IsString()
+  os_version?: string;
+
+  @ApiPropertyOptional({ description: '마지막 콘텐츠 다운로드 시각', example: '2026-02-22T10:30:00' })
+  @IsOptional()
+  @IsString()
+  last_download_at?: string;
+
+  // 에러
   @ApiPropertyOptional({ description: '에러 메시지' })
   @IsOptional()
   @IsString()

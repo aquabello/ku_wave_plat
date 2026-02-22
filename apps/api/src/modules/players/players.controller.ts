@@ -20,6 +20,8 @@ import { ListPlayersDto } from './dto/list-players.dto';
 import { RejectPlayerDto } from './dto/reject-player.dto';
 import { HeartbeatDto } from './dto/heartbeat.dto';
 import { ListHeartbeatLogsDto } from './dto/list-heartbeat-logs.dto';
+import { FileListRequestDto } from './dto/file-list-request.dto';
+import { RegisterDeviceDto } from './dto/register-device.dto';
 import { PlayerApiKeyGuard } from './guards/player-api-key.guard';
 import { Public } from '@common/decorators/public.decorator';
 
@@ -67,6 +69,15 @@ export class PlayersController {
       message: '플레이어가 등록되었습니다. 관리자 승인 대기 중입니다.',
       data: result,
     };
+  }
+
+  @Post('register')
+  @Public()
+  @ApiOperation({ summary: '기기 등록 (플레이어 자체 등록)' })
+  @ApiResponse({ status: 201, description: '등록 성공' })
+  @ApiResponse({ status: 400, description: '중복 IP 또는 유효성 검증 실패' })
+  async registerDevice(@Body() dto: RegisterDeviceDto) {
+    return this.playersService.registerDevice(dto);
   }
 
   @Put(':player_seq')
@@ -134,6 +145,17 @@ export class PlayersController {
     };
   }
 
+  @Post('file-list')
+  @Public()
+  @UseGuards(PlayerApiKeyGuard)
+  @ApiOperation({ summary: '플레이어 파일 목록 조회 (레거시 호환)' })
+  @ApiResponse({ status: 200, description: '파일 목록 조회 성공' })
+  @ApiResponse({ status: 401, description: '유효하지 않은 API Key' })
+  @ApiResponse({ status: 404, description: '플레이리스트 미할당' })
+  async getFileList(@Body() dto: FileListRequestDto, @Req() req: any) {
+    return this.playersService.getFileList(req.player, dto.watcher_ver, dto.player_ver);
+  }
+
   @Post('heartbeat')
   @Public()
   @UseGuards(PlayerApiKeyGuard)
@@ -141,8 +163,8 @@ export class PlayersController {
   @ApiOperation({ summary: 'Health Check 전송 (플레이어 → 서버)' })
   @ApiResponse({ status: 200, description: 'Heartbeat received' })
   @ApiResponse({ status: 401, description: '유효하지 않은 API Key' })
-  async heartbeat(@Body() heartbeatDto: HeartbeatDto, @Ip() ip: string) {
-    const result = await this.playersService.heartbeat(heartbeatDto, ip);
+  async heartbeat(@Body() heartbeatDto: HeartbeatDto, @Req() req: any, @Ip() ip: string) {
+    const result = await this.playersService.heartbeat(req.player, heartbeatDto, ip);
     return {
       success: true,
       message: 'Heartbeat received',

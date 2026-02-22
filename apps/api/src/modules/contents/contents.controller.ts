@@ -53,10 +53,10 @@ export class ContentsController {
   @ApiBody({
     schema: {
       type: 'object',
-      required: ['content_name', 'content_code', 'content_type'],
+      required: ['content_name', 'content_type'],
       properties: {
         content_name: { type: 'string', example: '환영 메시지' },
-        content_code: { type: 'string', example: 'CONTENT-001' },
+        content_code: { type: 'string', example: 'CONTENT-001', description: '미입력 시 자동 생성' },
         content_type: { type: 'string', enum: ['VIDEO', 'IMAGE', 'HTML', 'STREAM'] },
         file: { type: 'string', format: 'binary', description: '업로드 파일 (VIDEO/IMAGE/HTML)' },
         content_url: { type: 'string', example: 'https://stream.example.com/video.m3u8' },

@@ -171,6 +171,12 @@
       "type": "file"
     },
     {
+      "path": "src/modules/players/players.service.ts",
+      "accessCount": 4,
+      "lastAccessed": 1771737103775,
+      "type": "file"
+    },
+    {
       "path": "run-ai-ddl.ts",
       "accessCount": 3,
       "lastAccessed": 1771487437733,
@@ -181,6 +187,36 @@
       "accessCount": 2,
       "lastAccessed": 1771484375680,
       "type": "file"
+    },
+    {
+      "path": "src/modules/nfc",
+      "accessCount": 2,
+      "lastAccessed": 1771736431934,
+      "type": "directory"
+    },
+    {
+      "path": "src/modules/controller",
+      "accessCount": 2,
+      "lastAccessed": 1771736432911,
+      "type": "directory"
+    },
+    {
+      "path": "src/modules/players/dto/heartbeat.dto.ts",
+      "accessCount": 2,
+      "lastAccessed": 1771737052656,
+      "type": "file"
+    },
+    {
+      "path": "src/modules/players/entities/tb-player-heartbeat-log.entity.ts",
+      "accessCount": 2,
+      "lastAccessed": 1771737074396,
+      "type": "file"
+    },
+    {
+      "path": "src/modules/contents/contents.service.ts",
+      "accessCount": 2,
+      "lastAccessed": 1771740386182,
+      "type": "directory"
     },
     {
       "path": "src/modules/controller/control/control.controller.ts",
@@ -204,6 +240,36 @@
       "path": ".env",
       "accessCount": 1,
       "lastAccessed": 1771487159703,
+      "type": "file"
+    },
+    {
+      "path": "test/contract/nfc.contract.spec.ts",
+      "accessCount": 1,
+      "lastAccessed": 1771736481982,
+      "type": "file"
+    },
+    {
+      "path": "test/contract/controller.contract.spec.ts",
+      "accessCount": 1,
+      "lastAccessed": 1771736493512,
+      "type": "file"
+    },
+    {
+      "path": "test/http/players.http",
+      "accessCount": 1,
+      "lastAccessed": 1771737114033,
+      "type": "file"
+    },
+    {
+      "path": "src/modules/contents/entities/tb-content.entity.ts",
+      "accessCount": 1,
+      "lastAccessed": 1771740400029,
+      "type": "file"
+    },
+    {
+      "path": "src/modules/contents/contents.controller.ts",
+      "accessCount": 1,
+      "lastAccessed": 1771740522980,
       "type": "file"
     }
   ],

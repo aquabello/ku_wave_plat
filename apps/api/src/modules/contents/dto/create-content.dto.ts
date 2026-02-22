@@ -8,11 +8,11 @@ export class CreateContentDto {
   @MaxLength(100)
   content_name: string;
 
-  @ApiProperty({ description: '콘텐츠 코드', example: 'CONTENT-001', maxLength: 50 })
+  @ApiPropertyOptional({ description: '콘텐츠 코드 (미입력 시 자동 생성)', example: 'CONTENT-001', maxLength: 50 })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MaxLength(50)
-  content_code: string;
+  content_code?: string;
 
   @ApiProperty({ description: '콘텐츠 타입', enum: ['VIDEO', 'IMAGE', 'HTML', 'STREAM'] })
   @IsEnum(['VIDEO', 'IMAGE', 'HTML', 'STREAM'])

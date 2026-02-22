@@ -508,7 +508,6 @@ describe('PlayersService', () => {
 
   describe('heartbeat', () => {
     const heartbeatDto = {
-      player_seq: 1,
       player_version: '1.0.0',
       cpu_usage: 45.5,
       memory_usage: 60.2,
@@ -518,7 +517,6 @@ describe('PlayersService', () => {
     };
 
     it('should record heartbeat and update player status to ONLINE', async () => {
-      mockPlayerRepository.findOne.mockResolvedValue(mockPlayer);
       mockHeartbeatLogRepository.create.mockReturnValue({});
       mockHeartbeatLogRepository.save.mockResolvedValue({});
       mockPlayerRepository.save.mockResolvedValue({
@@ -526,8 +524,10 @@ describe('PlayersService', () => {
         playerStatus: 'ONLINE',
         lastHeartbeatAt: new Date(),
       });
+      mockPlayerRepository.findOne.mockResolvedValue(null);
+      mockPlaylistRepository.findOne.mockResolvedValue(null);
 
-      const result = await service.heartbeat(heartbeatDto, '192.168.1.100');
+      const result = await service.heartbeat(mockPlayer as TbPlayer, heartbeatDto, '192.168.1.100');
 
       expect(result.player_status).toBe('ONLINE');
       expect(result.last_heartbeat_at).toBeDefined();
@@ -542,25 +542,18 @@ describe('PlayersService', () => {
 
     it('should set status to ERROR if error_message provided', async () => {
       const errorHeartbeat = { ...heartbeatDto, error_message: 'Connection failed' };
-      mockPlayerRepository.findOne.mockResolvedValue(mockPlayer);
       mockHeartbeatLogRepository.create.mockReturnValue({});
       mockHeartbeatLogRepository.save.mockResolvedValue({});
       mockPlayerRepository.save.mockResolvedValue({
         ...mockPlayer,
         playerStatus: 'ERROR',
       });
+      mockPlayerRepository.findOne.mockResolvedValue(null);
+      mockPlaylistRepository.findOne.mockResolvedValue(null);
 
-      const result = await service.heartbeat(errorHeartbeat, '192.168.1.100');
+      const result = await service.heartbeat(mockPlayer as TbPlayer, errorHeartbeat, '192.168.1.100');
 
       expect(result.player_status).toBe('ERROR');
-    });
-
-    it('should throw NotFoundException if player not found', async () => {
-      mockPlayerRepository.findOne.mockResolvedValue(null);
-
-      await expect(service.heartbeat(heartbeatDto, '192.168.1.100')).rejects.toThrow(
-        NotFoundException,
-      );
     });
   });
 

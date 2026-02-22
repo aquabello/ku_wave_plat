@@ -9,10 +9,6 @@ import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { AuthModule } from '@modules/auth/auth.module';
 import { UsersModule } from '@modules/users/users.module';
 import { DashboardModule } from '@modules/dashboard/dashboard.module';
-import { ProductsModule } from '@modules/products/products.module';
-import { OrdersModule } from '@modules/orders/orders.module';
-import { CustomersModule } from '@modules/customers/customers.module';
-import { AnalyticsModule } from '@modules/analytics/analytics.module';
 import { SettingsModule } from '@modules/settings/settings.module';
 import { BuildingsModule } from '@modules/buildings/buildings.module';
 import { MenusModule } from '@modules/menus/menus.module';
@@ -84,10 +80,6 @@ import { AppService } from './app.service';
     AuthModule,
     UsersModule,
     DashboardModule,
-    ProductsModule,
-    OrdersModule,
-    CustomersModule,
-    AnalyticsModule,
     SettingsModule,
     BuildingsModule,
     MenusModule,

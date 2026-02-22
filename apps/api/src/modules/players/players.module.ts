@@ -7,6 +7,9 @@ import { TbPlayerHeartbeatLog } from './entities/tb-player-heartbeat-log.entity'
 import { TbBuilding } from '@modules/buildings/entities/tb-building.entity';
 import { TbSpace } from '@modules/spaces/entities/tb-space.entity';
 import { TbPlayList } from '@modules/playlists/entities/tb-play-list.entity';
+import { TbPlayListContent } from '@modules/playlists/entities/tb-play-list-content.entity';
+import { TbContent } from '@modules/contents/entities/tb-content.entity';
+import { TbSetting } from '@modules/settings/entities/tb-setting.entity';
 
 @Module({
   imports: [
@@ -16,6 +19,9 @@ import { TbPlayList } from '@modules/playlists/entities/tb-play-list.entity';
       TbBuilding,
       TbSpace,
       TbPlayList,
+      TbPlayListContent,
+      TbContent,
+      TbSetting,
     ]),
   ],
   controllers: [PlayersController],

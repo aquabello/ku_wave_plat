@@ -11,12 +11,16 @@ import { TbPlayerHeartbeatLog } from './entities/tb-player-heartbeat-log.entity'
 import { TbBuilding } from '@modules/buildings/entities/tb-building.entity';
 import { TbSpace } from '@modules/spaces/entities/tb-space.entity';
 import { TbPlayList } from '@modules/playlists/entities/tb-play-list.entity';
+import { TbPlayListContent } from '@modules/playlists/entities/tb-play-list-content.entity';
+import { TbContent } from '@modules/contents/entities/tb-content.entity';
+import { TbSetting } from '@modules/settings/entities/tb-setting.entity';
 import { CreatePlayerDto } from './dto/create-player.dto';
 import { UpdatePlayerDto } from './dto/update-player.dto';
 import { ListPlayersDto } from './dto/list-players.dto';
 import { RejectPlayerDto } from './dto/reject-player.dto';
 import { HeartbeatDto } from './dto/heartbeat.dto';
 import { ListHeartbeatLogsDto } from './dto/list-heartbeat-logs.dto';
+import { RegisterDeviceDto } from './dto/register-device.dto';
 import { randomUUID } from 'crypto';
 
 @Injectable()
@@ -32,6 +36,12 @@ export class PlayersService {
     private readonly spaceRepository: Repository<TbSpace>,
     @InjectRepository(TbPlayList)
     private readonly playlistRepository: Repository<TbPlayList>,
+    @InjectRepository(TbPlayListContent)
+    private readonly playlistContentRepository: Repository<TbPlayListContent>,
+    @InjectRepository(TbContent)
+    private readonly contentRepository: Repository<TbContent>,
+    @InjectRepository(TbSetting)
+    private readonly settingRepository: Repository<TbSetting>,
   ) {}
 
   async findAll(query: ListPlayersDto) {
@@ -580,25 +590,25 @@ export class PlayersService {
     };
   }
 
-  async heartbeat(heartbeatDto: HeartbeatDto, requestIp: string) {
-    const player = await this.playerRepository.findOne({
-      where: { playerSeq: heartbeatDto.player_seq, playerIsdel: 'N' },
-    });
-
-    if (!player) {
-      throw new NotFoundException('플레이어를 찾을 수 없습니다.');
-    }
-
+  async heartbeat(player: TbPlayer, heartbeatDto: HeartbeatDto, requestIp: string) {
     // Heartbeat 로그 저장
     const log = this.heartbeatLogRepository.create({
-      playerSeq: heartbeatDto.player_seq,
+      playerSeq: player.playerSeq,
       playerIp: requestIp,
       playerVersion: heartbeatDto.player_version,
       cpuUsage: heartbeatDto.cpu_usage,
       memoryUsage: heartbeatDto.memory_usage,
       diskUsage: heartbeatDto.disk_usage,
-      currentPlaylist: heartbeatDto.current_playlist,
-      currentContent: heartbeatDto.current_content,
+      displayStatus: heartbeatDto.display_status,
+      resolution: heartbeatDto.resolution,
+      orientation: heartbeatDto.orientation,
+      volume: heartbeatDto.volume,
+      networkType: heartbeatDto.network_type,
+      networkSpeed: heartbeatDto.network_speed,
+      uptime: heartbeatDto.uptime,
+      storageFree: heartbeatDto.storage_free,
+      osVersion: heartbeatDto.os_version,
+      lastDownloadAt: heartbeatDto.last_download_at ? new Date(heartbeatDto.last_download_at) : null,
       errorMessage: heartbeatDto.error_message,
     });
 
@@ -613,8 +623,16 @@ export class PlayersService {
       player.playerVersion = heartbeatDto.player_version;
     }
 
-    if (heartbeatDto.current_content) {
-      player.lastContentPlayed = heartbeatDto.current_content;
+    if (heartbeatDto.resolution) {
+      player.playerResolution = heartbeatDto.resolution;
+    }
+
+    if (heartbeatDto.orientation) {
+      player.playerOrientation = heartbeatDto.orientation as 'LANDSCAPE' | 'PORTRAIT';
+    }
+
+    if (heartbeatDto.volume !== undefined) {
+      player.defaultVolume = heartbeatDto.volume;
     }
 
     await this.playerRepository.save(player);
@@ -622,12 +640,20 @@ export class PlayersService {
     // 플레이리스트 변경 여부 확인
     const shouldUpdatePlaylist = previousPlaylistSeq !== player.playlistSeq;
 
+    // 파일 목록 조회 (heartbeat에 통합)
+    const fileList = await this.getFileList(
+      player,
+      heartbeatDto.player_version,
+      heartbeatDto.player_version,
+    );
+
     return {
       player_seq: player.playerSeq,
       player_status: player.playerStatus,
       last_heartbeat_at: player.lastHeartbeatAt,
       should_update_playlist: shouldUpdatePlaylist,
       new_playlist_seq: shouldUpdatePlaylist ? player.playlistSeq : undefined,
+      file_list: fileList,
     };
   }
 
@@ -672,8 +698,16 @@ export class PlayersService {
         cpu_usage: log.cpuUsage,
         memory_usage: log.memoryUsage,
         disk_usage: log.diskUsage,
-        current_playlist: log.currentPlaylist,
-        current_content: log.currentContent,
+        display_status: log.displayStatus,
+        resolution: log.resolution,
+        orientation: log.orientation,
+        volume: log.volume,
+        network_type: log.networkType,
+        network_speed: log.networkSpeed,
+        uptime: log.uptime,
+        storage_free: log.storageFree,
+        os_version: log.osVersion,
+        last_download_at: log.lastDownloadAt,
         error_message: log.errorMessage,
       })),
       pagination: {
@@ -681,6 +715,240 @@ export class PlayersService {
         page,
         limit,
         totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * 기기 등록 (레거시 호환 - player_post)
+   * 플레이어 기기가 직접 호출하는 Public API
+   */
+  async registerDevice(dto: RegisterDeviceDto) {
+    // 1. 활성 플레이어 IP 중복 체크
+    const activePlayer = await this.playerRepository.findOne({
+      where: { playerIp: dto.player_ip, playerIsdel: 'N' },
+    });
+
+    if (activePlayer) {
+      return {
+        status: 'FAIL',
+        message: '중복된 IP가 존재합니다.',
+      };
+    }
+
+    // 2. 건물 확인 (선택적)
+    if (dto.building_seq) {
+      const building = await this.buildingRepository.findOne({
+        where: { buildingSeq: dto.building_seq, buildingIsdel: 'N' },
+      });
+      if (!building) {
+        return {
+          status: 'FAIL',
+          message: '존재하지 않는 건물입니다.',
+        };
+      }
+    }
+
+    // 3. 삭제된 플레이어 검색 (같은 IP로 재등록)
+    const deletedPlayer = await this.playerRepository.findOne({
+      where: { playerIp: dto.player_ip, playerIsdel: 'Y' },
+    });
+
+    // 4. API Key 생성
+    const apiKey = `player_${randomUUID().replace(/-/g, '')}`;
+
+    // 5. 플레이어 코드 자동생성
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const playerCode = `PLAYER-${timestamp}-${random}`;
+
+    // 6. 수동 등록 여부 확인
+    const isManual = dto.player_ver === 'MANUAL_REGISTER';
+
+    if (deletedPlayer) {
+      // 재활성화
+      Object.assign(deletedPlayer, {
+        playerName: dto.player_nick_name || deletedPlayer.playerName || playerCode,
+        playerCode: playerCode,
+        playerIp: dto.player_ip,
+        playerVersion: isManual ? null : dto.player_ver,
+        buildingSeq: dto.building_seq || null,
+        playerApiKey: apiKey,
+        playerApproval: 'PENDING',
+        playerStatus: 'OFFLINE',
+        playerIsdel: 'N',
+        approvedBy: null,
+        approvedAt: null,
+        rejectReason: null,
+      });
+
+      const saved = await this.playerRepository.save(deletedPlayer);
+      return {
+        status: 'SUCCESS',
+        message: '플레이어 등록처리 하였습니다',
+        data: {
+          player_seq: saved.playerSeq,
+          player_code: saved.playerCode,
+          player_api_key: saved.playerApiKey,
+          player_approval: saved.playerApproval,
+        },
+      };
+    }
+
+    // 7. 신규 등록
+    const player = this.playerRepository.create({
+      playerName: dto.player_nick_name || playerCode,
+      playerCode: playerCode,
+      playerIp: dto.player_ip,
+      playerVersion: isManual ? undefined : dto.player_ver,
+      buildingSeq: dto.building_seq ?? undefined,
+      playerPort: 9090,
+      playerApiKey: apiKey,
+      playerApproval: 'PENDING',
+      playerStatus: 'OFFLINE',
+      defaultVolume: 50,
+      playerOrientation: 'LANDSCAPE',
+    });
+
+    const saved = await this.playerRepository.save(player) as TbPlayer;
+    return {
+      status: 'SUCCESS',
+      message: '플레이어 등록처리 하였습니다',
+      data: {
+        player_seq: saved.playerSeq,
+        player_code: saved.playerCode,
+        player_api_key: saved.playerApiKey,
+        player_approval: saved.playerApproval,
+      },
+    };
+  }
+
+  /**
+   * 플레이어 파일 목록 조회 (레거시 호환 응답)
+   * PHP reqWatcherFileList와 동일한 응답 포맷
+   */
+  async getFileList(player: TbPlayer, watcherVer?: string, playerVer?: string) {
+    // 1. 버전 정보 업데이트
+    if (watcherVer || playerVer) {
+      const updateData: Partial<TbPlayer> = {};
+      if (watcherVer) updateData.playerVersion = watcherVer;
+      if (playerVer) updateData.playerVersion = playerVer;
+      updateData.lastHeartbeatAt = new Date();
+      await this.playerRepository.update(player.playerSeq, updateData);
+    }
+
+    // 2. 플레이리스트 확인
+    if (!player.playlistSeq) {
+      return {
+        result: 'FAIL',
+        msg: '플레이리스트가 할당되지 않았습니다.',
+      };
+    }
+
+    const playlist = await this.playlistRepository.findOne({
+      where: { playlistSeq: player.playlistSeq, playlistIsdel: 'N' },
+    });
+
+    if (!playlist) {
+      return {
+        result: 'FAIL',
+        msg: '플레이리스트 정보가 존재하지 않습니다.',
+      };
+    }
+
+    // 3. 플레이리스트 콘텐츠 조회 (승인된 것만)
+    const playlistContents = await this.playlistContentRepository
+      .createQueryBuilder('plc')
+      .leftJoinAndSelect('plc.content', 'content')
+      .where('plc.playlist_seq = :playlistSeq', { playlistSeq: player.playlistSeq })
+      .andWhere('plc.plc_isdel = :isdel', { isdel: 'N' })
+      .andWhere('plc.approval_status = :approved', { approved: 'APPROVED' })
+      .andWhere('content.content_isdel = :contentIsdel', { contentIsdel: 'N' })
+      .andWhere('content.content_status = :contentStatus', { contentStatus: 'ACTIVE' })
+      .orderBy('plc.play_order', 'ASC')
+      .getMany();
+
+    // 4. 도메인 URL 구성
+    const domain = process.env.API_DOMAIN || `http://localhost:${process.env.PORT || 8000}`;
+
+    // 5. 콘텐츠 배열 구성 (레거시 포맷)
+    const contents = playlistContents.map((plc) => {
+      const content = plc.content;
+      const durationSec = plc.playDuration || content.contentDuration || 0;
+      const playMin = String(Math.floor(durationSec / 60));
+      const playSec = String(durationSec % 60);
+
+      // 콘텐츠 타입 매핑 (NestJS -> 레거시)
+      const typeMap: Record<string, string> = {
+        VIDEO: 'MOV',
+        IMAGE: 'IMG',
+        HTML: 'HTML',
+        STREAM: 'MOV',
+      };
+
+      // 파일 리스트 구성
+      const fileList: Array<{ file_path: string; file_name: string; file_size: string }> = [];
+      if (content.contentFilePath) {
+        const fileName = content.contentFilePath.split('/').pop() || '';
+        fileList.push({
+          file_path: `${domain}/${content.contentFilePath}`,
+          file_name: fileName,
+          file_size: String(content.contentSize || 0),
+        });
+      } else if (content.contentUrl) {
+        fileList.push({
+          file_path: content.contentUrl,
+          file_name: content.contentName,
+          file_size: '0',
+        });
+      }
+
+      return {
+        content: content.contentName,
+        start_date: content.validFrom
+          ? content.validFrom.toISOString().replace('T', ' ').substring(0, 19)
+          : '',
+        end_date: content.validTo
+          ? content.validTo.toISOString().replace('T', ' ').substring(0, 19)
+          : '',
+        type: typeMap[content.contentType] || content.contentType,
+        play_min: playMin,
+        play_sec: playSec,
+        screen_type: 'FULL',
+        fileList,
+      };
+    });
+
+    // 6. 환경설정 조회
+    const setting = await this.settingRepository.findOne({
+      where: {},
+      order: { seq: 'ASC' },
+    });
+
+    // 7. 레거시 포맷 응답 구성
+    return {
+      result: 'SUCCESS',
+      msg: '정상처리 되었습니다.',
+      channel: {
+        name: playlist.playlistName,
+        screen_type: playlist.playlistScreenLayout || '1x1',
+        screen_size: player.playerResolution || '1920x1080',
+        play_type: playlist.playlistRandom || 'N',
+        notice: setting?.noticeLink ? `${domain}/${setting.noticeLink}` : '',
+        intro: setting?.introLink ? `${domain}/${setting.introLink}` : '',
+      },
+      contents,
+      setting: {
+        screen_start: setting?.screenStart || '',
+        screen_end: setting?.screenEnd || '',
+        api_time: setting?.apiTime || '',
+        player_time: setting?.playerTime || '1',
+        player_ver: setting?.playerVer || '1.0.0',
+        player_link: setting?.playerLink ? `${domain}/${setting.playerLink}` : '',
+        watcher_ver: setting?.watcherVer || '1.0.0',
+        watcher_link: setting?.watcherLink ? `${domain}/${setting.watcherLink}` : '',
+        default_image: setting?.defaultImage ? `${domain}/${setting.defaultImage}` : '',
+        watcher_name: player.playerName,
       },
     };
   }

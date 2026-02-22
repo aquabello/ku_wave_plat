@@ -36,6 +36,8 @@ export interface PlayerListItem {
     space_seq: number;
     space_name: string;
   } | null;
+  player_orientation: PlayerOrientation;
+  player_description: string | null;
   playlist: {
     playlist_seq: number;
     playlist_name: string;

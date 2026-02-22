@@ -41,6 +41,7 @@ export class TbPlayerHeartbeatLog {
   })
   playerVersion: string | null;
 
+  // 시스템 리소스
   @Column({
     name: 'cpu_usage',
     type: 'decimal',
@@ -71,11 +72,100 @@ export class TbPlayerHeartbeatLog {
   })
   diskUsage: number | null;
 
+  // 디스플레이 정보
+  @Column({
+    name: 'display_status',
+    type: 'varchar',
+    length: 10,
+    nullable: true,
+    comment: '화면 상태 (ON/OFF/STANDBY)',
+  })
+  displayStatus: string | null;
+
+  @Column({
+    name: 'resolution',
+    type: 'varchar',
+    length: 20,
+    nullable: true,
+    comment: '현재 해상도',
+  })
+  resolution: string | null;
+
+  @Column({
+    name: 'orientation',
+    type: 'varchar',
+    length: 10,
+    nullable: true,
+    comment: '화면 방향',
+  })
+  orientation: string | null;
+
+  @Column({
+    name: 'volume',
+    type: 'tinyint',
+    nullable: true,
+    comment: '볼륨 레벨 (0-100)',
+  })
+  volume: number | null;
+
+  // 네트워크 정보
+  @Column({
+    name: 'network_type',
+    type: 'varchar',
+    length: 10,
+    nullable: true,
+    comment: '네트워크 종류 (ETHERNET/WIFI)',
+  })
+  networkType: string | null;
+
+  @Column({
+    name: 'network_speed',
+    type: 'int',
+    nullable: true,
+    comment: '네트워크 속도 (Mbps)',
+  })
+  networkSpeed: number | null;
+
+  // 기기 정보
+  @Column({
+    name: 'uptime',
+    type: 'bigint',
+    nullable: true,
+    comment: '가동 시간 (초)',
+  })
+  uptime: number | null;
+
+  @Column({
+    name: 'storage_free',
+    type: 'bigint',
+    nullable: true,
+    comment: '남은 저장공간 (MB)',
+  })
+  storageFree: number | null;
+
+  @Column({
+    name: 'os_version',
+    type: 'varchar',
+    length: 50,
+    nullable: true,
+    comment: 'OS 버전',
+  })
+  osVersion: string | null;
+
+  @Column({
+    name: 'last_download_at',
+    type: 'datetime',
+    nullable: true,
+    comment: '마지막 콘텐츠 다운로드 시각',
+  })
+  lastDownloadAt: Date | null;
+
+  // 레거시 (기존 데이터 보존용)
   @Column({
     name: 'current_playlist',
     type: 'int',
     nullable: true,
-    comment: '현재 재생 중인 플레이리스트',
+    comment: '[레거시] 현재 재생 중인 플레이리스트',
   })
   currentPlaylist: number | null;
 
@@ -84,7 +174,7 @@ export class TbPlayerHeartbeatLog {
     type: 'varchar',
     length: 255,
     nullable: true,
-    comment: '현재 재생 중인 콘텐츠',
+    comment: '[레거시] 현재 재생 중인 콘텐츠',
   })
   currentContent: string | null;
 

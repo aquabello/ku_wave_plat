@@ -54,7 +54,7 @@ export interface Content {
  */
 export interface CreateContentDto {
   content_name: string;
-  content_code: string;
+  content_code?: string; // 선택값 - 미입력 시 자동 생성
   content_type: ContentType;
   content_url?: string;
   content_duration?: number;

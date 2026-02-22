@@ -7,7 +7,6 @@ import * as z from 'zod';
 import { Loader2 } from 'lucide-react';
 import type { PlayerListItem, UpdatePlayerDto } from '@ku/types';
 import { useUpdatePlayerMutation } from '@/hooks/use-players';
-import { useBuildingsQuery } from '@/hooks/use-buildings';
 import { usePlaylistsQuery } from '@/hooks/use-playlists';
 import {
   Sheet,
@@ -27,7 +26,6 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -185,6 +183,28 @@ function PlayerEditForm({
               </FormItem>
             )}
           />
+          <FormField
+            control={form.control}
+            name="player_orientation"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>화면 방향</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent position="popper" sideOffset={4}>
+                    <SelectItem value="LANDSCAPE">가로 (Landscape)</SelectItem>
+                    <SelectItem value="PORTRAIT">세로 (Portrait)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormDescription>디스플레이의 설치 방향을 선택하세요</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
         {/* 고급 옵션 */}
@@ -223,28 +243,6 @@ function PlayerEditForm({
                     <FormControl>
                       <Input placeholder="AA:BB:CC:DD:EE:FF" {...field} />
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="player_orientation"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>화면 방향</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent position="popper" sideOffset={4}>
-                        <SelectItem value="LANDSCAPE">가로 (Landscape)</SelectItem>
-                        <SelectItem value="PORTRAIT">세로 (Portrait)</SelectItem>
-                      </SelectContent>
-                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

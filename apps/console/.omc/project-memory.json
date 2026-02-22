@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1771387673061,
+  "lastScanned": 1771737141839,
   "projectRoot": "/Users/aquabello/Documents/10-Dev/ku_wave_plat/apps/console",
   "techStack": {
     "languages": [
@@ -76,21 +76,21 @@
       "path": "public",
       "purpose": "Public files",
       "fileCount": 0,
-      "lastAccessed": 1771387673013,
+      "lastAccessed": 1771737141799,
       "keyFiles": []
     },
     "src": {
       "path": "src",
       "purpose": "Source code",
       "fileCount": 0,
-      "lastAccessed": 1771387673015,
+      "lastAccessed": 1771737141800,
       "keyFiles": []
     },
     "src/app": {
       "path": "src/app",
       "purpose": "Application code",
       "fileCount": 3,
-      "lastAccessed": 1771387673022,
+      "lastAccessed": 1771737141809,
       "keyFiles": [
         "globals.css",
         "layout.tsx",
@@ -101,7 +101,7 @@
       "path": "src/components",
       "purpose": "UI components",
       "fileCount": 1,
-      "lastAccessed": 1771387673023,
+      "lastAccessed": 1771737141810,
       "keyFiles": [
         "providers.tsx"
       ]
@@ -110,7 +110,7 @@
       "path": "src/lib",
       "purpose": "Library code",
       "fileCount": 2,
-      "lastAccessed": 1771387673023,
+      "lastAccessed": 1771737141810,
       "keyFiles": [
         "toast.ts",
         "utils.ts"
@@ -120,12 +120,37 @@
       "path": "src/types",
       "purpose": "Type definitions",
       "fileCount": 1,
-      "lastAccessed": 1771387673023,
+      "lastAccessed": 1771737141810,
       "keyFiles": [
         "settings.ts"
       ]
     }
   },
-  "hotPaths": [],
+  "hotPaths": [
+    {
+      "path": "src/app/(dashboard)/display/content/page.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1771737181588,
+      "type": "file"
+    },
+    {
+      "path": "src/app/(dashboard)/display/list/page.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1771737190992,
+      "type": "file"
+    },
+    {
+      "path": "src/lib/api/playlists.ts",
+      "accessCount": 1,
+      "lastAccessed": 1771737198499,
+      "type": "file"
+    },
+    {
+      "path": "src/hooks/use-playlists.ts",
+      "accessCount": 1,
+      "lastAccessed": 1771737200298,
+      "type": "file"
+    }
+  ],
   "userDirectives": []
 }

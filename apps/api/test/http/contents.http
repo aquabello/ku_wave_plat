@@ -1,0 +1,169 @@
+### ============================================================
+### Contents API 테스트
+### ============================================================
+### 통합: 콘텐츠 CRUD (파일업로드 포함) + 콘텐츠 승인 관리
+### ============================================================
+
+@token = PASTE_YOUR_ACCESS_TOKEN_HERE
+@baseUrl = http://localhost:8000/api/v1
+
+
+### ============================================================
+### 1. 콘텐츠 CRUD
+### - GET /contents — 목록 조회
+### - GET /contents/:seq — 상세 조회
+### - POST /contents — 등록 (multipart/form-data)
+### - PUT /contents/:seq — 수정
+### - DELETE /contents/:seq — 삭제
+### ============================================================
+
+### 1-1. 콘텐츠 목록 조회
+GET {{baseUrl}}/contents?page=1&limit=10
+Authorization: Bearer {{token}}
+
+### 1-2. 콘텐츠 목록 조회 (필터링)
+GET {{baseUrl}}/contents?type=IMAGE&search=환영
+Authorization: Bearer {{token}}
+
+### 1-3. 콘텐츠 상세 조회
+GET {{baseUrl}}/contents/1
+Authorization: Bearer {{token}}
+
+### 1-4. 콘텐츠 등록 (IMAGE 파일 업로드)
+POST {{baseUrl}}/contents
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="content_name"
+
+환영 메시지
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="content_code"
+
+CONTENT-001
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="content_type"
+
+IMAGE
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="content_duration"
+
+10
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="content_description"
+
+본관 입구 환영 메시지 이미지
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="welcome.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/welcome.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 1-5. 콘텐츠 등록 (STREAM URL)
+POST {{baseUrl}}/contents
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="content_name"
+
+라이브 스트림
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="content_code"
+
+STREAM-001
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="content_type"
+
+STREAM
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="content_url"
+
+https://stream.example.com/live/channel1.m3u8
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 1-6. 콘텐츠 수정 (메타데이터만)
+PUT {{baseUrl}}/contents/1
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="content_name"
+
+환영 메시지 (수정)
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="content_duration"
+
+15
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 1-7. 콘텐츠 수정 (파일 교체)
+PUT {{baseUrl}}/contents/1
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="welcome-new.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/welcome-new.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 1-8. 콘텐츠 삭제
+DELETE {{baseUrl}}/contents/1
+Authorization: Bearer {{token}}
+
+
+### ============================================================
+### 2. 콘텐츠 승인 관리
+### - GET /content-approvals — 승인 목록 + 통계
+### - PATCH /content-approvals/:seq/approve — 승인
+### - PATCH /content-approvals/:seq/reject — 반려
+### - PATCH /content-approvals/:seq/cancel — 취소
+### - GET /content-approvals/:seq/history — 이력
+### ============================================================
+
+### 2-1. 콘텐츠 승인 목록 + 통계 조회 (전체)
+GET {{baseUrl}}/content-approvals
+Authorization: Bearer {{token}}
+
+### 2-2. 콘텐츠 승인 목록 (PENDING 필터)
+GET {{baseUrl}}/content-approvals?status=PENDING
+Authorization: Bearer {{token}}
+
+### 2-3. 콘텐츠 승인 목록 (건물 필터)
+GET {{baseUrl}}/content-approvals?building_seq=1
+Authorization: Bearer {{token}}
+
+### 2-4. 콘텐츠 승인 목록 (검색어 + 날짜 필터)
+GET {{baseUrl}}/content-approvals?search=환영&start_date=2026-02-01&end_date=2026-02-28
+Authorization: Bearer {{token}}
+
+### 2-5. 콘텐츠 승인 (PENDING → APPROVED)
+PATCH {{baseUrl}}/content-approvals/1/approve
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{}
+
+### 2-6. 콘텐츠 반려 (PENDING → REJECTED, reason 필수)
+PATCH {{baseUrl}}/content-approvals/1/reject
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "reason": "콘텐츠 해상도가 규격에 맞지 않습니다."
+}
+
+### 2-7. 콘텐츠 승인/반려 취소 (→ PENDING)
+PATCH {{baseUrl}}/content-approvals/1/cancel
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{}
+
+### 2-8. 콘텐츠 승인 이력 조회
+GET {{baseUrl}}/content-approvals/1/history
+Authorization: Bearer {{token}}

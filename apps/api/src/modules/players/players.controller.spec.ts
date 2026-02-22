@@ -182,12 +182,13 @@ describe('PlayersController', () => {
   describe('heartbeat', () => {
     it('should process heartbeat from player', async () => {
       const heartbeatDto = {
-        player_seq: 1,
         player_version: '1.0.0',
         cpu_usage: 45.5,
         memory_usage: 60.2,
         disk_usage: 30.1,
       };
+      const mockPlayerEntity = { playerSeq: 1 };
+      const mockReq = { player: mockPlayerEntity };
       const mockResult = {
         player_seq: 1,
         player_status: 'ONLINE',
@@ -196,12 +197,12 @@ describe('PlayersController', () => {
       };
       mockPlayersService.heartbeat.mockResolvedValue(mockResult);
 
-      const result = await controller.heartbeat(heartbeatDto as any, '192.168.1.100');
+      const result = await controller.heartbeat(heartbeatDto as any, mockReq, '192.168.1.100');
 
       expect(result.success).toBe(true);
       expect(result.message).toBe('Heartbeat received');
       expect(result.data.player_status).toBe('ONLINE');
-      expect(mockPlayersService.heartbeat).toHaveBeenCalledWith(heartbeatDto, '192.168.1.100');
+      expect(mockPlayersService.heartbeat).toHaveBeenCalledWith(mockPlayerEntity, heartbeatDto, '192.168.1.100');
     });
   });
 

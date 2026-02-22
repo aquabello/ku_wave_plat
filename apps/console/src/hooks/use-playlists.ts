@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getPlaylists,
+  getPlaylist,
   createPlaylist,
   updatePlaylist,
   deletePlaylist,
@@ -17,6 +18,8 @@ export const playlistKeys = {
   lists: () => [...playlistKeys.all, 'list'] as const,
   list: (params?: GetPlaylistsParams) =>
     [...playlistKeys.lists(), params] as const,
+  detail: (playlistSeq: number) =>
+    [...playlistKeys.all, 'detail', playlistSeq] as const,
 };
 
 /**
@@ -36,6 +39,20 @@ export function usePlaylistsListQuery(params?: GetPlaylistsParams) {
   return useQuery({
     queryKey: playlistKeys.list(params),
     queryFn: () => getPlaylists(params),
+  });
+}
+
+/**
+ * 플레이리스트 상세 조회
+ */
+export function usePlaylistDetailQuery(playlistSeq: number | null) {
+  return useQuery({
+    queryKey:
+      playlistSeq !== null
+        ? playlistKeys.detail(playlistSeq)
+        : ['playlists', 'detail', null],
+    queryFn: () => getPlaylist(playlistSeq!),
+    enabled: playlistSeq !== null,
   });
 }
 

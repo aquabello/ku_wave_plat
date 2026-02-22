@@ -80,7 +80,9 @@ export async function createContent(data: CreateContentDto, file?: File): Promis
   const formData = new FormData();
 
   formData.append('content_name', data.content_name);
-  formData.append('content_code', data.content_code);
+  if (data.content_code) {
+    formData.append('content_code', data.content_code);
+  }
   formData.append('content_type', data.content_type);
 
   if (file) {
