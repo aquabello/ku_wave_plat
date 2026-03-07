@@ -16,6 +16,7 @@ import { useNavigationStore } from '@/stores/navigation';
 export default function LoginPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [openEcampus, setOpenEcampus] = useState(false);
 
   // 세션 만료/변경으로 인한 강제 로그아웃 시 안내 메시지 표시
   useEffect(() => {
@@ -67,6 +68,9 @@ export default function LoginPage() {
       localStorage.setItem('refresh_token', response.refreshToken);
       localStorage.setItem('user', JSON.stringify(response.user));
       useNavigationStore.getState().setMenus(response.menus ?? []);
+      if (openEcampus) {
+        window.open('https://ecampus.konkuk.ac.kr/', '_blank', 'noopener,noreferrer');
+      }
       router.push('/dashboard');
     } catch (error) {
       showToast.apiError(error, '로그인 중 오류가 발생했습니다');
@@ -118,6 +122,15 @@ export default function LoginPage() {
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? '로그인 중...' : '로그인'}
           </Button>
+          <label className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={openEcampus}
+              onChange={(e) => setOpenEcampus(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300"
+            />
+            e러닝 시스템(eCampus) 연동
+          </label>
         </form>
       </CardContent>
     </Card>

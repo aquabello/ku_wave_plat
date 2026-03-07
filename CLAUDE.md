@@ -8,6 +8,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Enterprise-grade admin system for Konkuk University Wave Platform built with NestJS backend and Next.js frontend in a monorepo architecture.
 
+## Skills
+
+React/Next.js 컴포넌트 작성, 리뷰, 리팩토링 시 아래 skill을 자동으로 참고한다:
+
+- vercel-composition-patterns — React 합성 패턴 (compound components, render props 등)
+- vercel-react-best-practices — React/Next.js 성능 최적화 패턴
+- web-design-guidelines - UI/UX에 대한 반드시 가이드 적용
+- react-native-skills - navive 사용시
+
 ## Technology Stack
 
 ### Monorepo Management

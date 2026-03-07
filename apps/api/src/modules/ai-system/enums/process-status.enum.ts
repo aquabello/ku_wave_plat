@@ -1,0 +1,6 @@
+export enum ProcessStatus {
+  UPLOADING = 'UPLOADING',
+  PROCESSING = 'PROCESSING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+}

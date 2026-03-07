@@ -57,3 +57,9 @@ export * from './content.types';
 
 // Content Approval Types
 export * from './content-approval.types';
+
+// Recorder Types
+export * from './recorder.types';
+
+// AI System Types
+export * from './ai.types';

@@ -1,0 +1,282 @@
+### AI System API 테스트
+### 사전 준비: /auth/login으로 토큰 발급 후 @token에 붙여넣기
+
+@baseUrl = http://localhost:8000/api/v1
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.PASTE_YOUR_TOKEN_HERE
+
+###############################################
+# 1. 강의요약 (Lecture Summary)
+###############################################
+
+### 1-1. 강의요약 목록 조회
+GET {{baseUrl}}/ai-system/lecture-summaries?page=1&limit=10
+Authorization: Bearer {{token}}
+
+### 1-2. 강의요약 목록 조회 (필터)
+GET {{baseUrl}}/ai-system/lecture-summaries?page=1&limit=10&processStatus=COMPLETED&search=데이터
+Authorization: Bearer {{token}}
+
+### 1-3. 강의요약 상세 조회
+GET {{baseUrl}}/ai-system/lecture-summaries/1
+Authorization: Bearer {{token}}
+
+### 1-4. 강의요약 레코드 생성 (MiniPC)
+POST {{baseUrl}}/ai-system/lecture-summaries
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "spaceSeq": 1,
+  "tuSeq": 1,
+  "deviceCode": "PC-101",
+  "jobId": "550e8400-e29b-41d4-a716-446655440000",
+  "recordingTitle": "데이터구조 3주차",
+  "recordingFilename": "20260223001.wav",
+  "durationSeconds": 5400,
+  "recordedAt": "2026-02-23T09:00:00"
+}
+
+### 1-5. 강의요약 상태 변경 (MiniPC) - UPLOADING → PROCESSING
+PUT {{baseUrl}}/ai-system/lecture-summaries/1/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "processStatus": "PROCESSING"
+}
+
+### 1-6. 강의요약 결과 저장 (MiniPC)
+PUT {{baseUrl}}/ai-system/lecture-summaries/1/result
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "sttText": "오늘 강의에서는 데이터구조의 기본 개념을 다루겠습니다. 먼저 연결리스트부터...",
+  "sttLanguage": "ko",
+  "sttConfidence": 0.92,
+  "summaryText": "본 강의는 데이터구조의 기본 개념을 다루며, 연결리스트와 트리 구조의 특성을 설명합니다.",
+  "summaryKeywords": ["데이터구조", "연결리스트", "트리"],
+  "completedAt": "2026-02-23T11:30:00",
+  "sessionSeq": 1
+}
+
+### 1-7. 강의요약 삭제
+DELETE {{baseUrl}}/ai-system/lecture-summaries/1
+Authorization: Bearer {{token}}
+
+###############################################
+# 2. 음성인식 세션 (Speech Session)
+###############################################
+
+### 2-1. 음성인식 세션 목록 조회
+GET {{baseUrl}}/ai-system/speech-sessions?page=1&limit=10
+Authorization: Bearer {{token}}
+
+### 2-2. 음성인식 세션 목록 조회 (필터)
+GET {{baseUrl}}/ai-system/speech-sessions?page=1&limit=10&sessionStatus=ENDED
+Authorization: Bearer {{token}}
+
+### 2-3. 음성인식 세션 상세 조회
+GET {{baseUrl}}/ai-system/speech-sessions/1
+Authorization: Bearer {{token}}
+
+### 2-4. 음성인식 세션 생성 (MiniPC)
+POST {{baseUrl}}/ai-system/speech-sessions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "spaceSeq": 1,
+  "tuSeq": 1,
+  "sttEngine": "faster-whisper",
+  "sttModel": "small",
+  "recordingFilename": "20260223001.wav"
+}
+
+### 2-5. 음성인식 세션 종료 (MiniPC)
+PUT {{baseUrl}}/ai-system/speech-sessions/1/end
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "totalDurationSec": 5400,
+  "totalSegments": 320,
+  "totalCommands": 5,
+  "summarySeq": 1
+}
+
+###############################################
+# 3. STT 로그 (Speech Log)
+###############################################
+
+### 3-1. STT 로그 저장 (MiniPC)
+POST {{baseUrl}}/ai-system/speech-logs
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "sessionSeq": 1,
+  "segmentText": "데이터구조의 기본 개념을 살펴보겠습니다",
+  "segmentStartSec": 120.5,
+  "segmentEndSec": 125.3,
+  "confidence": 0.93,
+  "isCommand": "N"
+}
+
+###############################################
+# 4. Voice Detect 장비 제어
+###############################################
+
+### 4-1. Voice Detect 장비 제어 실행 (MiniPC)
+POST {{baseUrl}}/ai-system/commands/execute
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "sessionSeq": 1,
+  "voiceCommandSeq": 1,
+  "recognizedText": "스크린 올려",
+  "matchedKeyword": "스크린 올려",
+  "matchScore": 0.97,
+  "verifySource": "LOCAL_VOSK"
+}
+
+### 4-2. 명령 로그 수동 저장 (MiniPC)
+POST {{baseUrl}}/ai-system/command-logs
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "sessionSeq": 1,
+  "recognizedText": "스크린 올려",
+  "matchedKeyword": "스크린 올려",
+  "matchScore": 0.97,
+  "voiceCommandSeq": 1,
+  "verifySource": "LOCAL_VOSK",
+  "executionStatus": "EXECUTED",
+  "executionResult": "{\"deviceName\":\"스크린\",\"action\":\"UP\"}"
+}
+
+###############################################
+# 5. 음성 명령어 (Voice Command)
+###############################################
+
+### 5-1. 음성 명령어 목록 조회
+GET {{baseUrl}}/ai-system/voice-commands
+Authorization: Bearer {{token}}
+
+### 5-2. 음성 명령어 목록 조회 (공간 필터)
+GET {{baseUrl}}/ai-system/voice-commands?spaceSeq=1
+Authorization: Bearer {{token}}
+
+### 5-3. 음성 명령어 추가
+POST {{baseUrl}}/ai-system/voice-commands
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "spaceSeq": 1,
+  "keyword": "스크린 올려",
+  "keywordAliases": ["화면 올려", "스크린 업"],
+  "spaceDeviceSeq": 1,
+  "commandSeq": 1,
+  "minConfidence": 0.85
+}
+
+### 5-4. 음성 명령어 수정
+PUT {{baseUrl}}/ai-system/voice-commands/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "keyword": "스크린 올려줘",
+  "keywordAliases": ["화면 올려", "스크린 업", "스크린 올려"],
+  "minConfidence": 0.80
+}
+
+### 5-5. 음성 명령어 삭제
+DELETE {{baseUrl}}/ai-system/voice-commands/1
+Authorization: Bearer {{token}}
+
+###############################################
+# 6. AI Worker 서버 관리
+###############################################
+
+### 6-1. Worker 서버 목록 조회
+GET {{baseUrl}}/ai-system/worker-servers
+Authorization: Bearer {{token}}
+
+### 6-2. Worker 서버 등록
+POST {{baseUrl}}/ai-system/worker-servers
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "serverName": "GPU서버-1호",
+  "serverUrl": "http://10.0.1.50:8080",
+  "apiKey": "wk-xxxxxxxxxxxxxxxxxxxxxxxx",
+  "callbackSecret": "cs-xxxxxxxx",
+  "gpuInfo": "RTX 4070 12GB",
+  "maxConcurrentJobs": 1,
+  "defaultSttModel": "large-v3",
+  "defaultLlmModel": "llama3"
+}
+
+### 6-3. Worker 서버 수정
+PUT {{baseUrl}}/ai-system/worker-servers/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "serverName": "GPU서버-1호 (업데이트)",
+  "maxConcurrentJobs": 2
+}
+
+### 6-4. Worker 서버 삭제
+DELETE {{baseUrl}}/ai-system/worker-servers/1
+Authorization: Bearer {{token}}
+
+### 6-5. Worker 서버 헬스체크 (Proxy)
+GET {{baseUrl}}/ai-system/worker-servers/1/health
+Authorization: Bearer {{token}}
+
+###############################################
+# 7. AI Callback (HMAC 인증 - JWT 불필요)
+###############################################
+
+### 7-1. AI Callback - 성공 결과
+POST {{baseUrl}}/ai-system/ai/callback
+Content-Type: application/json
+X-Callback-Signature: sha256=HMAC_SIGNATURE_HERE
+
+{
+  "jobId": "550e8400-e29b-41d4-a716-446655440000",
+  "uploadId": "upload-uuid-here",
+  "status": "COMPLETED",
+  "result": {
+    "sttText": "오늘 강의에서는 데이터구조의 기본 개념을 다루겠습니다.",
+    "sttLanguage": "ko",
+    "sttConfidence": 0.95,
+    "sttSegments": [
+      { "start": 0.0, "end": 5.2, "text": "오늘 강의에서는" },
+      { "start": 5.2, "end": 10.1, "text": "데이터구조의 기본 개념을 다루겠습니다" }
+    ],
+    "sttProcessingTimeMs": 180000,
+    "summaryText": "본 강의는 데이터구조의 기본 개념을 다루며, 연결리스트와 트리 구조의 특성을 설명합니다.",
+    "summaryKeywords": ["데이터구조", "연결리스트", "트리"],
+    "summaryProcessingTimeMs": 30000
+  }
+}
+
+### 7-2. AI Callback - 실패 결과
+POST {{baseUrl}}/ai-system/ai/callback
+Content-Type: application/json
+X-Callback-Signature: sha256=HMAC_SIGNATURE_HERE
+
+{
+  "jobId": "550e8400-e29b-41d4-a716-446655440000",
+  "uploadId": "upload-uuid-here",
+  "status": "FAILED",
+  "errorCode": "STT_TIMEOUT",
+  "errorMessage": "Whisper 처리 시간 초과 (30분 타임아웃)"
+}

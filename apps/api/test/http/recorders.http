@@ -1,0 +1,239 @@
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsInVzZXJJZCI6ImFkbWluIiwidG9rZW5WZXIiOjQsImlhdCI6MTc3MjYyNjQyNSwiZXhwIjoxNzczMjMxMjI1fQ.BIn4y1t97fSb1S938HhmFGj4sZEC48eel_BtAsrV_p0
+@recorderSeq = 1
+@recPresetSeq = 1
+
+### ──────────────────────────────────────
+### 1. 녹화기 CRUD
+### ──────────────────────────────────────
+
+### 1-1. 녹화기 목록 조회 (기본) → 200
+GET http://localhost:8000/api/v1/recorders
+Authorization: Bearer {{token}}
+
+### 1-2. 녹화기 목록 조회 (페이징) → 200
+GET http://localhost:8000/api/v1/recorders?page=1&limit=5
+Authorization: Bearer {{token}}
+
+### 1-3. 녹화기 목록 조회 (건물 필터) → 200
+GET http://localhost:8000/api/v1/recorders?buildingSeq=1
+Authorization: Bearer {{token}}
+
+### 1-4. 녹화기 목록 조회 (상태 필터) → 200
+GET http://localhost:8000/api/v1/recorders?status=ONLINE
+Authorization: Bearer {{token}}
+
+### 1-5. 녹화기 목록 조회 (통합검색) → 200
+GET http://localhost:8000/api/v1/recorders?search=101
+Authorization: Bearer {{token}}
+
+### 1-6. 녹화기 목록 조회 (복합 필터) → 200
+GET http://localhost:8000/api/v1/recorders?buildingSeq=1&status=ONLINE&search=녹화기&page=1&limit=5
+Authorization: Bearer {{token}}
+
+### 1-7. 녹화기 상세 조회 → 200
+GET http://localhost:8000/api/v1/recorders/{{recorderSeq}}
+Authorization: Bearer {{token}}
+
+### 1-8. 녹화기 상세 조회 (존재하지 않는 ID) → 404
+GET http://localhost:8000/api/v1/recorders/1
+Authorization: Bearer {{token}}
+
+### 1-9. 토큰 없이 조회 → 401
+GET http://localhost:8000/api/v1/recorders
+
+### 1-10. 녹화기 등록 → 201
+POST http://localhost:8000/api/v1/recorders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "spaceSeq": 1,
+  "recorderName": "101호 녹화기",
+  "recorderIp": "192.168.1.101",
+  "recorderPort": 80,
+  "recorderProtocol": "HTTP",
+  "recorderUsername": "admin",
+  "recorderPassword": "password123",
+  "recorderModel": "SONY SRG-X120",
+  "recorderOrder": 1,
+  "assignedUsers": [
+    { "tuSeq": 5, "isDefault": "Y" },
+    { "tuSeq": 8, "isDefault": "N" }
+  ]
+}
+
+### 1-11. 녹화기 등록 (이미 녹화기 있는 공간) → 409
+POST http://localhost:8000/api/v1/recorders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "spaceSeq": 1,
+  "recorderName": "중복 녹화기",
+  "recorderIp": "192.168.1.200"
+}
+
+### 1-12. 녹화기 수정 → 200
+PUT http://localhost:8000/api/v1/recorders/{{recorderSeq}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "recorderName": "101호 녹화기 (교체)",
+  "recorderIp": "192.168.1.201",
+  "recorderModel": "SONY SRG-X400",
+  "assignedUsers": [
+    { "tuSeq": 5, "isDefault": "Y" },
+    { "tuSeq": 12, "isDefault": "N" }
+  ]
+}
+
+### 1-13. 녹화기 삭제 (소프트 삭제) → 200
+DELETE http://localhost:8000/api/v1/recorders/{{recorderSeq}}
+Authorization: Bearer {{token}}
+
+### ──────────────────────────────────────
+### 2. 녹화기 제어
+### ──────────────────────────────────────
+
+### 2-1. PTZ 명령 전송 (move) → 200
+POST http://localhost:8000/api/v1/recorders/{{recorderSeq}}/control/ptz
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "action": "move",
+  "pan": 10.0,
+  "tilt": -5.0,
+  "zoom": 0
+}
+
+### 2-2. PTZ 명령 전송 (stop) → 200
+POST http://localhost:8000/api/v1/recorders/{{recorderSeq}}/control/ptz
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "action": "stop"
+}
+
+### 2-3. PTZ 명령 전송 (home) → 200
+POST http://localhost:8000/api/v1/recorders/{{recorderSeq}}/control/ptz
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "action": "home"
+}
+
+### 2-4. 녹화 시작 → 200
+POST http://localhost:8000/api/v1/recorders/{{recorderSeq}}/control/record/start
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "sessionTitle": "데이터구조론 3주차",
+  "recPresetSeq": 1
+}
+
+### 2-5. 녹화 시작 (프리셋 없이) → 200
+POST http://localhost:8000/api/v1/recorders/{{recorderSeq}}/control/record/start
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "sessionTitle": "알고리즘 5주차"
+}
+
+### 2-6. 녹화 종료 → 200
+POST http://localhost:8000/api/v1/recorders/{{recorderSeq}}/control/record/stop
+Authorization: Bearer {{token}}
+
+### 2-7. 프리셋 적용 → 200
+POST http://localhost:8000/api/v1/recorders/{{recorderSeq}}/control/preset/{{recPresetSeq}}
+Authorization: Bearer {{token}}
+
+### 2-8. 녹화기 실시간 상태 조회 → 200
+GET http://localhost:8000/api/v1/recorders/{{recorderSeq}}/control/status
+Authorization: Bearer {{token}}
+
+### ──────────────────────────────────────
+### 3. 프리셋 관리
+### ──────────────────────────────────────
+
+### 3-1. 프리셋 목록 조회 → 200
+GET http://localhost:8000/api/v1/recorders/{{recorderSeq}}/presets
+Authorization: Bearer {{token}}
+
+### 3-2. 프리셋 등록 → 201
+POST http://localhost:8000/api/v1/recorders/{{recorderSeq}}/presets
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "presetName": "칠판 중심",
+  "presetNumber": 1,
+  "panValue": 0.0,
+  "tiltValue": -15.0,
+  "zoomValue": 2.0,
+  "presetDescription": "칠판을 중심으로 촬영",
+  "presetOrder": 1
+}
+
+### 3-3. 프리셋 등록 (두 번째) → 201
+POST http://localhost:8000/api/v1/recorders/{{recorderSeq}}/presets
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "presetName": "강단 전체",
+  "presetNumber": 2,
+  "panValue": 0.0,
+  "tiltValue": 0.0,
+  "zoomValue": 1.0,
+  "presetDescription": "강단 전체 와이드 뷰",
+  "presetOrder": 2
+}
+
+### 3-4. 프리셋 수정 → 200
+PUT http://localhost:8000/api/v1/recorders/{{recorderSeq}}/presets/{{recPresetSeq}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "presetName": "칠판 클로즈업",
+  "zoomValue": 3.5,
+  "presetDescription": "칠판 클로즈업 뷰로 변경"
+}
+
+### 3-5. 프리셋 삭제 → 200
+DELETE http://localhost:8000/api/v1/recorders/{{recorderSeq}}/presets/{{recPresetSeq}}
+Authorization: Bearer {{token}}
+
+### ──────────────────────────────────────
+### 4. 녹화기 로그
+### ──────────────────────────────────────
+
+### 4-1. 로그 조회 (기본) → 200
+GET http://localhost:8000/api/v1/recorders/{{recorderSeq}}/logs
+Authorization: Bearer {{token}}
+
+### 4-2. 로그 조회 (페이징) → 200
+GET http://localhost:8000/api/v1/recorders/{{recorderSeq}}/logs?page=1&limit=10
+Authorization: Bearer {{token}}
+
+### 4-3. 로그 조회 (유형 필터) → 200
+GET http://localhost:8000/api/v1/recorders/{{recorderSeq}}/logs?logType=PTZ
+Authorization: Bearer {{token}}
+
+### 4-4. 로그 조회 (결과 필터) → 200
+GET http://localhost:8000/api/v1/recorders/{{recorderSeq}}/logs?resultStatus=FAIL
+Authorization: Bearer {{token}}
+
+### 4-5. 로그 조회 (날짜 범위) → 200
+GET http://localhost:8000/api/v1/recorders/{{recorderSeq}}/logs?startDate=2026-02-01&endDate=2026-02-28
+Authorization: Bearer {{token}}
+
+### 4-6. 로그 조회 (복합 필터) → 200
+GET http://localhost:8000/api/v1/recorders/{{recorderSeq}}/logs?logType=REC_START&resultStatus=SUCCESS&page=1&limit=5
+Authorization: Bearer {{token}}

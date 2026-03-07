@@ -5,7 +5,7 @@ import { Bell } from 'lucide-react';
 import {
   Cpu,
   Radio,
-  Monitor,
+  Video,
   Zap,
   TvMinimalPlay,
   Users,
@@ -22,7 +22,7 @@ import { useNavigationStore } from '@/stores/navigation';
 const GNB_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   controller: Zap,
   rfid: Radio,
-  'screen-share': Monitor,
+  recorder: Video,
   'ai-system': Cpu,
   display: TvMinimalPlay,
   member: Users,

@@ -9,7 +9,7 @@ import { TbBuilding } from '@modules/buildings/entities/tb-building.entity';
 import { TbUser } from '@modules/users/entities/tb-user.entity';
 import { NfcLogQueryDto } from '../dto';
 
-interface NfcControlDetailItem {
+export interface NfcControlDetailItem {
   spaceDeviceSeq: number;
   deviceName: string;
   commandType: string;
@@ -17,7 +17,7 @@ interface NfcControlDetailItem {
   resultMessage: string;
 }
 
-interface NfcControlSummary {
+export interface NfcControlSummary {
   totalDevices: number;
   successCount: number;
   failCount: number;

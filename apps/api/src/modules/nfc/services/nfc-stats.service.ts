@@ -5,7 +5,7 @@ import { TbNfcReader } from '../entities/tb-nfc-reader.entity';
 import { TbNfcCard } from '../entities/tb-nfc-card.entity';
 import { TbNfcLog } from '../entities/tb-nfc-log.entity';
 
-interface ActiveSpace {
+export interface ActiveSpace {
   spaceSeq: number;
   spaceName: string;
   currentUser: string;

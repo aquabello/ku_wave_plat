@@ -3,6 +3,7 @@ import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 
 // Modules
@@ -25,6 +26,10 @@ import { PlayerGroupsModule } from '@modules/player-groups/player-groups.module'
 import { PlayerPlaylistsModule } from '@modules/player-playlists/player-playlists.module';
 import { PlayLogsModule } from '@modules/play-logs/play-logs.module';
 import { ContentApprovalsModule } from '@modules/content-approvals/content-approvals.module';
+import { RecordersModule } from '@modules/recorders/recorders.module';
+import { FtpModule } from '@modules/ftp/ftp.module';
+import { RecordingsModule } from '@modules/recordings/recordings.module';
+import { AiSystemModule } from '@modules/ai-system/ai-system.module';
 import { ActivityLogInterceptor } from '@modules/activity-logs/interceptors/activity-log.interceptor';
 
 // Common modules
@@ -73,6 +78,9 @@ import { AppService } from './app.service';
       inject: [ConfigService],
     }),
 
+    // Scheduling
+    ScheduleModule.forRoot(),
+
     // Common modules
     HttpClientModule,
 
@@ -96,6 +104,10 @@ import { AppService } from './app.service';
     PlayerPlaylistsModule,
     PlayLogsModule,
     ContentApprovalsModule,
+    RecordersModule,
+    FtpModule,
+    RecordingsModule,
+    AiSystemModule,
   ],
   controllers: [AppController],
   providers: [

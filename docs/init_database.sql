@@ -727,3 +727,259 @@ create index idx_summary_isdel  on tb_ai_lecture_summary (summary_isdel);
 -- AI시스템 > 실시간 음성인식 LNB 메뉴
 insert into tb_menu (menu_seq, menu_name, menu_code, menu_path, menu_type, parent_seq, menu_order)
 values (42, '실시간 음성인식', 'ai-speech', '/ai-system/speech', 'LNB', 4, 2);
+
+
+-- AI Worker 서버 등록/관리
+-- ku_ai_worker(중앙 GPU 서버) 연동용
+-- 통신방식: API Proxy + Callback (미니PC 고정IP)
+create table tb_ai_worker_server
+(
+    worker_server_seq   int auto_increment comment 'Worker 서버 시퀀스' primary key,
+    server_name         varchar(100)                            not null comment '서버명 (예: GPU서버-1호)',
+    server_url          varchar(255)                            not null comment '서버 URL (http://10.0.1.50:8080)',
+    api_key             varchar(255)                            not null comment 'API 인증키 (Worker 발급)',
+    callback_secret     varchar(255)                            null     comment 'Webhook 검증용 Secret',
+    server_status       enum ('ONLINE','OFFLINE','ERROR','MAINTENANCE')
+                                         default 'OFFLINE'     not null comment '서버 상태',
+    last_health_check   datetime                                null     comment '마지막 헬스체크 시각',
+    gpu_info            varchar(200)                            null     comment 'GPU 정보 (RTX 4070 12GB)',
+    max_concurrent_jobs int              default 1              not null comment '동시 처리 가능 Job 수',
+    default_stt_model   varchar(50)      default 'large-v3'     null     comment '기본 STT 모델',
+    default_llm_model   varchar(50)      default 'llama3'       null     comment '기본 요약 LLM 모델',
+    server_isdel        char             default 'N'            not null comment '삭제 여부',
+    reg_date            datetime         default current_timestamp() not null comment '등록일시',
+    upd_date            datetime         default current_timestamp() not null
+                                         on update current_timestamp() comment '수정일시',
+    constraint uk_server_url unique (server_url)
+)
+    comment 'AI Worker 서버' charset = utf8mb4;
+
+create index idx_ws_status on tb_ai_worker_server (server_status);
+create index idx_ws_isdel  on tb_ai_worker_server (server_isdel);
+
+
+-- =============================================
+-- 녹화기 관리 시스템
+-- 작성일: 2026-02-22
+-- 관련문서: docs/recorder-system-design.md
+-- =============================================
+
+-- 1. 녹화기 마스터 (공간당 1대)
+CREATE TABLE tb_recorder
+(
+    recorder_seq        INT AUTO_INCREMENT COMMENT '녹화기 시퀀스' PRIMARY KEY,
+    space_seq           INT                                     NOT NULL COMMENT '공간 시퀀스',
+    recorder_name       VARCHAR(100)                            NOT NULL COMMENT '녹화기명 (예: 101호 녹화기)',
+    recorder_ip         VARCHAR(45)                             NOT NULL COMMENT '고정 IP',
+    recorder_port       INT             DEFAULT 80              NULL     COMMENT '통신 포트',
+    recorder_protocol   ENUM('HTTP','ONVIF','RTSP')  DEFAULT 'HTTP' NOT NULL COMMENT '통신 프로토콜',
+    recorder_username   VARCHAR(100)                            NULL     COMMENT '녹화기 로그인 ID',
+    recorder_password   VARCHAR(255)                            NULL     COMMENT '녹화기 로그인 PW (AES 암호화)',
+    recorder_model      VARCHAR(100)                            NULL     COMMENT '녹화기 모델명/제조사',
+    recorder_status     ENUM('ONLINE','OFFLINE','ERROR') DEFAULT 'OFFLINE' NOT NULL COMMENT '녹화기 상태',
+    current_user_seq    INT                                     NULL     COMMENT '현재 사용 중인 사용자',
+    last_health_check   DATETIME                                NULL     COMMENT '마지막 상태 확인 시각',
+    recorder_order      INT             DEFAULT 0               NULL     COMMENT '정렬 순서',
+    recorder_isdel      CHAR            DEFAULT 'N'             NOT NULL COMMENT '삭제 여부',
+    reg_date            DATETIME        DEFAULT CURRENT_TIMESTAMP() NOT NULL COMMENT '등록일시',
+    upd_date            DATETIME        DEFAULT CURRENT_TIMESTAMP() NOT NULL ON UPDATE CURRENT_TIMESTAMP() COMMENT '수정일시',
+    CONSTRAINT uk_recorder_space UNIQUE (space_seq),
+    CONSTRAINT fk_recorder_space
+        FOREIGN KEY (space_seq) REFERENCES tb_space (space_seq) ON DELETE CASCADE,
+    CONSTRAINT fk_recorder_current_user
+        FOREIGN KEY (current_user_seq) REFERENCES tb_users (tu_seq) ON DELETE SET NULL
+)
+    COMMENT '녹화기 마스터' CHARSET = utf8mb4;
+
+CREATE INDEX idx_recorder_ip     ON tb_recorder (recorder_ip);
+CREATE INDEX idx_recorder_status ON tb_recorder (recorder_status);
+CREATE INDEX idx_recorder_isdel  ON tb_recorder (recorder_isdel);
+CREATE INDEX idx_recorder_order  ON tb_recorder (recorder_order);
+
+
+-- 2. 녹화기-사용자 매핑 (교수 배정)
+CREATE TABLE tb_recorder_user
+(
+    recorder_user_seq   INT AUTO_INCREMENT COMMENT '시퀀스' PRIMARY KEY,
+    recorder_seq        INT                                     NOT NULL COMMENT '녹화기 시퀀스',
+    tu_seq              INT                                     NOT NULL COMMENT '사용자(교수) 시퀀스',
+    is_default          CHAR            DEFAULT 'N'             NOT NULL COMMENT '기본 사용자 여부',
+    recorder_user_isdel CHAR            DEFAULT 'N'             NOT NULL COMMENT '삭제 여부',
+    reg_date            DATETIME        DEFAULT CURRENT_TIMESTAMP() NOT NULL COMMENT '등록일시',
+    upd_date            DATETIME        DEFAULT CURRENT_TIMESTAMP() NOT NULL ON UPDATE CURRENT_TIMESTAMP() COMMENT '수정일시',
+    CONSTRAINT uk_recorder_user UNIQUE (recorder_seq, tu_seq),
+    CONSTRAINT fk_ru_recorder
+        FOREIGN KEY (recorder_seq) REFERENCES tb_recorder (recorder_seq) ON DELETE CASCADE,
+    CONSTRAINT fk_ru_user
+        FOREIGN KEY (tu_seq) REFERENCES tb_users (tu_seq) ON DELETE CASCADE
+)
+    COMMENT '녹화기-사용자 매핑' CHARSET = utf8mb4;
+
+CREATE INDEX idx_ru_recorder ON tb_recorder_user (recorder_seq);
+CREATE INDEX idx_ru_user     ON tb_recorder_user (tu_seq);
+CREATE INDEX idx_ru_isdel    ON tb_recorder_user (recorder_user_isdel);
+
+
+-- 3. 녹화기 PTZ 프리셋
+CREATE TABLE tb_recorder_preset
+(
+    rec_preset_seq      INT AUTO_INCREMENT COMMENT '프리셋 시퀀스' PRIMARY KEY,
+    recorder_seq        INT                                     NOT NULL COMMENT '녹화기 시퀀스',
+    preset_name         VARCHAR(100)                            NOT NULL COMMENT '프리셋명 (예: 칠판 중심, 강단 전체)',
+    preset_number       INT                                     NOT NULL COMMENT '녹화기 내부 프리셋 번호',
+    pan_value           FLOAT                                   NULL     COMMENT 'Pan 값',
+    tilt_value          FLOAT                                   NULL     COMMENT 'Tilt 값',
+    zoom_value          FLOAT                                   NULL     COMMENT 'Zoom 값',
+    preset_description  TEXT                                    NULL     COMMENT '프리셋 설명',
+    preset_order        INT             DEFAULT 0               NULL     COMMENT '정렬 순서',
+    preset_isdel        CHAR            DEFAULT 'N'             NOT NULL COMMENT '삭제 여부',
+    reg_date            DATETIME        DEFAULT CURRENT_TIMESTAMP() NOT NULL COMMENT '등록일시',
+    upd_date            DATETIME        DEFAULT CURRENT_TIMESTAMP() NOT NULL ON UPDATE CURRENT_TIMESTAMP() COMMENT '수정일시',
+    CONSTRAINT uk_recorder_preset_number UNIQUE (recorder_seq, preset_number),
+    CONSTRAINT fk_rp_recorder
+        FOREIGN KEY (recorder_seq) REFERENCES tb_recorder (recorder_seq) ON DELETE CASCADE
+)
+    COMMENT '녹화기 PTZ 프리셋' CHARSET = utf8mb4;
+
+CREATE INDEX idx_rp_recorder ON tb_recorder_preset (recorder_seq);
+CREATE INDEX idx_rp_isdel    ON tb_recorder_preset (preset_isdel);
+CREATE INDEX idx_rp_order    ON tb_recorder_preset (preset_order);
+
+
+-- 4. FTP 설정
+CREATE TABLE tb_ftp_config
+(
+    ftp_config_seq      INT AUTO_INCREMENT COMMENT 'FTP 설정 시퀀스' PRIMARY KEY,
+    recorder_seq        INT                                     NULL     COMMENT '녹화기 시퀀스 (NULL=글로벌 기본)',
+    ftp_name            VARCHAR(100)                            NOT NULL COMMENT '설정명',
+    ftp_host            VARCHAR(255)                            NOT NULL COMMENT 'FTP 호스트',
+    ftp_port            INT             DEFAULT 21              NOT NULL COMMENT 'FTP 포트',
+    ftp_username        VARCHAR(100)                            NOT NULL COMMENT 'FTP 계정',
+    ftp_password        VARCHAR(255)                            NOT NULL COMMENT 'FTP 비밀번호 (AES 암호화)',
+    ftp_path            VARCHAR(500)    DEFAULT '/'             NULL     COMMENT '업로드 기본 경로',
+    ftp_protocol        ENUM('FTP','SFTP','FTPS') DEFAULT 'FTP' NOT NULL COMMENT '프로토콜',
+    ftp_passive_mode    CHAR            DEFAULT 'Y'             NOT NULL COMMENT '패시브 모드 여부',
+    is_default          CHAR            DEFAULT 'N'             NOT NULL COMMENT '기본 설정 여부',
+    ftp_isdel           CHAR            DEFAULT 'N'             NOT NULL COMMENT '삭제 여부',
+    reg_date            DATETIME        DEFAULT CURRENT_TIMESTAMP() NOT NULL COMMENT '등록일시',
+    upd_date            DATETIME        DEFAULT CURRENT_TIMESTAMP() NOT NULL ON UPDATE CURRENT_TIMESTAMP() COMMENT '수정일시',
+    CONSTRAINT fk_ftp_recorder
+        FOREIGN KEY (recorder_seq) REFERENCES tb_recorder (recorder_seq) ON DELETE CASCADE
+)
+    COMMENT 'FTP 설정' CHARSET = utf8mb4;
+
+CREATE INDEX idx_ftp_recorder ON tb_ftp_config (recorder_seq);
+CREATE INDEX idx_ftp_default  ON tb_ftp_config (is_default);
+CREATE INDEX idx_ftp_isdel    ON tb_ftp_config (ftp_isdel);
+
+
+-- 5. 녹화 세션
+CREATE TABLE tb_recording_session
+(
+    rec_session_seq     INT AUTO_INCREMENT COMMENT '세션 시퀀스' PRIMARY KEY,
+    recorder_seq        INT                                     NOT NULL COMMENT '녹화기 시퀀스',
+    tu_seq              INT                                     NULL     COMMENT '녹화 시작 사용자',
+    session_status      ENUM('RECORDING','COMPLETED','FAILED','CANCELLED') NOT NULL COMMENT '세션 상태',
+    rec_preset_seq      INT                                     NULL     COMMENT '사용된 프리셋',
+    session_title       VARCHAR(200)                            NULL     COMMENT '강의명 / 메모',
+    started_at          DATETIME                                NOT NULL COMMENT '녹화 시작 시각',
+    ended_at            DATETIME                                NULL     COMMENT '녹화 종료 시각',
+    duration_sec        INT                                     NULL     COMMENT '녹화 시간 (초)',
+    reg_date            DATETIME        DEFAULT CURRENT_TIMESTAMP() NOT NULL COMMENT '등록일시',
+    upd_date            DATETIME        DEFAULT CURRENT_TIMESTAMP() NOT NULL ON UPDATE CURRENT_TIMESTAMP() COMMENT '수정일시',
+    CONSTRAINT fk_rs_recorder
+        FOREIGN KEY (recorder_seq) REFERENCES tb_recorder (recorder_seq) ON DELETE CASCADE,
+    CONSTRAINT fk_rs_user
+        FOREIGN KEY (tu_seq) REFERENCES tb_users (tu_seq) ON DELETE SET NULL,
+    CONSTRAINT fk_rs_preset
+        FOREIGN KEY (rec_preset_seq) REFERENCES tb_recorder_preset (rec_preset_seq) ON DELETE SET NULL
+)
+    COMMENT '녹화 세션' CHARSET = utf8mb4;
+
+CREATE INDEX idx_rs_recorder  ON tb_recording_session (recorder_seq);
+CREATE INDEX idx_rs_user      ON tb_recording_session (tu_seq);
+CREATE INDEX idx_rs_status    ON tb_recording_session (session_status);
+CREATE INDEX idx_rs_started   ON tb_recording_session (started_at);
+
+
+-- 6. 녹화 파일
+CREATE TABLE tb_recording_file
+(
+    rec_file_seq        INT AUTO_INCREMENT COMMENT '파일 시퀀스' PRIMARY KEY,
+    rec_session_seq     INT                                     NOT NULL COMMENT '세션 시퀀스',
+    file_name           VARCHAR(255)                            NOT NULL COMMENT '원본 파일명',
+    file_path           VARCHAR(500)                            NULL     COMMENT '녹화기 내 파일 경로',
+    file_size           BIGINT                                  NULL     COMMENT '파일 크기 (bytes)',
+    file_format         VARCHAR(20)                             NULL     COMMENT '파일 포맷 (mp4, avi)',
+    file_duration_sec   INT                                     NULL     COMMENT '영상 길이 (초)',
+    ftp_status          ENUM('PENDING','UPLOADING','COMPLETED','FAILED','RETRY') DEFAULT 'PENDING' NOT NULL COMMENT 'FTP 업로드 상태',
+    ftp_config_seq      INT                                     NULL     COMMENT 'FTP 설정 시퀀스',
+    ftp_uploaded_path   VARCHAR(500)                            NULL     COMMENT 'FTP 업로드 경로',
+    ftp_uploaded_at     DATETIME                                NULL     COMMENT '업로드 완료 시각',
+    ftp_retry_count     INT             DEFAULT 0               NOT NULL COMMENT '재시도 횟수',
+    ftp_error_message   TEXT                                    NULL     COMMENT '업로드 실패 에러',
+    file_isdel          CHAR            DEFAULT 'N'             NOT NULL COMMENT '삭제 여부',
+    reg_date            DATETIME        DEFAULT CURRENT_TIMESTAMP() NOT NULL COMMENT '등록일시',
+    upd_date            DATETIME        DEFAULT CURRENT_TIMESTAMP() NOT NULL ON UPDATE CURRENT_TIMESTAMP() COMMENT '수정일시',
+    CONSTRAINT fk_rf_session
+        FOREIGN KEY (rec_session_seq) REFERENCES tb_recording_session (rec_session_seq) ON DELETE CASCADE,
+    CONSTRAINT fk_rf_ftp
+        FOREIGN KEY (ftp_config_seq) REFERENCES tb_ftp_config (ftp_config_seq) ON DELETE SET NULL
+)
+    COMMENT '녹화 파일' CHARSET = utf8mb4;
+
+CREATE INDEX idx_rf_session    ON tb_recording_file (rec_session_seq);
+CREATE INDEX idx_rf_ftp_status ON tb_recording_file (ftp_status);
+CREATE INDEX idx_rf_ftp_config ON tb_recording_file (ftp_config_seq);
+CREATE INDEX idx_rf_isdel      ON tb_recording_file (file_isdel);
+
+
+-- 7. 녹화기 명령 로그
+CREATE TABLE tb_recorder_log
+(
+    rec_log_seq         INT AUTO_INCREMENT COMMENT '로그 시퀀스' PRIMARY KEY,
+    recorder_seq        INT                                     NOT NULL COMMENT '녹화기 시퀀스',
+    tu_seq              INT                                     NULL     COMMENT '실행자 시퀀스',
+    log_type            ENUM('PTZ','REC_START','REC_STOP','PRESET_APPLY','STATUS_CHECK','POWER') NOT NULL COMMENT '명령 유형',
+    command_detail      TEXT                                    NULL     COMMENT '전송 명령 상세 (JSON)',
+    result_status       ENUM('SUCCESS','FAIL','TIMEOUT')        NOT NULL COMMENT '실행 결과',
+    result_message      TEXT                                    NULL     COMMENT '응답 메시지',
+    executed_at         DATETIME        DEFAULT CURRENT_TIMESTAMP() NOT NULL COMMENT '실행 시각',
+    CONSTRAINT fk_rl_recorder
+        FOREIGN KEY (recorder_seq) REFERENCES tb_recorder (recorder_seq) ON DELETE CASCADE,
+    CONSTRAINT fk_rl_user
+        FOREIGN KEY (tu_seq) REFERENCES tb_users (tu_seq) ON DELETE SET NULL
+)
+    COMMENT '녹화기 명령 로그' CHARSET = utf8mb4;
+
+CREATE INDEX idx_rl_recorder  ON tb_recorder_log (recorder_seq);
+CREATE INDEX idx_rl_user      ON tb_recorder_log (tu_seq);
+CREATE INDEX idx_rl_type      ON tb_recorder_log (log_type);
+CREATE INDEX idx_rl_status    ON tb_recorder_log (result_status);
+CREATE INDEX idx_rl_executed  ON tb_recorder_log (executed_at);
+
+
+-- =============================================
+-- 메뉴 변경 (화면공유 → 녹화기관리)
+-- =============================================
+
+-- GNB 변경
+UPDATE tb_menu SET menu_name = '녹화기관리', menu_code = 'recorder'
+WHERE menu_seq = 3;
+
+-- 기존 LNB soft delete (화면공유 하위)
+UPDATE tb_menu SET menu_isdel = 'Y' WHERE parent_seq = 3 AND menu_seq IN (31, 32);
+
+-- 신규 LNB 삽입 (ON DUPLICATE KEY로 안전 처리)
+INSERT INTO tb_menu (menu_seq, menu_name, menu_code, menu_path, menu_type, parent_seq, menu_order) VALUES
+(31, '녹화기 등록',   'recorder-list',    '/recorder/list',    'LNB', 3, 1),
+(32, '녹화기 제어',   'recorder-control', '/recorder/control', 'LNB', 3, 2),
+(33, '녹화 이력',     'recorder-history', '/recorder/history', 'LNB', 3, 3),
+(34, '녹화파일 관리', 'recorder-files',   '/recorder/files',   'LNB', 3, 4),
+(35, 'FTP 설정',      'recorder-ftp',     '/recorder/ftp',     'LNB', 3, 5)
+ON DUPLICATE KEY UPDATE
+    menu_name = VALUES(menu_name),
+    menu_code = VALUES(menu_code),
+    menu_path = VALUES(menu_path),
+    menu_order = VALUES(menu_order),
+    menu_isdel = 'N';

@@ -165,7 +165,7 @@ export class ExampleService {
    */
   async uploadFile(file: Buffer, filename: string): Promise<{ url: string }> {
     const formData = new FormData();
-    formData.append('file', new Blob([file]), filename);
+    formData.append('file', new Blob([file as unknown as BlobPart]), filename);
 
     return this.httpClient.post<{ url: string }>('/upload', formData, {
       headers: {

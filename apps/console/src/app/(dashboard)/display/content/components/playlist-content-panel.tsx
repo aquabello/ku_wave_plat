@@ -2,7 +2,23 @@
 
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { List, FilePlus2 } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { restrictToVerticalAxis, restrictToParentElement } from '@dnd-kit/modifiers';
+import { List, FilePlus2, ArrowUpDown } from 'lucide-react';
 import {
   usePlaylistDetailQuery,
   useUpdatePlaylistMutation,
@@ -46,6 +62,17 @@ export function PlaylistContentPanel({ playlistSeq }: PlaylistContentPanelProps)
   const { data: playlist, isLoading } = usePlaylistDetailQuery(playlistSeq);
   const { mutate: updatePlaylist } = useUpdatePlaylistMutation();
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   if (playlistSeq === null) {
     return (
       <div className="flex flex-col items-center justify-center h-full min-h-[400px] rounded-lg border border-dashed text-muted-foreground gap-3">
@@ -80,6 +107,33 @@ export function PlaylistContentPanel({ playlistSeq }: PlaylistContentPanelProps)
   const sortedContents = [...playlist.contents].sort(
     (a, b) => a.play_order - b.play_order
   );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = sortedContents.findIndex((c) => c.plc_seq === active.id);
+    const newIndex = sortedContents.findIndex((c) => c.plc_seq === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordered = arrayMove(sortedContents, oldIndex, newIndex);
+
+    const updatedContents = reordered.map((c, index) => ({
+      content_seq: c.content_seq,
+      play_order: index + 1,
+    }));
+
+    updatePlaylist(
+      { playlistSeq, data: { contents: updatedContents } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: playlistKeys.all });
+        },
+      }
+    );
+  };
 
   const handleRemove = (content: PlaylistContent) => {
     const remaining = sortedContents
@@ -156,9 +210,17 @@ export function PlaylistContentPanel({ playlistSeq }: PlaylistContentPanelProps)
 
       {/* Action Bar */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          콘텐츠 {sortedContents.length}개
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="text-sm text-muted-foreground">
+            콘텐츠 {sortedContents.length}개
+          </p>
+          {sortedContents.length > 1 && (
+            <span className="flex items-center gap-1 text-xs text-muted-foreground/60">
+              <ArrowUpDown className="h-3 w-3" />
+              드래그하여 순서 변경
+            </span>
+          )}
+        </div>
         <Button
           size="sm"
           onClick={() => setRegisterDialogOpen(true)}
@@ -168,7 +230,7 @@ export function PlaylistContentPanel({ playlistSeq }: PlaylistContentPanelProps)
         </Button>
       </div>
 
-      {/* Content List */}
+      {/* Content List with Drag & Drop */}
       {sortedContents.length === 0 ? (
         <div className="flex flex-col items-center justify-center flex-1 min-h-[200px] rounded-lg border border-dashed text-muted-foreground gap-3">
           <List className="h-10 w-10 opacity-30" />
@@ -183,16 +245,28 @@ export function PlaylistContentPanel({ playlistSeq }: PlaylistContentPanelProps)
           </Button>
         </div>
       ) : (
-        <div className="space-y-3">
-          {sortedContents.map((content) => (
-            <PlaylistContentCard
-              key={content.plc_seq}
-              content={content}
-              onEdit={handleEdit}
-              onRemove={handleRemove}
-            />
-          ))}
-        </div>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={sortedContents.map((c) => c.plc_seq)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-2">
+              {sortedContents.map((content) => (
+                <PlaylistContentCard
+                  key={content.plc_seq}
+                  content={content}
+                  onEdit={handleEdit}
+                  onRemove={handleRemove}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       )}
 
       {/* Dialogs */}

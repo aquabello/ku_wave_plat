@@ -189,7 +189,40 @@ CREATE INDEX idx_summary_isdel    ON tb_ai_lecture_summary (summary_isdel);
 
 
 -- ======================
--- 7. 메뉴 추가
+-- 7. AI Worker 서버 등록
+-- ======================
+
+-- ku_ai_worker(중앙 GPU 서버) 연동용
+-- 통신방식: API Proxy + Callback (미니PC 고정IP)
+-- 관련문서: docs/ai-system-architecture.md
+
+CREATE TABLE tb_ai_worker_server (
+    worker_server_seq   INT AUTO_INCREMENT COMMENT 'Worker 서버 시퀀스' PRIMARY KEY,
+    server_name         VARCHAR(100)                            NOT NULL COMMENT '서버명 (예: GPU서버-1호)',
+    server_url          VARCHAR(255)                            NOT NULL COMMENT '서버 URL (http://10.0.1.50:8080)',
+    api_key             VARCHAR(255)                            NOT NULL COMMENT 'API 인증키 (Worker 발급)',
+    callback_secret     VARCHAR(255)                            NULL     COMMENT 'Webhook 검증용 Secret',
+    server_status       ENUM('ONLINE','OFFLINE','ERROR','MAINTENANCE')
+                                         DEFAULT 'OFFLINE'     NOT NULL COMMENT '서버 상태',
+    last_health_check   DATETIME                                NULL     COMMENT '마지막 헬스체크 시각',
+    gpu_info            VARCHAR(200)                            NULL     COMMENT 'GPU 정보 (RTX 4070 12GB)',
+    max_concurrent_jobs INT              DEFAULT 1              NOT NULL COMMENT '동시 처리 가능 Job 수',
+    default_stt_model   VARCHAR(50)      DEFAULT 'large-v3'     NULL     COMMENT '기본 STT 모델',
+    default_llm_model   VARCHAR(50)      DEFAULT 'llama3'       NULL     COMMENT '기본 요약 LLM 모델',
+    server_isdel        CHAR             DEFAULT 'N'            NOT NULL COMMENT '삭제 여부',
+    reg_date            DATETIME         DEFAULT CURRENT_TIMESTAMP() NOT NULL COMMENT '등록일시',
+    upd_date            DATETIME         DEFAULT CURRENT_TIMESTAMP() NOT NULL
+                                         ON UPDATE CURRENT_TIMESTAMP() COMMENT '수정일시',
+
+    CONSTRAINT uk_server_url UNIQUE (server_url)
+) COMMENT 'AI Worker 서버' CHARSET = utf8mb4;
+
+CREATE INDEX idx_ws_status ON tb_ai_worker_server (server_status);
+CREATE INDEX idx_ws_isdel  ON tb_ai_worker_server (server_isdel);
+
+
+-- ======================
+-- 8. 메뉴 추가
 -- ======================
 
 -- AI시스템 > 실시간 음성인식 LNB 추가
@@ -207,5 +240,19 @@ VALUES (42, '실시간 음성인식', 'ai-speech', '/ai-system/speech', 'LNB', 4
 --   DESCRIBE tb_ai_speech_log;
 --   DESCRIBE tb_ai_command_log;
 --   DESCRIBE tb_ai_lecture_summary;
+--   DESCRIBE tb_ai_worker_server;
 --   SHOW COLUMNS FROM tb_control_log LIKE 'trigger_type';
 --   SELECT * FROM tb_menu WHERE parent_seq = 4;
+
+
+-- ======================
+-- ku_ai_worker측 SQLite 변경 (참고용 - 별도 레포에서 실행)
+-- ======================
+-- ai_jobs 테이블에 callback 컬럼 추가:
+--
+--   ALTER TABLE ai_jobs ADD COLUMN callback_url    TEXT NULL;
+--   ALTER TABLE ai_jobs ADD COLUMN callback_status TEXT DEFAULT 'PENDING';
+--   ALTER TABLE ai_jobs ADD COLUMN callback_at     TEXT NULL;
+--
+-- callback_status 값: PENDING → SENT / FAILED
+-- 실패 시 3회 재시도 후 FAILED 처리

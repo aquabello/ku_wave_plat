@@ -128,6 +128,36 @@
   },
   "hotPaths": [
     {
+      "path": "src/app/(dashboard)/recorder/list/components/recorder-detail-dialog.tsx",
+      "accessCount": 5,
+      "lastAccessed": 1771760627397,
+      "type": "file"
+    },
+    {
+      "path": "src/app/(dashboard)/recorder/list/components/recorder-register-dialog.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1771760604325,
+      "type": "file"
+    },
+    {
+      "path": "src/app/(dashboard)/recorder/control/components/recorder-selector.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1771760587932,
+      "type": "file"
+    },
+    {
+      "path": "src/app/(dashboard)/recorder/control/components/recording-controls.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1771760589345,
+      "type": "file"
+    },
+    {
+      "path": "src/app/(dashboard)/recorder/list/components/preset-form-dialog.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1771760601073,
+      "type": "file"
+    },
+    {
       "path": "src/app/(dashboard)/display/content/page.tsx",
       "accessCount": 1,
       "lastAccessed": 1771737181588,
@@ -150,6 +180,12 @@
       "accessCount": 1,
       "lastAccessed": 1771737200298,
       "type": "file"
+    },
+    {
+      "path": "src/app/(dashboard)/recorder/list/components/recorder-edit-dialog.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1771760612511,
+      "type": "directory"
     }
   ],
   "userDirectives": []

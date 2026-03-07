@@ -18,7 +18,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -51,7 +50,6 @@ const updateContentSchema = z.object({
   content_url: z.string().optional().or(z.literal('')),
   content_duration: z.coerce.number().positive('0보다 큰 값을 입력하세요').optional().or(z.literal('')),
   content_description: z.string().optional().or(z.literal('')),
-  content_order: z.coerce.number().min(0).optional().or(z.literal('')),
 });
 
 type UpdateContentFormData = z.infer<typeof updateContentSchema>;
@@ -104,7 +102,6 @@ function ContentEditForm({
       content_url: content.content_url ?? '',
       content_duration: content.content_duration ?? '',
       content_description: content.content_description ?? '',
-      content_order: '',
     },
   });
 
@@ -143,7 +140,6 @@ function ContentEditForm({
       content_url: data.content_url || undefined,
       content_duration: data.content_duration ? Number(data.content_duration) : undefined,
       content_description: data.content_description || undefined,
-      content_order: data.content_order ? Number(data.content_order) : undefined,
     };
 
     updateContent(
@@ -304,21 +300,6 @@ function ContentEditForm({
                 <FormControl>
                   <Input type="number" placeholder="30" min={1} {...field} />
                 </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="content_order"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>정렬 순서</FormLabel>
-                <FormControl>
-                  <Input type="number" placeholder="0" min={0} {...field} />
-                </FormControl>
-                <FormDescription>숫자가 작을수록 앞에 표시됩니다</FormDescription>
                 <FormMessage />
               </FormItem>
             )}

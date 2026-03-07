@@ -1,6 +1,8 @@
 'use client';
 
-import { Pencil, Trash2, Film, Image, Code, Radio } from 'lucide-react';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { GripVertical, Pencil, Trash2, Film, Image, Code, Radio } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { getImageUrl } from '@/lib/api/settings';
@@ -42,6 +44,20 @@ function formatDuration(seconds: number | null): string {
 }
 
 export function PlaylistContentCard({ content, onEdit, onRemove }: PlaylistContentCardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: content.plc_seq });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
   const imageUrl =
     content.content_type === 'IMAGE'
       ? getImageUrl(content.content_file_path)
@@ -50,9 +66,35 @@ export function PlaylistContentCard({ content, onEdit, onRemove }: PlaylistConte
   const Icon = ContentTypeIcon[content.content_type];
 
   return (
-    <div className="flex items-center gap-3 rounded-lg border bg-card p-3 shadow-sm">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`
+        group flex items-center gap-3 rounded-xl border bg-card p-3 shadow-sm
+        transition-shadow duration-200
+        ${isDragging
+          ? 'z-50 shadow-lg ring-2 ring-primary/30 opacity-95 scale-[1.02]'
+          : 'hover:shadow-md'
+        }
+      `}
+    >
+      {/* Drag Handle */}
+      <button
+        type="button"
+        className="flex h-full shrink-0 cursor-grab items-center px-0.5 text-muted-foreground/40 transition-colors hover:text-muted-foreground active:cursor-grabbing"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="h-5 w-5" />
+      </button>
+
+      {/* Order Number */}
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+        {content.play_order}
+      </div>
+
       {/* Thumbnail / Icon */}
-      <div className="flex h-16 w-24 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted">
+      <div className="flex h-16 w-24 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted">
         {imageUrl ? (
           <img
             src={imageUrl}
@@ -67,7 +109,6 @@ export function PlaylistContentCard({ content, onEdit, onRemove }: PlaylistConte
       {/* Info */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">#{content.play_order}</span>
           <Badge variant={contentTypeBadgeVariant[content.content_type]} className="text-xs">
             {contentTypeLabel[content.content_type]}
           </Badge>
@@ -79,7 +120,7 @@ export function PlaylistContentCard({ content, onEdit, onRemove }: PlaylistConte
       </div>
 
       {/* Actions */}
-      <div className="flex shrink-0 flex-col gap-1">
+      <div className="flex shrink-0 gap-1 opacity-0 transition-opacity group-hover:opacity-100">
         <Button
           variant="ghost"
           size="icon"

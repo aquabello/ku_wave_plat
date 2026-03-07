@@ -237,11 +237,8 @@ export class PlaylistsService {
         throw new NotFoundException('존재하지 않는 콘텐츠가 포함되어 있습니다.');
       }
 
-      // 기존 매핑 삭제 (소프트)
-      await this.playlistContentRepository.update(
-        { playlistSeq },
-        { plcIsdel: 'Y' },
-      );
+      // 기존 매핑 하드 삭제 (유니크 키 충돌 방지)
+      await this.playlistContentRepository.delete({ playlistSeq });
 
       // 새 매핑 생성
       const mappings = updatePlaylistDto.contents.map((content) =>

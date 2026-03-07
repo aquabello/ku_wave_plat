@@ -1,0 +1,6 @@
+export enum SessionStatus {
+  RECORDING = 'RECORDING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  CANCELLED = 'CANCELLED',
+}

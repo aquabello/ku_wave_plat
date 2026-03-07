@@ -1,0 +1,7 @@
+export enum FtpStatus {
+  PENDING = 'PENDING',
+  UPLOADING = 'UPLOADING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  RETRY = 'RETRY',
+}
