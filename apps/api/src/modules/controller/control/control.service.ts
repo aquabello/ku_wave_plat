@@ -696,8 +696,13 @@ export class ControlService {
         }, 2000);
       });
 
-      client.on('data', (data) => {
-        responseData += data.toString();
+      client.on('data', (data: Buffer) => {
+        // 바이너리 응답은 HEX로 변환하여 저장, 유효한 UTF-8 텍스트만 그대로 사용
+        const text = data.toString('utf8');
+        const hasBrokenChars = /[\uFFFD\x00-\x08\x0E-\x1F]/.test(text);
+        responseData += hasBrokenChars
+          ? `명령어 전송 완료 (응답: ${data.toString('hex').toUpperCase().match(/.{2}/g)?.join(' ')})`
+          : text;
         clearTimeout(timeout);
         client.destroy();
         settle(() => resolve(responseData || '명령어 전송 완료'));

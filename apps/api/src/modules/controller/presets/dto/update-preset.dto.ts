@@ -38,7 +38,7 @@ export class UpdatePresetCommandDto {
   commandCode?: string;
 
   @ApiPropertyOptional({
-    description: '명령어 유형 (POWER_ON, POWER_OFF, INPUT_CHANGE, CUSTOM)',
+    description: '명령어 유형 (POWER_ON, POWER_OFF, CUSTOM)',
     example: 'CUSTOM',
   })
   @IsOptional()

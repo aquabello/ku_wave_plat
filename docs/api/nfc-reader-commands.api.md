@@ -85,7 +85,7 @@ Base URL: `http://localhost:8000/api/v1`
           "commandSeq": 3,
           "commandName": "입력 HDMI1",
           "commandCode": "SOURCE 30\\r",
-          "commandType": "INPUT_CHANGE"
+          "commandType": "CUSTOM"
         }
       ]
     },

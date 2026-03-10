@@ -38,7 +38,7 @@ export class TbPresetCommand {
     length: 20,
     default: 'CUSTOM',
     nullable: true,
-    comment: '명령어 유형 (POWER_ON, POWER_OFF, INPUT_CHANGE, CUSTOM)',
+    comment: '명령어 유형 (POWER_ON, POWER_OFF, CUSTOM)',
   })
   commandType: string | null;
 

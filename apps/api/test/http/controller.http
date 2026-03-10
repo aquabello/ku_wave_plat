@@ -52,7 +52,7 @@ Content-Type: application/json
     {
       "commandName": "입력 HDMI1",
       "commandCode": "SOURCE 30\\r",
-      "commandType": "INPUT_CHANGE",
+      "commandType": "CUSTOM",
       "commandOrder": 3
     }
   ]
@@ -82,7 +82,7 @@ Content-Type: application/json
     {
       "commandName": "입력 HDMI2",
       "commandCode": "SOURCE 31\\r",
-      "commandType": "INPUT_CHANGE",
+      "commandType": "CUSTOM",
       "commandOrder": 3
     }
   ]

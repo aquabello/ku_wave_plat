@@ -156,7 +156,7 @@ Base URL: `http://localhost:8000/api/v1`
 | commands | array | N | 명령어 배열 |
 | commands[].commandName | string | Y | 명령어명 |
 | commands[].commandCode | string | Y | 명령어 코드 (HEX 또는 텍스트) |
-| commands[].commandType | string | N | 유형 (POWER_ON/POWER_OFF/INPUT_CHANGE/CUSTOM, 기본 CUSTOM) |
+| commands[].commandType | string | N | 유형 (POWER_ON/POWER_OFF/CUSTOM, 기본 CUSTOM) |
 | commands[].commandOrder | number | N | 정렬 순서 (기본 0) |
 
 ### Response (201)
@@ -189,7 +189,7 @@ Base URL: `http://localhost:8000/api/v1`
     {
       "commandName": "입력 HDMI1",
       "commandCode": "SOURCE 30\\r",
-      "commandType": "INPUT_CHANGE",
+      "commandType": "CUSTOM",
       "commandOrder": 3
     }
   ]

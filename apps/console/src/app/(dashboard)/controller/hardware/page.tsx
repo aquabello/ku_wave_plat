@@ -600,7 +600,6 @@ export default function HardwareSettingsPage() {
                               <SelectContent>
                                 <SelectItem value="POWER_ON">전원 켜기</SelectItem>
                                 <SelectItem value="POWER_OFF">전원 끄기</SelectItem>
-                                <SelectItem value="INPUT_CHANGE">입력 변경</SelectItem>
                                 <SelectItem value="CUSTOM">사용자 정의</SelectItem>
                               </SelectContent>
                             </Select>

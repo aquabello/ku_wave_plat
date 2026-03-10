@@ -255,7 +255,7 @@ create table tb_preset_command
     preset_seq          int                                  not null comment '프리셋 시퀀스',
     command_name        varchar(100)                         not null comment '명령어명 (예: 전원 ON)',
     command_code        varchar(500)                         not null comment '명령어 코드 (HEX 또는 텍스트)',
-    command_type        varchar(20)  default 'CUSTOM'        null comment '명령어 유형 (POWER_ON, POWER_OFF, INPUT_CHANGE, CUSTOM)',
+    command_type        varchar(20)  default 'CUSTOM'        null comment '명령어 유형 (POWER_ON, POWER_OFF, CUSTOM)',
     command_order       int          default 0               null comment '정렬 순서',
     command_isdel       char         default 'N'             null comment '삭제 여부',
     reg_date            datetime     default current_timestamp() null comment '등록일시',

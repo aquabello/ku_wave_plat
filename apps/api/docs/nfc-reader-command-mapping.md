@@ -4,7 +4,7 @@
 
 NFC 리더기별로 입실/퇴실 시 실행할 장비 및 명령어를 세밀하게 매핑할 수 있는 기능입니다.
 
-기존 NFC 태깅 로직은 해당 호실의 모든 ACTIVE 장비에 대해 POWER_ON/POWER_OFF 명령어를 일괄 실행했지만, 이제 리더기별로 특정 장비만 선택하거나, 다른 유형의 명령어(INPUT_CHANGE 등)를 지정할 수 있습니다.
+기존 NFC 태깅 로직은 해당 호실의 모든 ACTIVE 장비에 대해 POWER_ON/POWER_OFF 명령어를 일괄 실행했지만, 이제 리더기별로 특정 장비만 선택하거나, 다른 유형의 명령어(CUSTOM 등)를 지정할 수 있습니다.
 
 ## 데이터베이스
 
@@ -77,7 +77,7 @@ CREATE TABLE tb_nfc_reader_command (
           "commandSeq": 3,
           "commandName": "HDMI 입력",
           "commandCode": "11 22 33",
-          "commandType": "INPUT_CHANGE"
+          "commandType": "CUSTOM"
         }
       ]
     }
