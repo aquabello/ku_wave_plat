@@ -110,6 +110,12 @@ export async function getUnregisteredTags(params?: {
   return await apiClient<UnregisteredTagListResponse>('/nfc/cards/unregistered', { params });
 }
 
+export async function deleteUnregisteredTag(tagIdentifier: string): Promise<{ deletedCount: number }> {
+  return await apiClient<{ deletedCount: number }>(`/nfc/cards/unregistered/${encodeURIComponent(tagIdentifier)}`, {
+    method: 'DELETE',
+  });
+}
+
 /** 카드 등록 (승인) */
 export async function createCard(dto: CreateNfcCardRequest): Promise<NfcCardDetail> {
   return await apiClient<NfcCardDetail>('/nfc/cards', {

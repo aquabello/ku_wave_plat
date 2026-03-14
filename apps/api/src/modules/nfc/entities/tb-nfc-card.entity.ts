@@ -12,13 +12,13 @@ export class TbNfcCard {
   @PrimaryGeneratedColumn({ name: 'card_seq', comment: 'NFC 카드 시퀀스' })
   cardSeq: number;
 
-  @Column({ name: 'tu_seq', type: 'int', nullable: false, comment: '사용자 시퀀스' })
-  tuSeq: number;
+  @Column({ name: 'tu_seq', type: 'int', nullable: true, comment: '사용자 시퀀스' })
+  tuSeq: number | null;
 
   @Column({
     name: 'card_identifier',
     type: 'varchar',
-    length: 64,
+    length: 255,
     nullable: false,
     unique: true,
     comment: '카드 식별자',

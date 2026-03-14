@@ -11,6 +11,7 @@ import { TbUserBuilding } from '@modules/permissions/entities/tb-user-building.e
 import { TbSpaceDevice } from '@modules/controller/devices/entities/tb-space-device.entity';
 import { TbPresetCommand } from '@modules/controller/presets/entities/tb-preset-command.entity';
 import { ControlModule } from '@modules/controller/control/control.module';
+import { SocketModule } from '@modules/controller/socket/socket.module';
 import { NfcController } from './nfc.controller';
 import { NfcTagService } from './services/nfc-tag.service';
 import { NfcReaderService } from './services/nfc-reader.service';
@@ -34,7 +35,8 @@ import { NfcApiKeyGuard } from './guards/nfc-api-key.guard';
       TbSpaceDevice,
       TbPresetCommand,
     ]),
-    ControlModule, // For ControlService (executeForNfc)
+    ControlModule,
+    SocketModule,
   ],
   controllers: [NfcController],
   providers: [

@@ -18,6 +18,7 @@ import { ActivityLogsModule } from '@modules/activity-logs/activity-logs.module'
 import { SpacesModule } from '@modules/spaces/spaces.module';
 import { PresetsModule } from '@modules/controller/presets/presets.module';
 import { ControlModule } from '@modules/controller/control/control.module';
+import { SocketModule } from '@modules/controller/socket/socket.module';
 import { NfcModule } from '@modules/nfc/nfc.module';
 import { PlayersModule } from '@modules/players/players.module';
 import { PlaylistsModule } from '@modules/playlists/playlists.module';
@@ -96,6 +97,7 @@ import { AppService } from './app.service';
     SpacesModule,
     PresetsModule,
     ControlModule,
+    SocketModule,
     NfcModule,
     PlayersModule,
     PlaylistsModule,

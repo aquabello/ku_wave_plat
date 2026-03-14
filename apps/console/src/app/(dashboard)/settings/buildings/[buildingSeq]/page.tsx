@@ -17,6 +17,9 @@ import {
   ArrowLeft,
   Loader2,
   Users,
+  Bell,
+  Send,
+  CheckSquare,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -449,6 +452,64 @@ export default function BuildingDetailPage() {
     setSpacePage(1);
   };
 
+  // --- 알림 전송 상태 ---
+
+  const [notifSelectedSeqs, setNotifSelectedSeqs] = useState<number[]>([]);
+  const [notifType, setNotifType] = useState('');
+  const [notifMessage, setNotifMessage] = useState('');
+  const [notifSending, setNotifSending] = useState(false);
+  const [notifResult, setNotifResult] = useState<{
+    count: number;
+    sentAt: string;
+  } | null>(null);
+
+  const handleNotifToggleAll = () => {
+    if (notifSelectedSeqs.length === spaces.length && spaces.length > 0) {
+      setNotifSelectedSeqs([]);
+    } else {
+      setNotifSelectedSeqs(spaces.map((s) => s.spaceSeq));
+    }
+  };
+
+  const handleNotifToggleSpace = (seq: number) => {
+    setNotifSelectedSeqs((prev) =>
+      prev.includes(seq) ? prev.filter((s) => s !== seq) : [...prev, seq],
+    );
+  };
+
+  const handleNotifSend = () => {
+    if (notifSelectedSeqs.length === 0) {
+      showToast.error('대상 선택 필요', '알림을 전송할 호실을 선택해주세요.');
+      return;
+    }
+    if (!notifType) {
+      showToast.error('유형 선택 필요', '알림 유형을 선택해주세요.');
+      return;
+    }
+    if (!notifMessage.trim()) {
+      showToast.error('메시지 필요', '알림 메시지를 입력해주세요.');
+      return;
+    }
+    setNotifSending(true);
+    setNotifResult(null);
+    setTimeout(() => {
+      const sentAt = new Date().toLocaleString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
+      setNotifResult({ count: notifSelectedSeqs.length, sentAt });
+      setNotifSending(false);
+      showToast.success(
+        '알림 전송 완료',
+        `${notifSelectedSeqs.length}개 호실에 알림을 전송했습니다.`,
+      );
+    }, 1200);
+  };
+
   const handleResetFilters = () => {
     setSpaceSearchInput('');
     setSpaceSearchQuery('');
@@ -726,6 +787,171 @@ export default function BuildingDetailPage() {
               )}
             </CardContent>
           </Card>
+      {/* 알림 전송 */}
+      <Card>
+        <CardContent className="pt-6 space-y-5">
+          {/* 섹션 헤더 */}
+          <div className="flex items-center gap-2">
+            <Bell className="h-5 w-5 text-konkuk-green" />
+            <h2 className="text-lg font-semibold">알림 전송</h2>
+          </div>
+
+          {/* 전송 대상 선택 */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium">전송 대상 호실</Label>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleNotifToggleAll}
+                disabled={spaces.length === 0}
+              >
+                <CheckSquare className="mr-1.5 h-3.5 w-3.5" />
+                {notifSelectedSeqs.length === spaces.length && spaces.length > 0
+                  ? '전체 해제'
+                  : '전체 선택'}
+              </Button>
+            </div>
+
+            {spaces.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-2">
+                등록된 공간이 없습니다.
+              </p>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-48 overflow-y-auto pr-1">
+                {spaces.map((space) => {
+                  const checked = notifSelectedSeqs.includes(space.spaceSeq);
+                  return (
+                    <label
+                      key={space.spaceSeq}
+                      className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm cursor-pointer transition-colors select-none ${
+                        checked
+                          ? 'border-konkuk-green bg-konkuk-green/5 text-konkuk-green font-medium'
+                          : 'border-input hover:bg-muted/50'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        className="sr-only"
+                        checked={checked}
+                        onChange={() => handleNotifToggleSpace(space.spaceSeq)}
+                      />
+                      <span className="truncate">{space.spaceName}</span>
+                      {space.spaceFloor && (
+                        <span className="ml-auto shrink-0 text-xs text-muted-foreground">
+                          {space.spaceFloor}층
+                        </span>
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+
+            {notifSelectedSeqs.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {notifSelectedSeqs.length}개 호실 선택됨
+              </p>
+            )}
+          </div>
+
+          {/* 알림 유형 */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">알림 유형</Label>
+            <Select value={notifType} onValueChange={setNotifType}>
+              <SelectTrigger className="w-full sm:w-[240px]">
+                <SelectValue placeholder="유형 선택" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="emergency">긴급 공지</SelectItem>
+                <SelectItem value="maintenance">시설 점검</SelectItem>
+                <SelectItem value="class">수업 안내</SelectItem>
+                <SelectItem value="etc">기타</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* 알림 메시지 */}
+          <div className="space-y-2">
+            <Label htmlFor="notifMessage" className="text-sm font-medium">
+              알림 메시지
+            </Label>
+            <textarea
+              id="notifMessage"
+              rows={4}
+              placeholder="전송할 알림 메시지를 입력해주세요"
+              value={notifMessage}
+              onChange={(e) => setNotifMessage(e.target.value)}
+              className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            />
+          </div>
+
+          {/* 전송 버튼 */}
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={handleNotifSend}
+              disabled={notifSending}
+              className="min-w-[120px]"
+            >
+              {notifSending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  전송 중...
+                </>
+              ) : (
+                <>
+                  <Send className="mr-2 h-4 w-4" />
+                  알림 전송
+                </>
+              )}
+            </Button>
+            {notifResult && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setNotifResult(null);
+                  setNotifMessage('');
+                  setNotifType('');
+                  setNotifSelectedSeqs([]);
+                }}
+              >
+                초기화
+              </Button>
+            )}
+          </div>
+
+          {/* 전송 결과 요약 */}
+          {notifResult && (
+            <div className="rounded-lg border border-konkuk-green/30 bg-konkuk-green/5 px-4 py-3 space-y-1">
+              <p className="text-sm font-semibold text-konkuk-green">
+                전송 완료
+              </p>
+              <div className="text-sm text-muted-foreground space-y-0.5">
+                <p>
+                  전송 대상:{' '}
+                  <span className="font-medium text-foreground">
+                    {notifResult.count}개 호실
+                  </span>
+                </p>
+                <p>
+                  전송 성공:{' '}
+                  <span className="font-medium text-foreground">
+                    {notifResult.count}건
+                  </span>
+                </p>
+                <p>
+                  전송 시각:{' '}
+                  <span className="font-medium text-foreground">
+                    {notifResult.sentAt}
+                  </span>
+                </p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* 공간 추가/수정 Sheet */}
       <SpaceFormSheet
         key={editingSpace?.spaceSeq ?? 'new'}

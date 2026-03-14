@@ -19,6 +19,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileDownloadButton } from './file-download-button';
+import { FilePreviewDialog } from './file-preview-dialog';
 import { useRetryUploadMutation } from '@/hooks/use-recordings';
 import type { RecordingFileListItem, FtpUploadStatus } from '@ku/types';
 
@@ -155,6 +156,7 @@ export function FileTable({ data, pagination, isLoading, onPageChange }: FileTab
           const canRetry = file.ftpStatus === 'FAILED' || file.ftpStatus === 'RETRY';
           return (
             <div className="flex gap-1">
+              <FilePreviewDialog recFileSeq={file.recFileSeq} fileName={file.fileName} />
               <FileDownloadButton recFileSeq={file.recFileSeq} fileName={file.fileName} />
               {canRetry && (
                 <Button

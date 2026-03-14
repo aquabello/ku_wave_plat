@@ -37,6 +37,11 @@ export class OfflineQueue {
     logger.info(`[QUEUE] 오프라인 큐 추가 (${this.queue.length}/${this.maxSize})`);
   }
 
+  peek(): NfcTagRequest | null {
+    if (this.queue.length === 0) return null;
+    return this.queue[0].request;
+  }
+
   dequeue(): QueueItem | undefined {
     const item = this.queue.shift();
     if (item) this.save();

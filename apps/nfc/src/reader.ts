@@ -1,36 +1,52 @@
 import { NFC } from 'nfc-pcsc';
 import { NfcAgentConfig, NfcTagRequest, NfcTagResponse, NfcAidScanResult, NfcWsScanEventData, NfcAppData } from '@ku/types';
 import { ApiClient } from './api-client';
-import { OfflineQueue } from './queue';
 import { BuzzerController } from './buzzer';
 import { NfcWsServer } from './ws-server';
 import { logger } from './logger';
 
+export type NfcMode = 'tag' | 'aid-test';
+
 export class NfcReader {
-  private nfc: any;
+  private nfc: any = null;
   private currentReader: any = null;
+  private mode: NfcMode = 'tag';
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private config: NfcAgentConfig,
     private apiClient: ApiClient,
-    private queue: OfflineQueue,
     private buzzer: BuzzerController,
     private wsServer: NfcWsServer,
-  ) {
-    this.nfc = new NFC();
-  }
+  ) {}
 
   start(): void {
     logger.info('NFC 리더기 대기 중...');
+    this.nfc = new NFC();
 
     this.nfc.on('reader', (reader: any) => {
+      reader.autoProcessing = false;
+      reader.aid = null;
+
+      reader.on('error', (err: any) => {
+        if (err.message?.includes('AID was not set')) {
+          logger.debug('[리더기] ISO 14443-4 AID 에러 무시 (수동 처리)');
+          return;
+        }
+        logger.error(`[리더기 오류] ${err.message}`);
+      });
+
       logger.info(`[리더기 연결] ${reader.name}`);
       this.currentReader = reader;
       this.wsServer.setReaderConnected(true, reader.name);
       this.wsServer.broadcastReaderConnected(reader.name);
 
-      // autoProcessing 비활성화: 일부 카드에서 자동 UID 읽기 실패 방지
-      reader.autoProcessing = false;
+      this.buzzer.setTransmit((data: Buffer, len: number) => reader.transmit(data, len));
+
+      if (this.reconnectTimer) {
+        clearTimeout(this.reconnectTimer);
+        this.reconnectTimer = null;
+      }
 
       reader.on('card', async (card: any) => {
         logger.debug(`[카드 감지] ATR: ${card.atr?.toString('hex') ?? 'N/A'}`);
@@ -41,16 +57,13 @@ export class NfcReader {
         logger.debug('[카드 제거]');
       });
 
-      reader.on('error', (err: any) => {
-        logger.error(`[리더기 오류] ${err.message}`);
-        logger.debug(`[리더기 오류 상세] ${JSON.stringify(err)}`);
-      });
-
       reader.on('end', () => {
         logger.warn('[리더기 연결 해제]');
         this.wsServer.setReaderConnected(false);
         this.wsServer.broadcastReaderDisconnected(reader.name);
         this.currentReader = null;
+        this.buzzer.clearTransmit();
+        this.scheduleReconnect();
       });
     });
 
@@ -60,19 +73,46 @@ export class NfcReader {
   }
 
   stop(): void {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
     if (this.currentReader) {
       logger.info('리더기 연결 해제...');
     }
   }
 
+  setMode(mode: NfcMode): void {
+    if (this.mode === mode) return;
+    this.mode = mode;
+    logger.info(`[모드 전환] ${mode === 'tag' ? '태그 모드' : 'AID 테스트 모드'}`);
+  }
+
+  getMode(): NfcMode {
+    return this.mode;
+  }
+
+  private scheduleReconnect(): void {
+    logger.info('[자동 재연결] 5초 후 리더기 재연결 시도...');
+    this.reconnectTimer = setTimeout(() => {
+      if (this.currentReader) return;
+      logger.info('[자동 재연결] NFC 서비스 재시작 중...');
+      try {
+        this.nfc = new NFC();
+        this.start();
+      } catch (err: any) {
+        logger.error(`[자동 재연결] 실패: ${err.message}`);
+        this.scheduleReconnect();
+      }
+    }, 5000);
+  }
+
   private async handleTag(reader: any, card: any): Promise<void> {
-    // autoProcessing=false이므로 수동으로 카드 연결 + UID 읽기
     let uid = card.uid || '';
 
     if (!uid) {
       try {
-        // APDU: GET DATA (UID) - FF CA 00 00 00
-        await reader.connect(1); // SCARD_SHARE_SHARED
+        await reader.connect(1);
         const getUidCmd = Buffer.from([0xFF, 0xCA, 0x00, 0x00, 0x00]);
         const uidResponse = await reader.transmit(getUidCmd, 256);
         const sw = uidResponse.slice(-2);
@@ -87,11 +127,9 @@ export class NfcReader {
     const atr = card.atr?.toString('hex').toUpperCase() ?? '';
     logger.info(`[태깅 감지] UID: ${uid || '(unknown)'} | ATR: ${atr || 'N/A'}`);
 
-    // 모든 AID 스캔 (전체 결과 수집)
     const { aidResults, firstMatchedAid } = await this.scanAllAids(reader);
     const matchedAids = aidResults.filter(r => r.status === 'SUCCESS').map(r => r.aid);
 
-    // scan 이벤트 브로드캐스트 (상세 스캔 결과)
     const scanData: NfcWsScanEventData = {
       uid: uid || 'UNKNOWN',
       atr,
@@ -103,7 +141,11 @@ export class NfcReader {
 
     logger.info(`[스캔 결과] 매칭 AID: ${matchedAids.length > 0 ? matchedAids.join(', ') : '없음'}`);
 
-    // 식별값 결정
+    if (this.mode === 'aid-test') {
+      logger.info('[AID 테스트 모드] API 호출 생략, 스캔 결과만 브로드캐스트');
+      return;
+    }
+
     const identifier = uid || 'UNKNOWN';
 
     const request: NfcTagRequest = {
@@ -117,13 +159,10 @@ export class NfcReader {
       this.handleResponse(response);
     } catch (err: any) {
       logger.error(`[API 호출 실패] ${err.message}`);
-      // 오프라인 큐에 추가
-      this.queue.enqueue(request);
       this.buzzer.error();
     }
   }
 
-  /** 잘 알려진 AID 라벨 */
   private static readonly AID_LABELS: Record<string, string> = {
     'D4100000030001': 'T-money (티머니)',
     'A0000000041010': 'Mastercard',
@@ -134,7 +173,6 @@ export class NfcReader {
     'A00000000401': 'EB 카드',
   };
 
-  /** config.aidList의 모든 AID에 SELECT 시도, 전체 결과 반환 */
   private async scanAllAids(reader: any): Promise<{
     aidResults: NfcAidScanResult[];
     firstMatchedAid: string | null;
@@ -184,7 +222,6 @@ export class NfcReader {
     return { aidResults, firstMatchedAid };
   }
 
-  /** SELECT AID 성공 후 앱 내부 데이터 읽기 */
   private async readAppData(reader: any, aidHex: string, fci: string | null): Promise<NfcAppData> {
     const appData: NfcAppData = {
       serialNumber: null,
@@ -194,11 +231,9 @@ export class NfcReader {
     };
 
     try {
-      // 1. READ RECORD - SFI 1~3, Record 1~3 시도
       for (let sfi = 1; sfi <= 3; sfi++) {
         for (let rec = 1; rec <= 3; rec++) {
           try {
-            // READ RECORD: 00 B2 [record] [SFI*8+4] 00
             const p2 = (sfi << 3) | 0x04;
             const readCmd = Buffer.from([0x00, 0xB2, rec, p2, 0x00]);
             const resp = await reader.transmit(readCmd, 256);
@@ -210,14 +245,12 @@ export class NfcReader {
               logger.debug(`[APP DATA] Record SFI${sfi}/R${rec}: ${data}`);
             }
           } catch {
-            // 해당 레코드 없음 - 계속
+            // 해당 레코드 없음
           }
         }
       }
 
-      // 2. GET DATA (카드 시리얼) - T-money/교통카드 계열
       try {
-        // GET DATA: 80 CA 00 04 00 (카드번호)
         const getSerial = Buffer.from([0x80, 0xCA, 0x00, 0x04, 0x00]);
         const resp = await reader.transmit(getSerial, 256);
         const rSw = resp.slice(-2);
@@ -229,19 +262,16 @@ export class NfcReader {
         // GET DATA 미지원
       }
 
-      // 3. 시리얼이 없으면 FCI에서 추출 시도
       if (!appData.serialNumber && fci && fci.length >= 16) {
         appData.serialNumber = fci;
         logger.info(`[APP DATA] FCI 기반 식별값: ${fci}`);
       }
 
-      // 4. 시리얼이 없으면 첫 번째 레코드에서 추출
       if (!appData.serialNumber && appData.records.length > 0) {
         appData.serialNumber = appData.records[0].data;
         logger.info(`[APP DATA] Record 기반 식별값: ${appData.serialNumber}`);
       }
 
-      // 5. GET BALANCE (T-money 계열)
       try {
         const getBalance = Buffer.from([0x80, 0x4C, 0x00, 0x00, 0x04]);
         const resp = await reader.transmit(getBalance, 256);
@@ -261,18 +291,12 @@ export class NfcReader {
     return appData;
   }
 
-  /** ATR 기반 카드 타입 추정 */
   private detectCardType(atr: string): string {
     if (!atr) return 'UNKNOWN';
-    // MIFARE Classic 1K
     if (atr.includes('0001') || atr.includes('0002')) return 'MIFARE Classic';
-    // MIFARE Ultralight
     if (atr.includes('0003')) return 'MIFARE Ultralight';
-    // MIFARE DESFire
     if (atr.includes('0005') || atr.includes('F004')) return 'MIFARE DESFire';
-    // FeliCa
     if (atr.includes('F012') || atr.includes('11')) return 'FeliCa';
-    // ISO 14443-4 (phone NFC / HCE)
     if (atr.includes('8040') || atr.includes('0080')) return 'ISO 14443-4 (NFC-A)';
     return 'NFC Tag';
   }

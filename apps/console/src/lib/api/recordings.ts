@@ -137,12 +137,53 @@ export async function getFiles(params?: GetFilesParams): Promise<RecorderPaginat
   return response.data;
 }
 
+export interface FilePreviewInfo {
+  recFileSeq: number;
+  fileName: string;
+  fileFormat: string;
+  fileDurationSec: number;
+  fileSize: string;
+  fileSizeFormatted: string;
+  previewPath: string;
+}
+
+export async function previewFile(recFileSeq: number): Promise<FilePreviewInfo> {
+  if (USE_MOCK) {
+    await new Promise((r) => setTimeout(r, 300));
+    const mockFile = MOCK_FILES.find((f) => f.recFileSeq === recFileSeq) ?? MOCK_FILES[0];
+    return {
+      recFileSeq: mockFile.recFileSeq,
+      fileName: mockFile.fileName,
+      fileFormat: mockFile.fileFormat,
+      fileDurationSec: mockFile.fileDurationSec,
+      fileSize: String(mockFile.fileSize),
+      fileSizeFormatted: mockFile.fileSizeFormatted,
+      previewPath: `/ftp/ku_wave/${mockFile.fileName.slice(4, 12)}/${mockFile.fileName}`,
+    };
+  }
+  const response = await apiClient<ApiResponse<FilePreviewInfo>>(`/recordings/files/${recFileSeq}/preview`, {
+    method: 'GET',
+  });
+  if (!response.success || !response.data) {
+    throw new Error('파일 미리보기 정보 조회 실패');
+  }
+  return response.data;
+}
+
 export async function downloadFile(recFileSeq: number): Promise<string> {
+  if (USE_MOCK) {
+    await new Promise((r) => setTimeout(r, 500));
+    const blob = new Blob(['mock video data'], { type: 'video/mp4' });
+    return URL.createObjectURL(blob);
+  }
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
   const token = localStorage.getItem('access_token');
   const res = await fetch(`${API_BASE_URL}/recordings/files/${recFileSeq}/download`, {
     headers: { Authorization: `Bearer ${token}` },
   });
+  if (res.status === 403) {
+    throw new Error('녹화를 진행한 사용자만 다운로드할 수 있습니다.');
+  }
   if (!res.ok) {
     throw new Error('파일 다운로드 실패');
   }
@@ -151,6 +192,10 @@ export async function downloadFile(recFileSeq: number): Promise<string> {
 }
 
 export async function retryUpload(recFileSeq: number): Promise<RetryUploadResponse> {
+  if (USE_MOCK) {
+    await new Promise((r) => setTimeout(r, 300));
+    return { recFileSeq, ftpStatus: 'RETRY' as FtpUploadStatus, ftpRetryCount: 1, message: 'FTP 업로드 재시도를 시작합니다 (1/3회)' };
+  }
   const response = await apiClient<ApiResponse<RetryUploadResponse>>(`/recordings/files/${recFileSeq}/retry-upload`, {
     method: 'POST',
   });

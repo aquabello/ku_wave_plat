@@ -209,7 +209,7 @@ function ReaderFormContent({
                 <SelectContent>
                   {spacesData?.items.map((space) => (
                     <SelectItem key={space.spaceSeq} value={String(space.spaceSeq)}>
-                      {space.spaceName}{space.spaceFloor ? ` (${space.spaceFloor})` : ''}
+                      {space.spaceName}
                     </SelectItem>
                   ))}
                 </SelectContent>

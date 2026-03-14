@@ -24,6 +24,7 @@ import {
   FileVideo,
   Upload,
   Mic,
+  Plug,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigationStore } from '@/stores/navigation';
@@ -53,6 +54,7 @@ const LNB_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   'member-activity': Activity,
   'settings-buildings': Building2,
   'settings-system': Wrench,
+  'controller-socket': Plug,
 };
 
 /**

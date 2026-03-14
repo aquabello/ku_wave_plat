@@ -22,6 +22,7 @@ import { ControlLogItemDto, ControlLogResponseDto } from './dto';
 export class ControlService {
   private readonly logger = new Logger(ControlService.name);
   private readonly TIMEOUT_MS = 5000;
+  private readonly COMMAND_DELAY_MS = 3000;
 
   constructor(
     @InjectRepository(TbControlLog)
@@ -336,14 +337,20 @@ export class ControlService {
       .where('sd.space_seq = :spaceSeq', { spaceSeq })
       .andWhere("(sd.device_isdel IS NULL OR sd.device_isdel != 'Y')")
       .andWhere("sd.device_status = 'ACTIVE'")
+      .orderBy('sd.device_order', 'ASC')
       .getMany();
 
     const results = [];
     let successCount = 0;
     let failCount = 0;
 
-    for (const device of devices) {
-      // Find the matching command type for this device's preset
+    for (let i = 0; i < devices.length; i++) {
+      const device = devices[i];
+
+      if (i > 0) {
+        await new Promise<void>((resolve) => setTimeout(resolve, this.COMMAND_DELAY_MS));
+      }
+
       const command = await this.commandRepository
         .createQueryBuilder('c')
         .where('c.preset_seq = :presetSeq', { presetSeq: device.presetSeq })
@@ -385,7 +392,6 @@ export class ControlService {
         failCount++;
       }
 
-      // Save log with triggerType='NFC'
       await this.logRepository.save(
         this.logRepository.create({
           spaceDeviceSeq: device.spaceDeviceSeq,
@@ -435,8 +441,13 @@ export class ControlService {
     let successCount = 0;
     let failCount = 0;
 
-    for (const mapping of mappings) {
-      // Get device info
+    for (let i = 0; i < mappings.length; i++) {
+      const mapping = mappings[i];
+
+      if (i > 0) {
+        await new Promise<void>((resolve) => setTimeout(resolve, this.COMMAND_DELAY_MS));
+      }
+
       const device = await this.spaceDeviceRepository.findOne({
         where: { spaceDeviceSeq: mapping.spaceDeviceSeq },
         relations: ['preset'],
@@ -827,12 +838,14 @@ export class ControlService {
    * 명령어 코드 파싱 (HEX 문자열 → Buffer, 또는 텍스트 그대로)
    */
   private parseCommandCode(commandCode: string): Buffer {
-    // Check if it looks like hex (e.g., "A1 B2 C3" or "0xA1,0xB2")
-    const hexPattern = /^([0-9A-Fa-f]{2}[\s,]*)+$/;
+    // Check if it looks like hex (e.g., "A1 B2 C3", "0xA1,0xB2", or "A1B2C3")
     const cleaned = commandCode.replace(/0x/g, '').replace(/,/g, ' ').trim();
+    const hexPattern = /^([0-9A-Fa-f]{2}[\s,]*)+$/;
 
     if (hexPattern.test(cleaned)) {
-      const hexBytes = cleaned.split(/\s+/).map((h) => parseInt(h, 16));
+      // Remove all whitespace, then split into 2-char pairs
+      const noSpace = cleaned.replace(/\s+/g, '');
+      const hexBytes = noSpace.match(/.{2}/g)!.map((h) => parseInt(h, 16));
       return Buffer.from(hexBytes);
     }
 

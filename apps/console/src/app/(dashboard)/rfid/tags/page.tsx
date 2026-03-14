@@ -68,6 +68,7 @@ import {
   updateCard,
   deleteCard,
   getUnregisteredTags,
+  deleteUnregisteredTag,
 } from '@/lib/api/nfc';
 import { getUsers } from '@/lib/api/members';
 import { useNfcWebSocket } from '@/hooks/useNfcWebSocket';
@@ -150,6 +151,8 @@ export default function NfcTagManagementPage() {
   const [unregPage, setUnregPage] = useState(1);
   const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
   const [selectedTag, setSelectedTag] = useState<UnregisteredTagItem | null>(null);
+  const [deleteUnregDialogOpen, setDeleteUnregDialogOpen] = useState(false);
+  const [tagToDelete, setTagToDelete] = useState<UnregisteredTagItem | null>(null);
 
   // ---- Registered cards state ----
   const [cardPage, setCardPage] = useState(1);
@@ -244,6 +247,19 @@ export default function NfcTagManagementPage() {
   });
 
   // ==================== Mutations ====================
+
+  const deleteUnregMutation = useMutation({
+    mutationFn: (tagIdentifier: string) => deleteUnregisteredTag(tagIdentifier),
+    onSuccess: () => {
+      showToast.success('미등록 태그가 삭제되었습니다.');
+      queryClient.invalidateQueries({ queryKey: ['unregisteredTags'] });
+      setDeleteUnregDialogOpen(false);
+      setTagToDelete(null);
+    },
+    onError: (error: Error & { data?: { message?: string } }) => {
+      showToast.apiError(error, '미등록 태그 삭제에 실패했습니다.');
+    },
+  });
 
   // Approve (create card)
   const createCardMutation = useMutation({
@@ -460,14 +476,26 @@ export default function NfcTagManagementPage() {
                           <TableCell>{tag.lastReaderName}</TableCell>
                           <TableCell>{tag.lastSpaceName}</TableCell>
                           <TableCell className="text-center">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleOpenApproval(tag)}
-                            >
-                              <UserCheck className="mr-1 h-4 w-4" />
-                              승인
-                            </Button>
+                            <div className="flex items-center justify-center gap-1">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleOpenApproval(tag)}
+                              >
+                                <UserCheck className="mr-1 h-4 w-4" />
+                                승인
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setTagToDelete(tag);
+                                  setDeleteUnregDialogOpen(true);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
@@ -1265,6 +1293,48 @@ export default function NfcTagManagementPage() {
           </form>
         </SheetContent>
       </Sheet>
+
+      {/* ==================== Delete Unregistered Tag Dialog ==================== */}
+      <Dialog open={deleteUnregDialogOpen} onOpenChange={setDeleteUnregDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>미등록 태그 삭제</DialogTitle>
+            <DialogDescription>
+              식별값 <span className="font-mono font-bold">{tagToDelete?.tagIdentifier}</span>의
+              미등록 태그 로그를 삭제하시겠습니까?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteUnregDialogOpen(false);
+                setTagToDelete(null);
+              }}
+            >
+              취소
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (tagToDelete) {
+                  deleteUnregMutation.mutate(tagToDelete.tagIdentifier);
+                }
+              }}
+              disabled={deleteUnregMutation.isPending}
+            >
+              {deleteUnregMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  삭제 중...
+                </>
+              ) : (
+                '삭제'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* ==================== Delete Confirmation Dialog ==================== */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

@@ -5,8 +5,9 @@ import {
   Param,
   Query,
   ParseIntPipe,
+  Request,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { RecordingsService } from './recordings.service';
 import { QuerySessionsDto, QueryFilesDto } from './dto/query-recordings.dto';
 
@@ -43,10 +44,27 @@ export class RecordingsController {
 
   @Get('files/:recFileSeq/download')
   @ApiOperation({ summary: '녹화 파일 다운로드' })
+  @ApiResponse({ status: 200, description: '파일 경로 및 메타데이터 반환' })
+  @ApiResponse({ status: 403, description: '접근 권한 없음 (녹화 진행자만 가능)' })
+  @ApiResponse({ status: 404, description: '파일 없음' })
   async downloadFile(
     @Param('recFileSeq', ParseIntPipe) recFileSeq: number,
+    @Request() req: { user: { seq: number } },
   ) {
-    const result = await this.recordingsService.getFileForDownload(recFileSeq);
+    const result = await this.recordingsService.getFileForDownload(recFileSeq, req.user.seq);
+    return { success: true, data: result };
+  }
+
+  @Get('files/:recFileSeq/preview')
+  @ApiOperation({ summary: '녹화 파일 미리보기 정보' })
+  @ApiResponse({ status: 200, description: '미리보기용 메타데이터 및 경로 반환' })
+  @ApiResponse({ status: 403, description: '접근 권한 없음 (녹화 진행자만 가능)' })
+  @ApiResponse({ status: 404, description: '파일 없음' })
+  async previewFile(
+    @Param('recFileSeq', ParseIntPipe) recFileSeq: number,
+    @Request() req: { user: { seq: number } },
+  ) {
+    const result = await this.recordingsService.getFileForPreview(recFileSeq, req.user.seq);
     return { success: true, data: result };
   }
 

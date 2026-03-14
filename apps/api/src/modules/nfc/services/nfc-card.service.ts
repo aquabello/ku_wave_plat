@@ -336,6 +336,17 @@ export class NfcCardService {
   /**
    * 미등록 태그 목록 조회
    */
+  async deleteUnregistered(tagIdentifier: string) {
+    const result = await this.nfcLogRepository
+      .createQueryBuilder()
+      .delete()
+      .where('tag_identifier = :tagIdentifier', { tagIdentifier })
+      .andWhere('card_seq IS NULL')
+      .execute();
+
+    return { deletedCount: result.affected ?? 0 };
+  }
+
   async findUnregistered(
     query: NfcUnregisteredQueryDto,
   ): Promise<NfcUnregisteredListResponse> {

@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -235,16 +236,49 @@ export class RecordingsService {
     };
   }
 
-  // ──────────────── 파일 다운로드 ────────────────
+  // ──────────────── 파일 다운로드 / 미리보기 ────────────────
 
-  async getFileForDownload(recFileSeq: number): Promise<TbRecordingFile> {
+  async getFileForDownload(recFileSeq: number, userSeq: number) {
     const file = await this.fileRepo.findOne({
       where: { recFileSeq, fileIsdel: 'N' },
+      relations: ['session'],
     });
     if (!file) {
       throw new NotFoundException('해당 파일을 찾을 수 없습니다.');
     }
-    return file;
+    if (file.session.tuSeq !== userSeq) {
+      throw new ForbiddenException('녹화를 진행한 사용자만 접근할 수 있습니다.');
+    }
+    return {
+      recFileSeq: file.recFileSeq,
+      fileName: file.fileName,
+      filePath: file.filePath,
+      fileSize: file.fileSize,
+      fileFormat: file.fileFormat,
+      ftpUploadedPath: file.ftpUploadedPath,
+    };
+  }
+
+  async getFileForPreview(recFileSeq: number, userSeq: number) {
+    const file = await this.fileRepo.findOne({
+      where: { recFileSeq, fileIsdel: 'N' },
+      relations: ['session'],
+    });
+    if (!file) {
+      throw new NotFoundException('해당 파일을 찾을 수 없습니다.');
+    }
+    if (file.session.tuSeq !== userSeq) {
+      throw new ForbiddenException('녹화를 진행한 사용자만 접근할 수 있습니다.');
+    }
+    return {
+      recFileSeq: file.recFileSeq,
+      fileName: file.fileName,
+      fileFormat: file.fileFormat,
+      fileDurationSec: file.fileDurationSec,
+      fileSize: file.fileSize,
+      fileSizeFormatted: this.formatFileSize(file.fileSize ? Number(file.fileSize) : null),
+      previewPath: file.ftpUploadedPath ?? file.filePath,
+    };
   }
 
   // ──────────────── 헬퍼 ────────────────

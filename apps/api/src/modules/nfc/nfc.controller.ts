@@ -174,6 +174,16 @@ export class NfcController {
     return this.nfcCardService.findUnregistered(query);
   }
 
+  @Delete('cards/unregistered/:tagIdentifier')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '미등록 태그 삭제' })
+  @ApiResponse({ status: 200, description: '미등록 태그 로그 삭제 성공' })
+  async deleteUnregisteredTag(
+    @Param('tagIdentifier') tagIdentifier: string,
+  ) {
+    return this.nfcCardService.deleteUnregistered(tagIdentifier);
+  }
+
   @Get('cards')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'NFC 카드 목록 조회' })

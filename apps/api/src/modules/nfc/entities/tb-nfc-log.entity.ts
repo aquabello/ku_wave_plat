@@ -30,16 +30,16 @@ export class TbNfcLog {
   @Column({
     name: 'log_type',
     type: 'enum',
-    enum: ['ENTER', 'EXIT', 'DENIED', 'UNKNOWN'],
+    enum: ['ENTER', 'EXIT', 'DENIED', 'UNKNOWN', 'REGISTER_SAVE', 'REGISTER_NO', 'REGISTER_TIMEOUT'],
     nullable: false,
     comment: '로그 유형',
   })
-  logType: 'ENTER' | 'EXIT' | 'DENIED' | 'UNKNOWN';
+  logType: 'ENTER' | 'EXIT' | 'DENIED' | 'UNKNOWN' | 'REGISTER_SAVE' | 'REGISTER_NO' | 'REGISTER_TIMEOUT';
 
   @Column({
     name: 'tag_identifier',
     type: 'varchar',
-    length: 64,
+    length: 255,
     nullable: false,
     comment: '태그 식별자',
   })

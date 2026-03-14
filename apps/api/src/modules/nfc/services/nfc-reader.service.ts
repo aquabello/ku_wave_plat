@@ -156,7 +156,6 @@ export class NfcReaderService {
       .createQueryBuilder('reader')
       .select('MAX(reader.reader_code)', 'maxCode')
       .where("reader.reader_code LIKE 'RDR-%'")
-      .andWhere('reader.reader_isdel = :isdel', { isdel: 'N' })
       .getRawOne();
 
     let nextNumber = 1;

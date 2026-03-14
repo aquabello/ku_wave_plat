@@ -26,8 +26,8 @@ export interface NfcTagRequest {
 
 /** BE → Agent: POST /nfc/tag 응답 */
 export interface NfcTagResponse {
-  result: 'SUCCESS' | 'PARTIAL' | 'DENIED' | 'UNKNOWN' | 'ERROR';
-  logType: 'ENTER' | 'EXIT' | 'DENIED' | 'UNKNOWN';
+  result: 'SUCCESS' | 'PARTIAL' | 'DENIED' | 'UNKNOWN' | 'ERROR' | 'REGISTER_SAVE' | 'REGISTER_NO' | 'REGISTER_TIMEOUT';
+  logType: 'ENTER' | 'EXIT' | 'DENIED' | 'UNKNOWN' | 'REGISTER_SAVE' | 'REGISTER_NO' | 'REGISTER_TIMEOUT';
   spaceName: string;
   userName: string | null;
   controlResult: 'SUCCESS' | 'FAIL' | 'PARTIAL' | 'SKIPPED' | null;
@@ -135,7 +135,7 @@ export interface UpdateNfcCardRequest {
 // NFC Log
 // =============================================
 
-export type NfcLogType = 'ENTER' | 'EXIT' | 'DENIED' | 'UNKNOWN';
+export type NfcLogType = 'ENTER' | 'EXIT' | 'DENIED' | 'UNKNOWN' | 'REGISTER_SAVE' | 'REGISTER_NO' | 'REGISTER_TIMEOUT';
 export type NfcControlResult = 'SUCCESS' | 'FAIL' | 'PARTIAL' | 'SKIPPED';
 
 export interface NfcLogListItem {

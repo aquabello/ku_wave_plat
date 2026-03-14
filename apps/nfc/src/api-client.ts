@@ -21,7 +21,7 @@ export class ApiClient {
         'X-NFC-Api-Key': this.apiKey,
       },
       body: request,
-      timeout: 10000, // 10초 타임아웃
+      timeout: 35000,
     });
 
     return response;
@@ -29,8 +29,13 @@ export class ApiClient {
 
   async healthCheck(): Promise<boolean> {
     try {
-      await ofetch(`${this.baseUrl}/health`, { timeout: 5000 });
-      return true;
+      const res = await ofetch.raw(`${this.baseUrl}/nfc/stats`, {
+        method: 'GET',
+        headers: { 'X-NFC-Api-Key': this.apiKey },
+        timeout: 5000,
+        ignoreResponseError: true,
+      });
+      return res.status !== 401 && res.status !== 403;
     } catch {
       return false;
     }
