@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1773451594000,
+  "lastScanned": 1773568328641,
   "projectRoot": "/Users/aquabello/Documents/10-Dev/ku_wave_plat",
   "techStack": {
     "languages": [
@@ -58,28 +58,28 @@
       "path": "_bmad",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1773451593892,
+      "lastAccessed": 1773568328593,
       "keyFiles": []
     },
     "_bmad-output": {
       "path": "_bmad-output",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1773451593893,
+      "lastAccessed": 1773568328593,
       "keyFiles": []
     },
     "apps": {
       "path": "apps",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1773451593945,
+      "lastAccessed": 1773568328594,
       "keyFiles": []
     },
     "docs": {
       "path": "docs",
       "purpose": "Documentation",
-      "fileCount": 18,
-      "lastAccessed": 1773451593947,
+      "fileCount": 20,
+      "lastAccessed": 1773568328594,
       "keyFiles": [
         "00-sys-agent-prompt.md",
         "01-fe-agent-prompt.md",
@@ -92,14 +92,14 @@
       "path": "packages",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1773451593952,
+      "lastAccessed": 1773568328595,
       "keyFiles": []
     },
     "scripts": {
       "path": "scripts",
       "purpose": "Build/utility scripts",
       "fileCount": 2,
-      "lastAccessed": 1773451593959,
+      "lastAccessed": 1773568328595,
       "keyFiles": [
         "check-db.js",
         "dev-wrapper.js"
@@ -109,14 +109,14 @@
       "path": "tools",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1773451593987,
+      "lastAccessed": 1773568328595,
       "keyFiles": []
     },
     "apps/api": {
       "path": "apps/api",
       "purpose": "API routes",
       "fileCount": 10,
-      "lastAccessed": 1773451593994,
+      "lastAccessed": 1773568328596,
       "keyFiles": [
         "README.md",
         "nest-cli.json",
@@ -127,7 +127,7 @@
       "path": "packages/config",
       "purpose": "Configuration files",
       "fileCount": 4,
-      "lastAccessed": 1773451593997,
+      "lastAccessed": 1773568328597,
       "keyFiles": [
         "eslint-preset.js",
         "package.json",
@@ -138,7 +138,7 @@
       "path": "packages/types",
       "purpose": "Type definitions",
       "fileCount": 3,
-      "lastAccessed": 1773451593998,
+      "lastAccessed": 1773568328614,
       "keyFiles": [
         "package.json",
         "tsconfig.json"
@@ -147,303 +147,303 @@
   },
   "hotPaths": [
     {
-      "path": "",
-      "accessCount": 9,
-      "lastAccessed": 1773456107187,
+      "path": "docs/dev/plan.md",
+      "accessCount": 21,
+      "lastAccessed": 1773572268246,
+      "type": "file"
+    },
+    {
+      "path": "CLAUDE.md",
+      "accessCount": 8,
+      "lastAccessed": 1773573498409,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/ftp/ftp.service.ts",
+      "accessCount": 4,
+      "lastAccessed": 1773571523261,
+      "type": "file"
+    },
+    {
+      "path": "apps/console/src/app/(dashboard)/recorder/files/components/file-table.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1773572135204,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/recorders/recorders.module.ts",
+      "accessCount": 3,
+      "lastAccessed": 1773571418285,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/recorders/recorder-control.service.ts",
+      "accessCount": 3,
+      "lastAccessed": 1773571491535,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/ftp/ftp.module.ts",
+      "accessCount": 3,
+      "lastAccessed": 1773571555650,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/recordings/recordings.service.ts",
+      "accessCount": 3,
+      "lastAccessed": 1773571571978,
+      "type": "file"
+    },
+    {
+      "path": "apps/console/src/hooks",
+      "accessCount": 3,
+      "lastAccessed": 1773572022062,
       "type": "directory"
     },
     {
-      "path": "apps/api/src/app.module.ts",
-      "accessCount": 5,
-      "lastAccessed": 1773456046849,
-      "type": "file"
-    },
-    {
-      "path": "apps/console/src/components/layout/sidebar.tsx",
-      "accessCount": 5,
-      "lastAccessed": 1773456077077,
-      "type": "file"
-    },
-    {
-      "path": "apps/console/src/lib/api/client.ts",
-      "accessCount": 4,
-      "lastAccessed": 1773456076844,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/common/guards/jwt-auth.guard.ts",
+      "path": "packages/types/src/recorder.types.ts",
       "accessCount": 3,
-      "lastAccessed": 1773455084201,
+      "lastAccessed": 1773572059885,
       "type": "file"
     },
     {
-      "path": "apps/console/package.json",
-      "accessCount": 3,
-      "lastAccessed": 1773456115807,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/package.json",
+      "path": "apps/api/src/modules/recorders/enums/ftp-status.enum.ts",
       "accessCount": 2,
-      "lastAccessed": 1773452067916,
+      "lastAccessed": 1773569154835,
       "type": "file"
     },
     {
-      "path": "packages/config/package.json",
+      "path": "apps/console/src",
       "accessCount": 2,
-      "lastAccessed": 1773452092891,
-      "type": "file"
+      "lastAccessed": 1773570499490,
+      "type": "directory"
     },
     {
-      "path": "packages/types/package.json",
+      "path": "packages/types/src",
       "accessCount": 2,
-      "lastAccessed": 1773452093321,
-      "type": "file"
+      "lastAccessed": 1773572038154,
+      "type": "directory"
     },
     {
-      "path": "packages/ui/package.json",
+      "path": "apps/console/src/app/(dashboard)/recorder/control/components/control-panel.tsx",
       "accessCount": 2,
-      "lastAccessed": 1773452093463,
+      "lastAccessed": 1773572088152,
       "type": "file"
     },
     {
-      "path": "packages/contracts/package.json",
+      "path": "apps/console/src/hooks/use-recordings.ts",
       "accessCount": 2,
-      "lastAccessed": 1773452093513,
-      "type": "file"
-    },
-    {
-      "path": ".env.example",
-      "accessCount": 2,
-      "lastAccessed": 1773452112041,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/auth/auth.controller.ts",
-      "accessCount": 2,
-      "lastAccessed": 1773452133512,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/main.ts",
-      "accessCount": 2,
-      "lastAccessed": 1773452142759,
-      "type": "file"
-    },
-    {
-      "path": "apps/console/src/components/auth/auth-guard.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1773452151338,
-      "type": "file"
-    },
-    {
-      "path": "apps/console/src/components/layout/header.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1773455106498,
-      "type": "file"
-    },
-    {
-      "path": "package.json",
-      "accessCount": 1,
-      "lastAccessed": 1773452053964,
-      "type": "file"
-    },
-    {
-      "path": "pnpm-workspace.yaml",
-      "accessCount": 1,
-      "lastAccessed": 1773452054149,
-      "type": "file"
-    },
-    {
-      "path": "turbo.json",
-      "accessCount": 1,
-      "lastAccessed": 1773452054310,
-      "type": "file"
-    },
-    {
-      "path": "apps/nfc/package.json",
-      "accessCount": 1,
-      "lastAccessed": 1773452063779,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/users/users.controller.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773452083849,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/dashboard/dashboard.controller.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773452084155,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/settings/settings.controller.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773452084470,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/spaces/spaces.controller.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773452085582,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/menus/menus.controller.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773452086099,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/permissions/permissions.controller.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773452086304,
-      "type": "file"
-    },
-    {
-      "path": "apps/console/next.config.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773452089784,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/activity-logs/activity-logs.controller.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773452091512,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/nfc/nfc.controller.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773452091710,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/players/players.controller.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773452093121,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/playlists/playlists.controller.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773452093435,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/contents/contents.controller.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773452093781,
-      "type": "file"
-    },
-    {
-      "path": "apps/console/src/app/layout.tsx",
-      "accessCount": 1,
-      "lastAccessed": 1773452093931,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/player-groups/player-groups.controller.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773452093940,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/player-playlists/player-playlists.controller.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773452094836,
-      "type": "file"
-    },
-    {
-      "path": "apps/console/src/app/(auth)/layout.tsx",
-      "accessCount": 1,
-      "lastAccessed": 1773452094960,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/play-logs/play-logs.controller.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773452095503,
-      "type": "file"
-    },
-    {
-      "path": "apps/console/src/components/providers.tsx",
-      "accessCount": 1,
-      "lastAccessed": 1773452096650,
+      "lastAccessed": 1773572097320,
       "type": "file"
     },
     {
       "path": "packages/types/src/index.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773452098316,
+      "accessCount": 2,
+      "lastAccessed": 1773572163580,
+      "type": "directory"
+    },
+    {
+      "path": "apps/console/src/lib/api/recordings.ts",
+      "accessCount": 2,
+      "lastAccessed": 1773572211078,
       "type": "file"
     },
     {
-      "path": "packages/config/eslint-preset.js",
-      "accessCount": 1,
-      "lastAccessed": 1773452098952,
+      "path": "apps/api/src/modules/controller/socket/socket.service.ts",
+      "accessCount": 2,
+      "lastAccessed": 1773574781412,
       "type": "file"
     },
     {
-      "path": "packages/ui/src/index.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773452098966,
+      "path": "apps/nfc/src/reader.ts",
+      "accessCount": 2,
+      "lastAccessed": 1773574860661,
       "type": "file"
     },
     {
-      "path": "packages/config/tsconfig.base.json",
-      "accessCount": 1,
-      "lastAccessed": 1773452099067,
+      "path": "apps/api/src/modules/nfc/services/nfc-tag.service.ts",
+      "accessCount": 2,
+      "lastAccessed": 1773574861147,
       "type": "file"
     },
     {
-      "path": "apps/api/src/modules/content-approvals/content-approvals.controller.ts",
+      "path": "apps/api/src",
       "accessCount": 1,
-      "lastAccessed": 1773452100154,
-      "type": "file"
-    },
-    {
-      "path": "apps/api/src/modules/recorders/recorders.controller.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773452101027,
-      "type": "file"
+      "lastAccessed": 1773568509400,
+      "type": "directory"
     },
     {
       "path": "apps/api/src/modules/recorders/recorder-control.controller.ts",
       "accessCount": 1,
-      "lastAccessed": 1773452101286,
-      "type": "file"
-    },
-    {
-      "path": "packages/types/src/auth.types.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773452101492,
-      "type": "file"
-    },
-    {
-      "path": "packages/types/src/user.types.ts",
-      "accessCount": 1,
-      "lastAccessed": 1773452101891,
+      "lastAccessed": 1773568515705,
       "type": "file"
     },
     {
       "path": "apps/api/src/modules/ftp/ftp.controller.ts",
       "accessCount": 1,
-      "lastAccessed": 1773452102031,
+      "lastAccessed": 1773568516799,
       "type": "file"
     },
     {
-      "path": "packages/types/src/api.types.ts",
+      "path": "apps/api/src/modules/recorders/entities/recording-session.entity.ts",
       "accessCount": 1,
-      "lastAccessed": 1773452102211,
+      "lastAccessed": 1773568517950,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/recorders/entities/recording-file.entity.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773568518328,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/ftp/entities/ftp-config.entity.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773568518733,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/recorders/enums/session-status.enum.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773568539597,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/recorders/entities/recorder.entity.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773568540073,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/recorders/enums/log-type.enum.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773568541008,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/ftp/dto/create-ftp-config.dto.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773569153739,
       "type": "file"
     },
     {
       "path": "apps/api/src/modules/recordings/recordings.controller.ts",
       "accessCount": 1,
-      "lastAccessed": 1773452102460,
+      "lastAccessed": 1773570488482,
+      "type": "file"
+    },
+    {
+      "path": "apps/console/src/components/layout",
+      "accessCount": 1,
+      "lastAccessed": 1773570510877,
+      "type": "directory"
+    },
+    {
+      "path": "apps/console/src/app/(dashboard)/recorder/files/components/file-preview-dialog.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1773570511358,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/recorders/enums/recorder-protocol.enum.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773571358298,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/recorders/dto/recording-command.dto.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773571358741,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/recorders/interfaces/protocol.interface.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773571373393,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/recorders/services/recorder-protocol.service.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773571402006,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/ftp/ftp-upload-job.service.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773571542473,
+      "type": "file"
+    },
+    {
+      "path": "apps/console/src/app/(dashboard)/recorder/control/page.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1773572008565,
+      "type": "file"
+    },
+    {
+      "path": "apps/console/src/app/(dashboard)/recorder/control/components/recording-controls.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1773572009590,
+      "type": "file"
+    },
+    {
+      "path": "apps/console/src/hooks/use-recorders.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773572026744,
+      "type": "file"
+    },
+    {
+      "path": "apps/console/src/components/ui",
+      "accessCount": 1,
+      "lastAccessed": 1773572157651,
+      "type": "directory"
+    },
+    {
+      "path": "apps/console/src/components/ui/progress.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1773572178113,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/nfc/nfc.controller.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773574781579,
+      "type": "file"
+    },
+    {
+      "path": "apps/nfc/src/api-client.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773574782035,
+      "type": "file"
+    },
+    {
+      "path": "apps/nfc/src/index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773574782213,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/nfc/dto/index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773574788774,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/nfc/guards/nfc-api-key.guard.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773574789006,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/nfc/entities/tb-nfc-card.entity.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773574789220,
+      "type": "file"
+    },
+    {
+      "path": "apps/api/src/modules/nfc/entities/tb-nfc-reader.entity.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773574789378,
       "type": "file"
     }
   ],

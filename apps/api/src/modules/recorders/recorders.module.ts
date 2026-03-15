@@ -12,6 +12,8 @@ import { RecorderControlController } from './recorder-control.controller';
 import { RecordersService } from './recorders.service';
 import { RecorderControlService } from './recorder-control.service';
 import { RecorderHealthService } from './recorder-health.service';
+import { RecorderProtocolService } from './services/recorder-protocol.service';
+import { FtpModule } from '@modules/ftp/ftp.module';
 
 @Module({
   imports: [
@@ -24,9 +26,10 @@ import { RecorderHealthService } from './recorder-health.service';
       TbSpace,
     ]),
     HttpModule.register({ timeout: 10000 }),
+    FtpModule,
   ],
   controllers: [RecordersController, RecorderControlController],
-  providers: [RecordersService, RecorderControlService, RecorderHealthService],
-  exports: [RecordersService, RecorderControlService],
+  providers: [RecordersService, RecorderControlService, RecorderHealthService, RecorderProtocolService],
+  exports: [RecordersService, RecorderControlService, RecorderProtocolService],
 })
 export class RecordersModule {}

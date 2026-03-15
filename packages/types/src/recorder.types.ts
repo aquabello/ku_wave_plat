@@ -169,6 +169,25 @@ export interface PresetApplyResponse {
   executedAt: string;
 }
 
+export interface RecorderLiveStatus {
+  recordingStatus: 'RECORDING' | 'PAUSED' | 'STOPPED';
+  elapsedSec: number;
+  elapsedFormatted: string;
+  storage: {
+    totalBytes: string;
+    availableBytes: string;
+    usedPercent: number;
+    isWarning: boolean;
+  };
+}
+
+export interface RecorderRecentFile {
+  recFileSeq: number;
+  fileName: string;
+  ftpStatus: FtpUploadStatus;
+  ftpRetryCount: number;
+}
+
 export interface RecorderControlStatus {
   recorderSeq: number;
   recorderName: string;
@@ -185,6 +204,8 @@ export interface RecorderControlStatus {
     tuName: string;
   } | null;
   lastHealthCheck: string | null;
+  liveStatus: RecorderLiveStatus | null;
+  recentFiles: RecorderRecentFile[];
 }
 
 // --- Recording Sessions ---
@@ -257,7 +278,7 @@ export interface RecordingFileListItem {
 
 export interface RetryUploadResponse {
   recFileSeq: number;
-  ftpStatus: 'UPLOADING';
+  ftpStatus: FtpUploadStatus;
   ftpRetryCount: number;
   message: string;
 }

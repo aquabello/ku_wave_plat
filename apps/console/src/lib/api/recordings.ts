@@ -194,7 +194,7 @@ export async function downloadFile(recFileSeq: number): Promise<string> {
 export async function retryUpload(recFileSeq: number): Promise<RetryUploadResponse> {
   if (USE_MOCK) {
     await new Promise((r) => setTimeout(r, 300));
-    return { recFileSeq, ftpStatus: 'RETRY' as FtpUploadStatus, ftpRetryCount: 1, message: 'FTP 업로드 재시도를 시작합니다 (1/3회)' };
+    return { recFileSeq, ftpStatus: 'RETRY' as const, ftpRetryCount: 0, message: 'FTP 업로드 재시도가 예약되었습니다' };
   }
   const response = await apiClient<ApiResponse<RetryUploadResponse>>(`/recordings/files/${recFileSeq}/retry-upload`, {
     method: 'POST',

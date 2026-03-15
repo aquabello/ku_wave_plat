@@ -38,6 +38,14 @@ export function useFilesQuery(params?: GetFilesParams) {
   return useQuery({
     queryKey: recordingKeys.fileList(params),
     queryFn: () => getFiles(params),
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      if (!data) return false;
+      const hasActiveUpload = data.items?.some(
+        (f: { ftpStatus: string }) => f.ftpStatus === 'PENDING' || f.ftpStatus === 'UPLOADING' || f.ftpStatus === 'RETRY',
+      );
+      return hasActiveUpload ? 10000 : false;
+    },
   });
 }
 

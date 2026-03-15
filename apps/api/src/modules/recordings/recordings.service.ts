@@ -220,19 +220,19 @@ export class RecordingsService {
       throw new ConflictException('이미 업로드 완료된 파일입니다.');
     }
 
-    if (file.ftpRetryCount >= 3) {
-      throw new ConflictException('최대 재시도 횟수(3회)를 초과했습니다.');
+    if (file.ftpStatus === FtpStatus.UPLOADING) {
+      throw new ConflictException('현재 업로드 진행 중입니다.');
     }
 
     file.ftpStatus = FtpStatus.RETRY;
-    file.ftpRetryCount += 1;
+    file.ftpRetryCount = 0;
     await this.fileRepo.save(file);
 
     return {
       recFileSeq: file.recFileSeq,
       ftpStatus: file.ftpStatus,
       ftpRetryCount: file.ftpRetryCount,
-      message: `FTP 업로드 재시도를 시작합니다 (${file.ftpRetryCount}/3회)`,
+      message: 'FTP 업로드 재시도가 예약되었습니다',
     };
   }
 

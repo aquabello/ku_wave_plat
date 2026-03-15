@@ -7,7 +7,7 @@ import {
   flexRender,
   type ColumnDef,
 } from '@tanstack/react-table';
-import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RefreshCw, Loader2, AlertCircle } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -112,11 +112,29 @@ export function FileTable({ data, pagination, isLoading, onPageChange }: FileTab
         accessorKey: 'ftpStatus',
         header: 'FTP 상태',
         cell: ({ row }) => {
-          const status = row.original.ftpStatus;
+          const file = row.original;
+          const status = file.ftpStatus;
           return (
-            <Badge className={ftpStatusColorMap[status]}>
-              {ftpStatusLabelMap[status]}
-            </Badge>
+            <div className="flex items-center gap-1.5">
+              {status === 'UPLOADING' && (
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600" />
+              )}
+              {status === 'FAILED' && (
+                <AlertCircle className="h-3.5 w-3.5 text-red-600" />
+              )}
+              <Badge className={ftpStatusColorMap[status]}>
+                {ftpStatusLabelMap[status]}
+                {(status === 'FAILED' || status === 'RETRY') && ` (${file.ftpRetryCount}/3)`}
+              </Badge>
+              {status === 'FAILED' && file.ftpErrorMessage && (
+                <span
+                  className="text-xs text-red-500 max-w-[120px] truncate cursor-help"
+                  title={file.ftpErrorMessage}
+                >
+                  {file.ftpErrorMessage}
+                </span>
+              )}
+            </div>
           );
         },
       },
@@ -153,12 +171,12 @@ export function FileTable({ data, pagination, isLoading, onPageChange }: FileTab
         header: '관리',
         cell: ({ row }) => {
           const file = row.original;
-          const canRetry = file.ftpStatus === 'FAILED' || file.ftpStatus === 'RETRY';
+          const showRetry = file.ftpStatus === 'FAILED';
           return (
             <div className="flex gap-1">
               <FilePreviewDialog recFileSeq={file.recFileSeq} fileName={file.fileName} />
               <FileDownloadButton recFileSeq={file.recFileSeq} fileName={file.fileName} />
-              {canRetry && (
+              {showRetry && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -167,9 +185,9 @@ export function FileTable({ data, pagination, isLoading, onPageChange }: FileTab
                     retryMutation.mutate(file.recFileSeq);
                   }}
                   disabled={retryMutation.isPending}
-                  title="FTP 재업로드"
+                  title="FTP 재업로드 (retryCount 초기화)"
                 >
-                  <RefreshCw className="h-4 w-4 text-orange-600" />
+                  <RefreshCw className={`h-4 w-4 text-orange-600 ${retryMutation.isPending ? 'animate-spin' : ''}`} />
                 </Button>
               )}
             </div>

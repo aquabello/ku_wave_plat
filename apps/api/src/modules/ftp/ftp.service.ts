@@ -236,4 +236,129 @@ export class FtpService {
       await sftp.end();
     }
   }
+
+  // ──────────────── FTP 전송 로직 ────────────────
+
+  async getConfigForRecorder(recorderSeq: number): Promise<TbFtpConfig | null> {
+    const dedicated = await this.ftpConfigRepo.findOne({
+      where: { recorderSeq, ftpIsdel: 'N' },
+    });
+    if (dedicated) return dedicated;
+
+    const defaultConfig = await this.ftpConfigRepo.findOne({
+      where: { isDefault: 'Y', ftpIsdel: 'N' },
+    });
+    return defaultConfig ?? null;
+  }
+
+  async downloadAndUpload(
+    config: TbFtpConfig,
+    recorderFilePath: string,
+    fileName: string,
+  ): Promise<string> {
+    const fs = await import('fs');
+    const path = await import('path');
+
+    const tmpDir = '/tmp/recordings';
+    if (!fs.existsSync(tmpDir)) {
+      fs.mkdirSync(tmpDir, { recursive: true });
+    }
+    const localTmpPath = path.join(tmpDir, `${Date.now()}_${fileName}`);
+
+    await this.downloadFile(config, recorderFilePath, fileName, localTmpPath);
+
+    try {
+      const uploadPath = `${config.ftpPath ?? '/'}/${fileName}`;
+      await this.uploadFile(config, localTmpPath, uploadPath);
+      return uploadPath;
+    } finally {
+      try {
+        if (fs.existsSync(localTmpPath)) fs.unlinkSync(localTmpPath);
+      } catch {
+        this.logger.warn(`Failed to cleanup tmp file: ${localTmpPath}`);
+      }
+    }
+  }
+
+  private async downloadFile(
+    config: TbFtpConfig,
+    remotePath: string,
+    fileName: string,
+    localPath: string,
+  ): Promise<void> {
+    const fs = await import('fs');
+    const remoteFilePath = `${remotePath}${fileName}`;
+
+    if (config.ftpProtocol === 'SFTP') {
+      const sftp = new SftpClient();
+      try {
+        await sftp.connect({
+          host: config.ftpHost,
+          port: config.ftpPort ?? 22,
+          username: config.ftpUsername,
+          password: config.ftpPassword,
+          readyTimeout: 10000,
+        });
+        await sftp.fastGet(remoteFilePath, localPath);
+      } finally {
+        await sftp.end();
+      }
+    } else {
+      const client = new FtpClient(30000);
+      try {
+        await client.access({
+          host: config.ftpHost,
+          port: config.ftpPort ?? 21,
+          user: config.ftpUsername,
+          password: config.ftpPassword,
+          secure: config.ftpProtocol === 'FTPS',
+          secureOptions: config.ftpProtocol === 'FTPS' ? { rejectUnauthorized: false } : undefined,
+        });
+        const writeStream = fs.createWriteStream(localPath);
+        await client.downloadTo(writeStream, remoteFilePath);
+      } finally {
+        client.close();
+      }
+    }
+  }
+
+  private async uploadFile(
+    config: TbFtpConfig,
+    localPath: string,
+    remotePath: string,
+  ): Promise<void> {
+    const fs = await import('fs');
+
+    if (config.ftpProtocol === 'SFTP') {
+      const sftp = new SftpClient();
+      try {
+        await sftp.connect({
+          host: config.ftpHost,
+          port: config.ftpPort ?? 22,
+          username: config.ftpUsername,
+          password: config.ftpPassword,
+          readyTimeout: 10000,
+        });
+        await sftp.fastPut(localPath, remotePath);
+      } finally {
+        await sftp.end();
+      }
+    } else {
+      const client = new FtpClient(30000);
+      try {
+        await client.access({
+          host: config.ftpHost,
+          port: config.ftpPort ?? 21,
+          user: config.ftpUsername,
+          password: config.ftpPassword,
+          secure: config.ftpProtocol === 'FTPS',
+          secureOptions: config.ftpProtocol === 'FTPS' ? { rejectUnauthorized: false } : undefined,
+        });
+        const readStream = fs.createReadStream(localPath);
+        await client.uploadFrom(readStream, remotePath);
+      } finally {
+        client.close();
+      }
+    }
+  }
 }
