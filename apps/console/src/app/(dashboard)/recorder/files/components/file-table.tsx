@@ -81,73 +81,19 @@ export function FileTable({ data, pagination, isLoading, onPageChange }: FileTab
         ),
       },
       {
-        accessorKey: 'fileName',
-        header: '파일명',
+        id: 'location',
+        header: '건물/공간',
         cell: ({ row }) => (
-          <div className="font-mono text-sm max-w-[200px] truncate" title={row.original.fileName}>
-            {row.original.fileName}
+          <div>
+            {row.original.buildingName} {row.original.spaceName}
           </div>
         ),
-      },
-      {
-        accessorKey: 'fileSizeFormatted',
-        header: '크기',
-        cell: ({ row }) => <div>{row.original.fileSizeFormatted}</div>,
-      },
-      {
-        accessorKey: 'fileFormat',
-        header: '포맷',
-        cell: ({ row }) => (
-          <Badge variant="outline" className="uppercase">
-            {row.original.fileFormat}
-          </Badge>
-        ),
-      },
-      {
-        id: 'duration',
-        header: '녹화시간',
-        cell: ({ row }) => <div className="font-mono">{formatDuration(row.original.fileDurationSec)}</div>,
-      },
-      {
-        accessorKey: 'ftpStatus',
-        header: 'FTP 상태',
-        cell: ({ row }) => {
-          const file = row.original;
-          const status = file.ftpStatus;
-          return (
-            <div className="flex items-center gap-1.5">
-              {status === 'UPLOADING' && (
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600" />
-              )}
-              {status === 'FAILED' && (
-                <AlertCircle className="h-3.5 w-3.5 text-red-600" />
-              )}
-              <Badge className={ftpStatusColorMap[status]}>
-                {ftpStatusLabelMap[status]}
-                {(status === 'FAILED' || status === 'RETRY') && ` (${file.ftpRetryCount}/3)`}
-              </Badge>
-              {status === 'FAILED' && file.ftpErrorMessage && (
-                <span
-                  className="text-xs text-red-500 max-w-[120px] truncate cursor-help"
-                  title={file.ftpErrorMessage}
-                >
-                  {file.ftpErrorMessage}
-                </span>
-              )}
-            </div>
-          );
-        },
-      },
-      {
-        id: 'ftpUploadedAt',
-        header: '업로드일',
-        cell: ({ row }) => <div>{formatDate(row.original.ftpUploadedAt)}</div>,
       },
       {
         accessorKey: 'sessionTitle',
         header: '강의명',
         cell: ({ row }) => (
-          <div className="max-w-[160px] truncate" title={row.original.sessionTitle}>
+          <div className="max-w-[200px] truncate" title={row.original.sessionTitle}>
             {row.original.sessionTitle || '-'}
           </div>
         ),
@@ -158,13 +104,24 @@ export function FileTable({ data, pagination, isLoading, onPageChange }: FileTab
         cell: ({ row }) => <div>{row.original.userName || '-'}</div>,
       },
       {
-        id: 'location',
-        header: '건물/공간',
-        cell: ({ row }) => (
-          <div>
-            {row.original.buildingName} {row.original.spaceName}
-          </div>
-        ),
+        id: 'duration',
+        header: '녹화시간',
+        cell: ({ row }) => <div className="font-mono">{formatDuration(row.original.fileDurationSec)}</div>,
+      },
+      {
+        id: 'sessionStatus',
+        header: '녹화상태',
+        cell: ({ row }) => {
+          const status = (row.original as any).sessionStatus ?? 'COMPLETED';
+          const statusConfig: Record<string, { label: string; className: string }> = {
+            COMPLETED: { label: '완료', className: 'bg-green-100 text-green-800 hover:bg-green-100' },
+            RECORDING: { label: '녹화 중', className: 'bg-red-100 text-red-800 hover:bg-red-100' },
+            FAILED: { label: '실패', className: 'bg-red-100 text-red-800 hover:bg-red-100' },
+            CANCELLED: { label: '취소', className: 'bg-gray-100 text-gray-800 hover:bg-gray-100' },
+          };
+          const config = statusConfig[status] ?? statusConfig.COMPLETED;
+          return <Badge className={config.className}>{config.label}</Badge>;
+        },
       },
       {
         id: 'actions',
@@ -174,7 +131,15 @@ export function FileTable({ data, pagination, isLoading, onPageChange }: FileTab
           const showRetry = file.ftpStatus === 'FAILED';
           return (
             <div className="flex gap-1">
-              <FilePreviewDialog recFileSeq={file.recFileSeq} fileName={file.fileName} />
+              <FilePreviewDialog
+                recFileSeq={file.recFileSeq}
+                fileName={file.fileName}
+                sessionTitle={file.sessionTitle ?? undefined}
+                fileSize={file.fileSize}
+                fileSizeFormatted={file.fileSizeFormatted}
+                fileDurationSec={file.fileDurationSec}
+                fileFormat={file.fileFormat}
+              />
               <FileDownloadButton recFileSeq={file.recFileSeq} fileName={file.fileName} />
               {showRetry && (
                 <Button
@@ -185,7 +150,7 @@ export function FileTable({ data, pagination, isLoading, onPageChange }: FileTab
                     retryMutation.mutate(file.recFileSeq);
                   }}
                   disabled={retryMutation.isPending}
-                  title="FTP 재업로드 (retryCount 초기화)"
+                  title="FTP 재업로드"
                 >
                   <RefreshCw className={`h-4 w-4 text-orange-600 ${retryMutation.isPending ? 'animate-spin' : ''}`} />
                 </Button>

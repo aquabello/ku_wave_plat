@@ -331,14 +331,21 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
         const hex = rawHex.match(/.{2}/g)?.join(' ') ?? '';
         const ascii = this.tryDecodeAscii(data);
 
+        const normalized = rawHex.replace(/\s/g, '');
+
+        const rxLabel =
+          normalized === '4E66632073617665' ? 'RX: SAVE' :
+          normalized === '4E6663206E6F'     ? 'RX: NO' :
+          normalized === MAIN_PAGE_HEX      ? 'RX: MAIN 페이지' :
+          undefined;
+
         this.broadcastLog({
           direction: 'RX',
           timestamp: new Date().toISOString(),
           hex,
           ascii,
+          label: rxLabel,
         });
-
-        const normalized = rawHex.replace(/\s/g, '');
 
         if (normalized === MAIN_PAGE_HEX) {
           this.broadcastLog({

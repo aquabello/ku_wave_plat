@@ -13,7 +13,7 @@ import type { RecorderPaginatedResponse } from './recorders';
 // ============================================================
 // MOCK DATA (BE 미연동 시 사용 — 연동 후 제거)
 // ============================================================
-const USE_MOCK = true;
+const USE_MOCK = false;
 
 const MOCK_SESSIONS: RecordingSessionListItem[] = [
   { no: 1, recSessionSeq: 101, recorderName: 'CAM-신공학관-301', buildingName: '신공학관', spaceName: '301호 강의실', sessionTitle: '데이터구조론 3주차', userName: '김교수', sessionStatus: 'COMPLETED' as SessionStatus, startedAt: '2026-03-04T09:00:00', endedAt: '2026-03-04T10:30:00', durationSec: 5400, fileCount: 3, presetName: '교탁 정면' },
@@ -147,27 +147,22 @@ export interface FilePreviewInfo {
   previewPath: string;
 }
 
-export async function previewFile(recFileSeq: number): Promise<FilePreviewInfo> {
-  if (USE_MOCK) {
-    await new Promise((r) => setTimeout(r, 300));
-    const mockFile = MOCK_FILES.find((f) => f.recFileSeq === recFileSeq) ?? MOCK_FILES[0];
-    return {
-      recFileSeq: mockFile.recFileSeq,
-      fileName: mockFile.fileName,
-      fileFormat: mockFile.fileFormat,
-      fileDurationSec: mockFile.fileDurationSec,
-      fileSize: String(mockFile.fileSize),
-      fileSizeFormatted: mockFile.fileSizeFormatted,
-      previewPath: `/ftp/ku_wave/${mockFile.fileName.slice(4, 12)}/${mockFile.fileName}`,
-    };
-  }
-  const response = await apiClient<ApiResponse<FilePreviewInfo>>(`/recordings/files/${recFileSeq}/preview`, {
-    method: 'GET',
-  });
-  if (!response.success || !response.data) {
-    throw new Error('파일 미리보기 정보 조회 실패');
-  }
-  return response.data;
+export function getPreviewUrl(recFileSeq: number): string {
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+  return `${API_BASE_URL}/recordings/files/${recFileSeq}/preview`;
+}
+
+export async function previewFile(recFileSeq: number, fileInfo?: Partial<FilePreviewInfo>): Promise<FilePreviewInfo> {
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+  return {
+    recFileSeq,
+    fileName: fileInfo?.fileName ?? '',
+    fileFormat: fileInfo?.fileFormat ?? 'mp4',
+    fileDurationSec: fileInfo?.fileDurationSec ?? 0,
+    fileSize: fileInfo?.fileSize ?? '0',
+    fileSizeFormatted: fileInfo?.fileSizeFormatted ?? '',
+    previewPath: `${API_BASE_URL}/recordings/files/${recFileSeq}/preview`,
+  };
 }
 
 export async function downloadFile(recFileSeq: number): Promise<string> {

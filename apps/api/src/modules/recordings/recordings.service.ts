@@ -149,7 +149,7 @@ export class RecordingsService {
     const qb = this.fileRepo
       .createQueryBuilder('f')
       .leftJoin('f.session', 'session')
-      .addSelect(['session.recSessionSeq', 'session.sessionTitle', 'session.tuSeq', 'session.recorderSeq'])
+      .addSelect(['session.recSessionSeq', 'session.sessionTitle', 'session.sessionStatus', 'session.tuSeq', 'session.recorderSeq'])
       .leftJoin('session.user', 'user')
       .addSelect(['user.seq', 'user.name'])
       .leftJoin('session.recorder', 'recorder')
@@ -194,6 +194,7 @@ export class RecordingsService {
         ftpUploadedAt: f.ftpUploadedAt,
         ftpRetryCount: f.ftpRetryCount,
         ftpErrorMessage: f.ftpErrorMessage,
+        sessionStatus: f.session?.sessionStatus ?? null,
         sessionTitle: f.session?.sessionTitle ?? null,
         userName: f.session?.user?.name ?? null,
         buildingName: f.session?.recorder?.space?.building?.buildingName ?? null,
@@ -238,16 +239,12 @@ export class RecordingsService {
 
   // ──────────────── 파일 다운로드 / 미리보기 ────────────────
 
-  async getFileForDownload(recFileSeq: number, userSeq: number) {
+  async getFileForDownload(recFileSeq: number) {
     const file = await this.fileRepo.findOne({
       where: { recFileSeq, fileIsdel: 'N' },
-      relations: ['session'],
     });
     if (!file) {
       throw new NotFoundException('해당 파일을 찾을 수 없습니다.');
-    }
-    if (file.session.tuSeq !== userSeq) {
-      throw new ForbiddenException('녹화를 진행한 사용자만 접근할 수 있습니다.');
     }
     return {
       recFileSeq: file.recFileSeq,
@@ -255,29 +252,23 @@ export class RecordingsService {
       filePath: file.filePath,
       fileSize: file.fileSize,
       fileFormat: file.fileFormat,
-      ftpUploadedPath: file.ftpUploadedPath,
     };
   }
 
-  async getFileForPreview(recFileSeq: number, userSeq: number) {
+  async getFileForPreview(recFileSeq: number) {
     const file = await this.fileRepo.findOne({
       where: { recFileSeq, fileIsdel: 'N' },
-      relations: ['session'],
     });
     if (!file) {
       throw new NotFoundException('해당 파일을 찾을 수 없습니다.');
     }
-    if (file.session.tuSeq !== userSeq) {
-      throw new ForbiddenException('녹화를 진행한 사용자만 접근할 수 있습니다.');
-    }
     return {
       recFileSeq: file.recFileSeq,
       fileName: file.fileName,
+      filePath: file.filePath,
       fileFormat: file.fileFormat,
       fileDurationSec: file.fileDurationSec,
       fileSize: file.fileSize,
-      fileSizeFormatted: this.formatFileSize(file.fileSize ? Number(file.fileSize) : null),
-      previewPath: file.ftpUploadedPath ?? file.filePath,
     };
   }
 

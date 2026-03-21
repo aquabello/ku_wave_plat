@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Eye, Loader2, FileVideo, Clock, HardDrive, Folder } from 'lucide-react';
+import { Eye, Loader2, FileVideo, Clock, HardDrive } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -9,12 +9,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { previewFile, type FilePreviewInfo } from '@/lib/api/recordings';
+import { previewFile, getPreviewUrl, type FilePreviewInfo } from '@/lib/api/recordings';
 import { useToast } from '@/hooks/use-toast';
 
 interface FilePreviewDialogProps {
   recFileSeq: number;
   fileName: string;
+  sessionTitle?: string;
+  fileSize?: number;
+  fileSizeFormatted?: string;
+  fileDurationSec?: number;
+  fileFormat?: string;
+  filePath?: string;
 }
 
 function formatDuration(seconds: number): string {
@@ -25,7 +31,16 @@ function formatDuration(seconds: number): string {
   return `${mins}분 ${secs}초`;
 }
 
-export function FilePreviewDialog({ recFileSeq, fileName }: FilePreviewDialogProps) {
+function formatFileSize(bytes: number | undefined): string {
+  if (!bytes) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let i = 0;
+  let size = bytes;
+  while (size >= 1024 && i < units.length - 1) { size /= 1024; i++; }
+  return `${size.toFixed(1)} ${units[i]}`;
+}
+
+export function FilePreviewDialog({ recFileSeq, fileName, sessionTitle, fileSize, fileSizeFormatted, fileDurationSec, fileFormat, filePath }: FilePreviewDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [previewInfo, setPreviewInfo] = useState<FilePreviewInfo | null>(null);
@@ -35,7 +50,13 @@ export function FilePreviewDialog({ recFileSeq, fileName }: FilePreviewDialogPro
     setOpen(true);
     setLoading(true);
     try {
-      const info = await previewFile(recFileSeq);
+      const info = await previewFile(recFileSeq, {
+        fileName,
+        fileFormat: fileFormat ?? 'mp4',
+        fileDurationSec: fileDurationSec ?? 0,
+        fileSize: String(fileSize ?? 0),
+        fileSizeFormatted: fileSizeFormatted || formatFileSize(fileSize),
+      });
       setPreviewInfo(info);
     } catch (error) {
       toast({
@@ -65,7 +86,7 @@ export function FilePreviewDialog({ recFileSeq, fileName }: FilePreviewDialogPro
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileVideo className="h-5 w-5 text-primary" />
-              {fileName}
+              {sessionTitle || fileName}
             </DialogTitle>
           </DialogHeader>
 
@@ -75,23 +96,26 @@ export function FilePreviewDialog({ recFileSeq, fileName }: FilePreviewDialogPro
             </div>
           ) : previewInfo ? (
             <div className="space-y-4">
-              {/* Video placeholder */}
-              <div className="relative bg-black rounded-lg aspect-video flex items-center justify-center">
-                <div className="text-center text-white/60">
-                  <FileVideo className="h-16 w-16 mx-auto mb-2 opacity-40" />
-                  <p className="text-sm">녹화기 파일 스트리밍 미리보기</p>
-                  <p className="text-xs mt-1 text-white/40">{previewInfo.fileFormat}</p>
-                </div>
+              {/* Video player */}
+              <div className="relative bg-black rounded-lg aspect-video overflow-hidden">
+                <video
+                  src={getPreviewUrl(recFileSeq)}
+                  controls
+                  autoPlay
+                  className="w-full h-full object-contain"
+                >
+                  브라우저가 비디오 재생을 지원하지 않습니다.
+                </video>
               </div>
 
               {/* File info */}
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <FileVideo className="h-4 w-4" />
-                  <span>파일명</span>
+                  <span>강의명</span>
                 </div>
-                <div className="font-mono text-xs truncate" title={previewInfo.fileName}>
-                  {previewInfo.fileName}
+                <div className="truncate" title={sessionTitle || previewInfo.fileName}>
+                  {sessionTitle || previewInfo.fileName}
                 </div>
 
                 <div className="flex items-center gap-2 text-muted-foreground">
@@ -104,15 +128,8 @@ export function FilePreviewDialog({ recFileSeq, fileName }: FilePreviewDialogPro
                   <HardDrive className="h-4 w-4" />
                   <span>파일크기</span>
                 </div>
-                <div>{previewInfo.fileSizeFormatted}</div>
+                <div>{fileSizeFormatted || previewInfo.fileSizeFormatted}</div>
 
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Folder className="h-4 w-4" />
-                  <span>저장경로</span>
-                </div>
-                <div className="font-mono text-xs truncate" title={previewInfo.previewPath}>
-                  {previewInfo.previewPath}
-                </div>
               </div>
             </div>
           ) : null}

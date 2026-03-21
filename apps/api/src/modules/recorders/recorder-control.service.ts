@@ -48,36 +48,56 @@ export class RecorderControlService {
 
   async sendPtzCommand(recorderSeq: number, dto: PtzCommandDto, tuSeq?: number) {
     const recorder = await this.getOnlineRecorder(recorderSeq);
+    const port = recorder.recorderPort ?? 6060;
     const log = await this.createLog(recorderSeq, tuSeq, RecorderLogType.PTZ, dto);
 
     try {
-      const url = this.buildRecorderUrl(recorder, '/ptz/control');
-      await firstValueFrom(
-        this.httpService.post(url, {
-          action: dto.action,
-          pan: dto.pan ?? 0,
-          tilt: dto.tilt ?? 0,
-          zoom: dto.zoom ?? 0,
-        }, { timeout: 10000 }),
-      );
+      let ack = false;
+      const { action, pan = 0, tilt = 0, zoom = 0 } = dto;
 
-      await this.updateLog(log.recLogSeq, ResultStatus.SUCCESS, 'PTZ 명령 전송 완료');
+      if (action === 'home') {
+        ack = await this.protocolService.ptzHome(recorder.recorderIp, port);
+      } else if (action === 'stop') {
+        ack = await this.protocolService.ptzStop(recorder.recorderIp, port);
+        await this.protocolService.ptzZoomStop(recorder.recorderIp, port);
+      } else if (action === 'move') {
+        if (zoom !== 0) {
+          ack = await this.protocolService.ptzZoom(recorder.recorderIp, port, zoom > 0 ? 'in' : 'out');
+        } else {
+          const direction = this.resolvePtzDirection(pan, tilt);
+          if (direction) {
+            ack = await this.protocolService.ptzMove(recorder.recorderIp, port, direction);
+          }
+        }
+      }
+
+      const resultStatus = ack ? ResultStatus.SUCCESS : ResultStatus.FAIL;
+      const resultMessage = ack ? 'PTZ 명령 전송 완료' : 'PTZ 명령 거부 (NACK)';
+      await this.updateLog(log.recLogSeq, resultStatus, resultMessage);
+
       return {
         recLogSeq: log.recLogSeq,
-        resultStatus: ResultStatus.SUCCESS,
-        resultMessage: 'PTZ 명령 전송 완료',
+        resultStatus,
+        resultMessage,
         executedAt: log.executedAt,
       };
     } catch (error: unknown) {
-      const err = error as { code?: string; message?: string };
-      const isTimeout = err?.code === 'ECONNABORTED' || err?.code === 'ETIMEDOUT';
-      const status = isTimeout ? ResultStatus.TIMEOUT : ResultStatus.FAIL;
-      const message = isTimeout ? '녹화기 응답 시간 초과' : `녹화기 통신 실패: ${err?.message}`;
-
-      await this.updateLog(log.recLogSeq, status, message);
-      if (isTimeout) throw new GatewayTimeoutException(message);
+      const message = `PTZ 통신 실패: ${(error as Error)?.message}`;
+      await this.updateLog(log.recLogSeq, ResultStatus.FAIL, message);
       throw new UnprocessableEntityException(message);
     }
+  }
+
+  private resolvePtzDirection(pan: number, tilt: number): string | null {
+    if (pan < 0 && tilt > 0) return 'leftUp';
+    if (pan > 0 && tilt > 0) return 'rightUp';
+    if (pan < 0 && tilt < 0) return 'leftDown';
+    if (pan > 0 && tilt < 0) return 'rightDown';
+    if (pan < 0) return 'left';
+    if (pan > 0) return 'right';
+    if (tilt > 0) return 'up';
+    if (tilt < 0) return 'down';
+    return null;
   }
 
   // ──────────────── 녹화 제어 ────────────────
@@ -112,11 +132,20 @@ export class RecorderControlService {
 
     const log = await this.createLog(recorderSeq, tuSeq, RecorderLogType.REC_START, dto);
 
-    const ack = await this.protocolService.startRecording(recorder.recorderIp, port);
-    if (!ack) {
+    // TCP로 녹화 시작
+    const tcpResult = await this.protocolService.startRecording(recorder.recorderIp, port);
+    if (!tcpResult.success) {
       await this.updateLog(log.recLogSeq, ResultStatus.FAIL, '녹화기가 녹화 시작 명령을 거부했습니다 (NACK)');
       throw new UnprocessableEntityException('녹화기가 녹화 시작 명령을 거부했습니다 (NACK)');
     }
+
+    // [참고] REST API 녹화 시작 (filepath 획득 가능, 현재 미사용)
+    // try {
+    //   const restResult = await this.protocolService.restStartRecording(recorder.recorderIp, dto.sessionTitle);
+    //   recFilePath = restResult.filepath || null;
+    // } catch (restError) {
+    //   this.logger.warn(`REST API 녹화 시작 실패: ${(restError as Error).message}`);
+    // }
 
     try {
       await this.recorderRepo.update(recorderSeq, { currentUserSeq: tuSeq ?? null });
@@ -178,20 +207,34 @@ export class RecorderControlService {
 
     await this.recorderRepo.update(recorderSeq, { currentUserSeq: null });
 
+    // FTP에서 최신 녹화 폴더 조회하여 파일 레코드 생성
     const ftpConfig = await this.ftpService.getConfigForRecorder(recorderSeq);
-    const timestamp = endedAt.toISOString().replace(/[-:T]/g, '').slice(0, 14);
-    const safeTitle = (session.sessionTitle ?? 'recording').replace(/[^a-zA-Z0-9가-힣_-]/g, '_');
+    const latestFile = await this.ftpService.getLatestRecordingPath();
+
+    const filePath = latestFile ? `${latestFile.remotePath}${latestFile.fileName}` : null;
+    const fileName = latestFile?.fileName ?? `recording_${endedAt.toISOString().replace(/[-:T]/g, '').slice(0, 14)}.mp4`;
+
     const recordingFile = this.fileRepo.create({
       recSessionSeq: session.recSessionSeq,
-      fileName: `${safeTitle}_${timestamp}.mp4`,
-      filePath: `/recordings/${recorder.recorderIp}/${timestamp}/`,
+      fileName,
+      filePath,
+      fileSize: latestFile?.fileSize ? String(latestFile.fileSize) : null,
       fileFormat: 'mp4',
-      ftpStatus: FtpStatus.PENDING,
+      fileDurationSec: durationSec,
+      ftpStatus: filePath ? FtpStatus.COMPLETED : FtpStatus.FAILED,
       ftpConfigSeq: ftpConfig?.ftpConfigSeq ?? null,
+      ftpErrorMessage: filePath ? null : 'FTP에서 녹화 파일을 찾을 수 없습니다.',
     });
-    await this.fileRepo.save(recordingFile);
+    const savedFile = await this.fileRepo.save(recordingFile);
 
     await this.updateLog(log.recLogSeq, ResultStatus.SUCCESS, '녹화 종료 완료');
+
+    // 백그라운드: FTP → 캐시 다운로드 (미리보기/다운로드 속도 향상)
+    if (savedFile.filePath) {
+      this.ftpService.downloadToCache(savedFile.recFileSeq, savedFile.filePath).catch((err) => {
+        this.logger.warn(`Background cache download failed: ${(err as Error).message}`);
+      });
+    }
 
     const minutes = Math.floor(durationSec / 60);
     return {

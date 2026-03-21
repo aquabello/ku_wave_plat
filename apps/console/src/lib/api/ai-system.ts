@@ -14,7 +14,6 @@ import type {
   CreateWorkerServerDto,
   UpdateWorkerServerDto,
   WorkerHealthResponse,
-  ApiResponse,
   AiProcessStatus,
   SpeechSessionStatus,
 } from '@ku/types';
@@ -22,7 +21,7 @@ import type {
 // ============================================================
 // MOCK DATA (BE 미연동 시 사용 — 연동 후 USE_MOCK = false)
 // ============================================================
-const USE_MOCK = true;
+const USE_MOCK = false;
 
 const MOCK_LECTURE_SUMMARIES: LectureSummaryListItem[] = [
   { no: 1, summarySeq: 1, buildingName: '신공학관', spaceName: '301호 강의실', spaceFloor: '3F', userName: '김교수', deviceCode: 'MINIPC-301', jobId: 'job-20260304-001', recordingTitle: '데이터구조론 3주차', recordingFilename: 'REC_데이터구조론_20260304.wav', durationSeconds: 5400, durationFormatted: '01:30:00', recordedAt: '2026-03-04T09:00:00', processStatus: 'COMPLETED' as AiProcessStatus, summaryKeywords: ['이진트리', '힙', '우선순위 큐', '시간복잡도'], completedAt: '2026-03-04T10:45:00', regDate: '2026-03-04T09:00:00' },
@@ -172,14 +171,10 @@ export async function getLectureSummaries(
     await new Promise((r) => setTimeout(r, 300));
     return paginateMock(MOCK_LECTURE_SUMMARIES, params?.page, params?.limit);
   }
-  const response = await apiClient<ApiResponse<PaginatedResponse<LectureSummaryListItem>>>(
+  return await apiClient<PaginatedResponse<LectureSummaryListItem>>(
     '/ai-system/lecture-summaries',
     { method: 'GET', params },
   );
-  if (!response.success || !response.data) {
-    throw new Error('강의요약 목록 조회 실패');
-  }
-  return response.data;
 }
 
 export async function getLectureSummaryDetail(
@@ -189,14 +184,10 @@ export async function getLectureSummaryDetail(
     await new Promise((r) => setTimeout(r, 200));
     return { ...MOCK_LECTURE_SUMMARY_DETAIL, summarySeq };
   }
-  const response = await apiClient<ApiResponse<LectureSummaryDetail>>(
+  return await apiClient<LectureSummaryDetail>(
     `/ai-system/lecture-summaries/${summarySeq}`,
     { method: 'GET' },
   );
-  if (!response.success || !response.data) {
-    throw new Error('강의요약 상세 조회 실패');
-  }
-  return response.data;
 }
 
 // ─── 2. Speech Session (음성인식 세션) ───
@@ -208,14 +199,10 @@ export async function getSpeechSessions(
     await new Promise((r) => setTimeout(r, 300));
     return paginateMock(MOCK_SPEECH_SESSIONS, params?.page, params?.limit);
   }
-  const response = await apiClient<ApiResponse<PaginatedResponse<SpeechSessionListItem>>>(
+  return await apiClient<PaginatedResponse<SpeechSessionListItem>>(
     '/ai-system/speech-sessions',
     { method: 'GET', params },
   );
-  if (!response.success || !response.data) {
-    throw new Error('음성인식 세션 목록 조회 실패');
-  }
-  return response.data;
 }
 
 export async function getSpeechSessionDetail(
@@ -225,14 +212,10 @@ export async function getSpeechSessionDetail(
     await new Promise((r) => setTimeout(r, 200));
     return { ...MOCK_SPEECH_SESSION_DETAIL, sessionSeq };
   }
-  const response = await apiClient<ApiResponse<SpeechSessionDetail>>(
+  return await apiClient<SpeechSessionDetail>(
     `/ai-system/speech-sessions/${sessionSeq}`,
     { method: 'GET' },
   );
-  if (!response.success || !response.data) {
-    throw new Error('음성인식 세션 상세 조회 실패');
-  }
-  return response.data;
 }
 
 // ─── 3. Voice Command (음성 명령어) ───
@@ -240,131 +223,91 @@ export async function getSpeechSessionDetail(
 export async function getVoiceCommands(
   params?: GetVoiceCommandsParams,
 ): Promise<{ items: VoiceCommandListItem[] }> {
-  const response = await apiClient<ApiResponse<{ items: VoiceCommandListItem[] }>>(
+  return await apiClient<{ items: VoiceCommandListItem[] }>(
     '/ai-system/voice-commands',
     { method: 'GET', params },
   );
-  if (!response.success || !response.data) {
-    throw new Error('음성 명령어 목록 조회 실패');
-  }
-  return response.data;
 }
 
 export async function createVoiceCommand(
   data: CreateVoiceCommandDto,
 ): Promise<{ voiceCommandSeq: number; message: string }> {
-  const response = await apiClient<ApiResponse<{ voiceCommandSeq: number; message: string }>>(
+  return await apiClient<{ voiceCommandSeq: number; message: string }>(
     '/ai-system/voice-commands',
     { method: 'POST', body: data },
   );
-  if (!response.success || !response.data) {
-    throw new Error('음성 명령어 등록 실패');
-  }
-  return response.data;
 }
 
 export async function updateVoiceCommand(
   voiceCommandSeq: number,
   data: UpdateVoiceCommandDto,
 ): Promise<{ voiceCommandSeq: number; message: string }> {
-  const response = await apiClient<ApiResponse<{ voiceCommandSeq: number; message: string }>>(
+  return await apiClient<{ voiceCommandSeq: number; message: string }>(
     `/ai-system/voice-commands/${voiceCommandSeq}`,
     { method: 'PUT', body: data },
   );
-  if (!response.success || !response.data) {
-    throw new Error('음성 명령어 수정 실패');
-  }
-  return response.data;
 }
 
 export async function deleteVoiceCommand(
   voiceCommandSeq: number,
 ): Promise<{ voiceCommandSeq: number; message: string }> {
-  const response = await apiClient<ApiResponse<{ voiceCommandSeq: number; message: string }>>(
+  return await apiClient<{ voiceCommandSeq: number; message: string }>(
     `/ai-system/voice-commands/${voiceCommandSeq}`,
     { method: 'DELETE' },
   );
-  if (!response.success || !response.data) {
-    throw new Error('음성 명령어 삭제 실패');
-  }
-  return response.data;
 }
 
 // ─── 4. Worker Server (AI Worker 서버) ───
 
 export async function getWorkerServers(): Promise<{ items: WorkerServerListItem[] }> {
-  const response = await apiClient<ApiResponse<{ items: WorkerServerListItem[] }>>(
+  return await apiClient<{ items: WorkerServerListItem[] }>(
     '/ai-system/worker-servers',
     { method: 'GET' },
   );
-  if (!response.success || !response.data) {
-    throw new Error('Worker 서버 목록 조회 실패');
-  }
-  return response.data;
 }
 
 export async function getWorkerServerDetail(
   workerServerSeq: number,
 ): Promise<WorkerServerDetail> {
-  const response = await apiClient<ApiResponse<WorkerServerDetail>>(
+  return await apiClient<WorkerServerDetail>(
     `/ai-system/worker-servers/${workerServerSeq}`,
     { method: 'GET' },
   );
-  if (!response.success || !response.data) {
-    throw new Error('Worker 서버 상세 조회 실패');
-  }
-  return response.data;
 }
 
 export async function createWorkerServer(
   data: CreateWorkerServerDto,
 ): Promise<{ workerServerSeq: number; message: string }> {
-  const response = await apiClient<ApiResponse<{ workerServerSeq: number; message: string }>>(
+  return await apiClient<{ workerServerSeq: number; message: string }>(
     '/ai-system/worker-servers',
     { method: 'POST', body: data },
   );
-  if (!response.success || !response.data) {
-    throw new Error('Worker 서버 등록 실패');
-  }
-  return response.data;
 }
 
 export async function updateWorkerServer(
   workerServerSeq: number,
   data: UpdateWorkerServerDto,
 ): Promise<{ workerServerSeq: number; message: string }> {
-  const response = await apiClient<ApiResponse<{ workerServerSeq: number; message: string }>>(
+  return await apiClient<{ workerServerSeq: number; message: string }>(
     `/ai-system/worker-servers/${workerServerSeq}`,
     { method: 'PUT', body: data },
   );
-  if (!response.success || !response.data) {
-    throw new Error('Worker 서버 수정 실패');
-  }
-  return response.data;
 }
 
 export async function deleteWorkerServer(
   workerServerSeq: number,
 ): Promise<{ workerServerSeq: number; message: string }> {
-  const response = await apiClient<ApiResponse<{ workerServerSeq: number; message: string }>>(
+  return await apiClient<{ workerServerSeq: number; message: string }>(
     `/ai-system/worker-servers/${workerServerSeq}`,
     { method: 'DELETE' },
   );
-  if (!response.success || !response.data) {
-    throw new Error('Worker 서버 삭제 실패');
-  }
-  return response.data;
 }
 
 export async function getWorkerHealth(
   workerServerSeq: number,
 ): Promise<WorkerHealthResponse> {
-  const response = await apiClient<ApiResponse<WorkerHealthResponse>>(
+  return await apiClient<WorkerHealthResponse>(
     `/ai-system/worker-servers/${workerServerSeq}/health`,
     { method: 'GET' },
   );
-  if (!response.success || !response.data) {
-    throw new Error('Worker 서버 헬스체크 실패');
-  }
-  return response.data;
 }

@@ -150,15 +150,15 @@ function DetailContent({
       {/* 배정 사용자 */}
       <div className="space-y-3">
         <h3 className="text-sm font-medium">
-          배정 사용자 ({detail.assignedUsers.length}명)
+          배정 사용자 ({detail.assignedUsers?.length ?? 0}명)
         </h3>
-        {detail.assignedUsers.length === 0 ? (
+        {!detail.assignedUsers?.length ? (
           <p className="text-sm text-muted-foreground py-2">
             배정된 사용자가 없습니다.
           </p>
         ) : (
           <div className="space-y-2">
-            {detail.assignedUsers.map((user) => (
+            {detail.assignedUsers?.map((user) => (
               <div
                 key={user.recorderUserSeq}
                 className="flex items-center justify-between p-3 rounded-lg border bg-muted/20"

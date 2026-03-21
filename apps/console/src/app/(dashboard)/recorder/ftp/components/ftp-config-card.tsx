@@ -60,7 +60,7 @@ export function FtpConfigCard({ config, onEdit, onDelete }: FtpConfigCardProps) 
           패시브 모드: {config.ftpPassiveMode === 'Y' ? '사용' : '미사용'}
         </div>
         <div className="text-muted-foreground">
-          연결 녹화기: {config.recorderName ?? '글로벌 설정'}
+          연결 녹화기: {config.recorderName ? `${config.buildingName ?? ''} ${config.spaceName ?? ''} - ${config.recorderName}` : '글로벌 설정'}
         </div>
         {testResult && <FtpTestResult result={testResult} />}
       </CardContent>

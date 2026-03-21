@@ -10,7 +10,7 @@ import type { RecorderListItem } from '@ku/types';
 export default function RecorderControlPage() {
   const [selectedRecorder, setSelectedRecorder] =
     useState<RecorderListItem | null>(null);
-  const { data, isLoading } = useRecordersQuery({ limit: 100 });
+  const { data, isLoading } = useRecordersQuery({ limit: 100 }, { refetchInterval: 30000 });
 
   return (
     <div className="space-y-6">

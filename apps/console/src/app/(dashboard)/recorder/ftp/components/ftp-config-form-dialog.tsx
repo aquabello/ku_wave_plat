@@ -125,7 +125,7 @@ function RecorderSelect({
         <SelectItem value="none">글로벌 설정 (선택 안함)</SelectItem>
         {data?.items.map((r) => (
           <SelectItem key={r.recorderSeq} value={String(r.recorderSeq)}>
-            {r.recorderName}
+            {r.buildingName} {r.spaceName} - {r.recorderName}
           </SelectItem>
         ))}
       </SelectContent>

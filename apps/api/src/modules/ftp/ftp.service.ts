@@ -8,6 +8,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Client as FtpClient } from 'basic-ftp';
 import SftpClient from 'ssh2-sftp-client';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
 import { TbFtpConfig } from './entities/ftp-config.entity';
 import { TbRecordingFile } from '@modules/recorders/entities/recording-file.entity';
 import { CreateFtpConfigDto } from './dto/create-ftp-config.dto';
@@ -27,7 +30,7 @@ export class FtpService {
   async findAll() {
     const items = await this.ftpConfigRepo.find({
       where: { ftpIsdel: 'N' },
-      relations: ['recorder'],
+      relations: ['recorder', 'recorder.space', 'recorder.space.building'],
       order: { isDefault: 'DESC', ftpConfigSeq: 'ASC' },
     });
 
@@ -43,6 +46,8 @@ export class FtpService {
         isDefault: c.isDefault,
         recorderSeq: c.recorderSeq,
         recorderName: c.recorder?.recorderName ?? null,
+        buildingName: (c.recorder?.space as any)?.building?.buildingName ?? null,
+        spaceName: (c.recorder?.space as any)?.spaceName ?? null,
         regDate: c.regDate,
       })),
     };
@@ -238,6 +243,181 @@ export class FtpService {
   }
 
   // ──────────────── FTP 전송 로직 ────────────────
+
+  // ──────────────── 디스크 캐시 (최근 10건) ────────────────
+
+  private readonly CACHE_DIR = path.join(os.tmpdir(), 'ku-recordings', 'cache');
+  private readonly MAX_CACHE_FILES = 10;
+
+  private ensureCacheDir() {
+    if (!fs.existsSync(this.CACHE_DIR)) {
+      fs.mkdirSync(this.CACHE_DIR, { recursive: true });
+    }
+  }
+
+  getCachedPath(recFileSeq: number): string | null {
+    const cached = path.join(this.CACHE_DIR, `${recFileSeq}.mp4`);
+    return fs.existsSync(cached) ? cached : null;
+  }
+
+  /**
+   * 캐시에서 파일 반환, 없으면 FTP 다운로드 후 캐시 저장
+   */
+  async getFileWithCache(recFileSeq: number, windowsFilePath: string): Promise<string> {
+    const cached = this.getCachedPath(recFileSeq);
+    if (cached) {
+      this.logger.debug(`Cache HIT: recFileSeq=${recFileSeq}`);
+      return cached;
+    }
+
+    this.logger.debug(`Cache MISS: recFileSeq=${recFileSeq}, downloading from FTP...`);
+    const localPath = await this.downloadToCache(recFileSeq, windowsFilePath);
+    this.cleanupCache();
+    return localPath;
+  }
+
+  /**
+   * FTP에서 다운로드하여 캐시에 저장
+   */
+  async downloadToCache(recFileSeq: number, windowsFilePath: string): Promise<string> {
+    this.ensureCacheDir();
+    const config = await this.ftpConfigRepo.findOne({
+      where: { isDefault: 'Y', ftpIsdel: 'N' },
+    });
+    if (!config) {
+      throw new NotFoundException('기본 FTP 설정이 없습니다.');
+    }
+
+    const { remotePath, fileName } = this.convertWindowsPathToFtp(windowsFilePath);
+    const cachePath = path.join(this.CACHE_DIR, `${recFileSeq}.mp4`);
+
+    await this.downloadFile(config, remotePath, fileName, cachePath);
+    this.logger.log(`Cached: recFileSeq=${recFileSeq} → ${cachePath}`);
+    return cachePath;
+  }
+
+  /**
+   * 캐시 정리: MAX_CACHE_FILES 초과 시 오래된 것부터 삭제
+   */
+  private cleanupCache() {
+    this.ensureCacheDir();
+    const files = fs.readdirSync(this.CACHE_DIR)
+      .filter((f) => f.endsWith('.mp4'))
+      .map((f) => ({
+        name: f,
+        path: path.join(this.CACHE_DIR, f),
+        mtime: fs.statSync(path.join(this.CACHE_DIR, f)).mtimeMs,
+      }))
+      .sort((a, b) => b.mtime - a.mtime); // 최신순
+
+    if (files.length > this.MAX_CACHE_FILES) {
+      const toDelete = files.slice(this.MAX_CACHE_FILES);
+      for (const f of toDelete) {
+        fs.unlinkSync(f.path);
+        this.logger.debug(`Cache cleanup: deleted ${f.name}`);
+      }
+    }
+  }
+
+  /**
+   * FTP에서 최신 녹화 폴더의 파일 경로 조회
+   */
+  async getLatestRecordingPath(): Promise<{ remotePath: string; fileName: string; fileSize: number } | null> {
+    const config = await this.ftpConfigRepo.findOne({
+      where: { isDefault: 'Y', ftpIsdel: 'N' },
+    });
+    if (!config) return null;
+
+    const client = new FtpClient(10000);
+    try {
+      await client.access({
+        host: config.ftpHost,
+        port: config.ftpPort ?? 21,
+        user: config.ftpUsername,
+        password: config.ftpPassword,
+      });
+
+      const folders = await client.list('/');
+      const recFolders = folders
+        .filter((f) => f.isDirectory && f.name.startsWith('녹화_'))
+        .sort((a, b) => (b.modifiedAt?.getTime() ?? 0) - (a.modifiedAt?.getTime() ?? 0));
+
+      if (recFolders.length === 0) return null;
+
+      const latestFolder = recFolders[0].name;
+      const files = await client.list(`/${latestFolder}`);
+      const mp4 = files.find((f) => !f.isDirectory && f.name.endsWith('.mp4'));
+
+      if (!mp4) return null;
+
+      return {
+        remotePath: `/${latestFolder}/`,
+        fileName: mp4.name,
+        fileSize: mp4.size,
+      };
+    } catch (err) {
+      this.logger.warn(`FTP latest folder scan failed: ${(err as Error).message}`);
+      return null;
+    } finally {
+      client.close();
+    }
+  }
+
+  /**
+   * Windows 로컬 경로를 FTP 경로로 변환
+   * D:\녹화\녹화_260321_0007\\출력.mp4 → /녹화_260321_0007/출력.mp4
+   */
+  convertWindowsPathToFtp(windowsPath: string): { remotePath: string; fileName: string } {
+    const normalized = windowsPath.replace(/\\\\/g, '\\').replace(/\\/g, '/');
+    // D:/녹화/녹화_260321_0007/출력.mp4 → 녹화_260321_0007/출력.mp4
+    const parts = normalized.split('/');
+    const fileName = parts.pop() ?? '';
+    // FTP 루트가 D:\녹화\ 이므로 "녹화" 폴더 이후 경로 추출
+    const recIdx = parts.findIndex((p) => p.startsWith('녹화_'));
+    const remotePath = recIdx >= 0
+      ? '/' + parts.slice(recIdx).join('/') + '/'
+      : '/' + parts.slice(-1).join('/') + '/';
+    return { remotePath, fileName };
+  }
+
+  /**
+   * FTP에서 파일 다운로드하여 로컬 임시 파일로 저장
+   */
+  async downloadToLocal(ftpConfigSeq: number, windowsFilePath: string): Promise<string> {
+    const config = await this.findOne(ftpConfigSeq);
+    const { remotePath, fileName } = this.convertWindowsPathToFtp(windowsFilePath);
+
+    const tmpDir = path.join(os.tmpdir(), 'ku-recordings');
+    if (!fs.existsSync(tmpDir)) {
+      fs.mkdirSync(tmpDir, { recursive: true });
+    }
+    const localPath = path.join(tmpDir, `${Date.now()}_${fileName}`);
+
+    await this.downloadFile(config, remotePath, fileName, localPath);
+    return localPath;
+  }
+
+  /**
+   * FTP에서 파일 다운로드 (기본 FTP 설정 사용)
+   */
+  async downloadToLocalByDefault(windowsFilePath: string): Promise<string> {
+    const config = await this.ftpConfigRepo.findOne({
+      where: { isDefault: 'Y', ftpIsdel: 'N' },
+    });
+    if (!config) {
+      throw new NotFoundException('기본 FTP 설정이 없습니다.');
+    }
+    const { remotePath, fileName } = this.convertWindowsPathToFtp(windowsFilePath);
+
+    const tmpDir = path.join(os.tmpdir(), 'ku-recordings');
+    if (!fs.existsSync(tmpDir)) {
+      fs.mkdirSync(tmpDir, { recursive: true });
+    }
+    const localPath = path.join(tmpDir, `${Date.now()}_${fileName}`);
+
+    await this.downloadFile(config, remotePath, fileName, localPath);
+    return localPath;
+  }
 
   async getConfigForRecorder(recorderSeq: number): Promise<TbFtpConfig | null> {
     const dedicated = await this.ftpConfigRepo.findOne({

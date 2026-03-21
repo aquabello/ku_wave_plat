@@ -42,10 +42,11 @@ export const recorderKeys = {
 
 // --- Queries ---
 
-export function useRecordersQuery(params?: GetRecordersParams) {
+export function useRecordersQuery(params?: GetRecordersParams, options?: { refetchInterval?: number }) {
   return useQuery({
     queryKey: recorderKeys.list(params),
     queryFn: () => getRecorders(params),
+    ...options,
   });
 }
 
@@ -213,7 +214,6 @@ export function useStartRecordingMutation() {
       startRecording(recorderSeq, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: recorderKeys.status(variables.recorderSeq) });
-      toast({ title: '녹화 시작', description: '녹화가 시작되었습니다.' });
     },
     onError: (error: Error) => {
       toast({ variant: 'destructive', title: '녹화 시작 실패', description: error.message });
@@ -229,7 +229,6 @@ export function useStopRecordingMutation() {
     mutationFn: (recorderSeq: number) => stopRecording(recorderSeq),
     onSuccess: (_, recorderSeq) => {
       queryClient.invalidateQueries({ queryKey: recorderKeys.status(recorderSeq) });
-      toast({ title: '녹화 종료', description: '녹화가 종료되었습니다.' });
     },
     onError: (error: Error) => {
       toast({ variant: 'destructive', title: '녹화 종료 실패', description: error.message });
@@ -243,9 +242,6 @@ export function useApplyPresetMutation() {
   return useMutation({
     mutationFn: ({ recorderSeq, recPresetSeq }: { recorderSeq: number; recPresetSeq: number }) =>
       applyPreset(recorderSeq, recPresetSeq),
-    onSuccess: (data) => {
-      toast({ title: '프리셋 적용 완료', description: `${data.presetName} 프리셋이 적용되었습니다.` });
-    },
     onError: (error: Error) => {
       toast({ variant: 'destructive', title: '프리셋 적용 실패', description: error.message });
     },

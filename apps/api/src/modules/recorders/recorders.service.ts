@@ -51,7 +51,7 @@ export class RecordersService {
     }
     if (search) {
       qb.andWhere(
-        '(r.recorder_name LIKE :search OR r.recorder_ip LIKE :search)',
+        '(r.recorder_name LIKE :search OR r.recorder_ip LIKE :search OR building.building_name LIKE :search OR space.space_name LIKE :search)',
         { search: `%${search}%` },
       );
     }

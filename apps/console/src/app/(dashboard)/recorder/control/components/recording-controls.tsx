@@ -1,22 +1,22 @@
 'use client';
 
 import { useState } from 'react';
-import { Play, Square } from 'lucide-react';
+import { Play, Square, Monitor, Users, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 import {
   useStartRecordingMutation,
   useStopRecordingMutation,
   useApplyPresetMutation,
 } from '@/hooks/use-recorders';
 import type { RecorderPreset } from '@ku/types';
+
+const PRESET_ICONS: Record<string, React.ReactNode> = {
+  'PC화면': <Monitor className="h-5 w-5" />,
+  'PC+강사화면': <Users className="h-5 w-5" />,
+  '강사카메라': <Camera className="h-5 w-5" />,
+};
 
 interface RecordingControlsProps {
   recorderSeq: number;
@@ -51,7 +51,7 @@ export function RecordingControls({
     startRec({
       recorderSeq,
       data: {
-        sessionTitle: sessionTitle || undefined,
+        sessionTitle: sessionTitle.trim(),
         recPresetSeq: selectedPresetSeq
           ? Number(selectedPresetSeq)
           : undefined,
@@ -63,9 +63,9 @@ export function RecordingControls({
     stopRec(recorderSeq);
   };
 
-  const handleApplyPreset = (value: string) => {
-    setSelectedPresetSeq(value);
-    applyPreset({ recorderSeq, recPresetSeq: Number(value) });
+  const handleApplyPreset = (preset: RecorderPreset) => {
+    setSelectedPresetSeq(String(preset.recPresetSeq));
+    applyPreset({ recorderSeq, recPresetSeq: preset.recPresetSeq });
   };
 
   return (
@@ -98,27 +98,45 @@ export function RecordingControls({
         </div>
       )}
 
-      {/* Preset selector */}
+      {/* Preset cards */}
       {presets.length > 0 && (
         <div>
-          <label className="text-sm text-muted-foreground mb-1 block">
+          <label className="text-sm text-muted-foreground mb-2 block">
             프리셋
           </label>
-          <Select onValueChange={handleApplyPreset} value={selectedPresetSeq}>
-            <SelectTrigger>
-              <SelectValue placeholder="프리셋 선택" />
-            </SelectTrigger>
-            <SelectContent>
-              {presets.map((preset) => (
-                <SelectItem
+          <div className="grid grid-cols-3 gap-2">
+            {presets.map((preset) => {
+              const isActive = selectedPresetSeq === String(preset.recPresetSeq);
+              return (
+                <button
                   key={preset.recPresetSeq}
-                  value={String(preset.recPresetSeq)}
+                  onClick={() => handleApplyPreset(preset)}
+                  disabled={disabled}
+                  className={cn(
+                    'flex flex-col items-center gap-1.5 p-3 rounded-lg border text-center transition-all',
+                    'hover:shadow-md hover:border-primary/50',
+                    isActive
+                      ? 'border-primary bg-primary/10 shadow-md ring-1 ring-primary'
+                      : 'border-border bg-card',
+                    disabled && 'opacity-50 cursor-not-allowed',
+                  )}
                 >
-                  {preset.presetName} (#{preset.presetNumber})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+                  <span className={cn(
+                    'transition-colors',
+                    isActive ? 'text-primary' : 'text-muted-foreground',
+                  )}>
+                    {PRESET_ICONS[preset.presetName] ?? <Monitor className="h-5 w-5" />}
+                  </span>
+                  <span className={cn(
+                    'text-xs font-medium',
+                    isActive ? 'text-primary' : 'text-foreground',
+                  )}>
+                    {preset.presetName}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -138,7 +156,7 @@ export function RecordingControls({
           <Button
             className="flex-1"
             onClick={handleStart}
-            disabled={disabled || isStarting}
+            disabled={disabled || isStarting || !sessionTitle.trim()}
           >
             <Play className="h-4 w-4 mr-2" />
             {isStarting ? '시작 중...' : '녹화 시작'}
