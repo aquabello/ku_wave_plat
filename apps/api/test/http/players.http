@@ -5,8 +5,8 @@
 ###       플레이리스트 할당, 파일목록(레거시), 기기등록, IP 재등록
 ### ============================================================
 
-@token = PASTE_YOUR_ACCESS_TOKEN_HERE
-@playerApiKey = player_7abea96eb201435daf89550b2a3ea3d5
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsInVzZXJJZCI6ImFkbWluIiwidXNlck5hbWUiOiLqtIDrpqzsnpAiLCJ1c2VyVHlwZSI6IlNVUEVSIiwidG9rZW5WZXIiOjQsImlhdCI6MTc3NDA5NTU0MiwiZXhwIjoxNzc0MTE3MTQyfQ.-YT6rCH4K1KXbedCsUM97XFhXaFg7BH_82n9091F2KI
+@playerApiKey = player_17f14ad31da344d6ad9c3fe7e1b07256
 @baseUrl = http://localhost:8000/api/v1
 
 
@@ -36,9 +36,9 @@ Content-Type: application/json
   "player_code": "PLAYER-001",
   "player_did": "DID-12345",
   "player_mac": "AA:BB:CC:DD:EE:FF",
-  "building_seq": 1,
+  "building_seq": 2,
   "space_seq": 1,
-  "player_ip": "192.168.1.100",
+  "player_ip": "192.168.1.101",
   "player_port": 9090,
   "player_resolution": "1920x1080",
   "player_orientation": "LANDSCAPE",
