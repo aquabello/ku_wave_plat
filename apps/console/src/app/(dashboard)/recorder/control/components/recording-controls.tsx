@@ -48,19 +48,37 @@ export function RecordingControls({
   const { mutate: applyPreset } = useApplyPresetMutation();
 
   const handleStart = () => {
-    startRec({
-      recorderSeq,
-      data: {
-        sessionTitle: sessionTitle.trim(),
-        recPresetSeq: selectedPresetSeq
-          ? Number(selectedPresetSeq)
-          : undefined,
-      },
-    });
+    // PC+강사화면 프리셋 먼저 적용 후 녹화 시작
+    const pcTeacherPreset = presets.find((p) => p.presetName === 'PC+강사화면');
+    const startRecording = () => {
+      startRec({
+        recorderSeq,
+        data: {
+          sessionTitle: sessionTitle.trim(),
+          recPresetSeq: pcTeacherPreset
+            ? pcTeacherPreset.recPresetSeq
+            : selectedPresetSeq
+              ? Number(selectedPresetSeq)
+              : undefined,
+        },
+      });
+    };
+
+    if (pcTeacherPreset) {
+      setSelectedPresetSeq(String(pcTeacherPreset.recPresetSeq));
+      applyPreset(
+        { recorderSeq, recPresetSeq: pcTeacherPreset.recPresetSeq },
+        { onSuccess: () => startRecording() },
+      );
+    } else {
+      startRecording();
+    }
   };
 
   const handleStop = () => {
-    stopRec(recorderSeq);
+    stopRec(recorderSeq, {
+      onSuccess: () => setSessionTitle(''),
+    });
   };
 
   const handleApplyPreset = (preset: RecorderPreset) => {

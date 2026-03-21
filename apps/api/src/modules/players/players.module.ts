@@ -10,6 +10,8 @@ import { TbPlayList } from '@modules/playlists/entities/tb-play-list.entity';
 import { TbPlayListContent } from '@modules/playlists/entities/tb-play-list-content.entity';
 import { TbContent } from '@modules/contents/entities/tb-content.entity';
 import { TbSetting } from '@modules/settings/entities/tb-setting.entity';
+import { TbRecorder } from '@modules/recorders/entities/recorder.entity';
+import { TbRecordingSession } from '@modules/recorders/entities/recording-session.entity';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { TbSetting } from '@modules/settings/entities/tb-setting.entity';
       TbPlayListContent,
       TbContent,
       TbSetting,
+      TbRecorder,
+      TbRecordingSession,
     ]),
   ],
   controllers: [PlayersController],

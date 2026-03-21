@@ -66,7 +66,7 @@ export class PlayersController {
     const result = await this.playersService.create(createPlayerDto);
     return {
       success: true,
-      message: '플레이어가 등록되었습니다. 관리자 승인 대기 중입니다.',
+      message: '플레이어가 등록되었습니다.',
       data: result,
     };
   }
@@ -99,7 +99,7 @@ export class PlayersController {
 
   @Delete(':player_seq')
   @ApiBearerAuth()
-  @ApiOperation({ summary: '플레이어 삭제 (소프트 삭제)' })
+  @ApiOperation({ summary: '플레이어 삭제' })
   @ApiResponse({ status: 200, description: '삭제 성공' })
   @ApiResponse({ status: 404, description: '플레이어를 찾을 수 없습니다.' })
   async remove(@Param('player_seq', ParseIntPipe) playerSeq: number) {

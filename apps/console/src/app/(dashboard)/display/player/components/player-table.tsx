@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -9,7 +9,7 @@ import {
 } from '@tanstack/react-table';
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { Edit, CheckCircle, XCircle, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Edit, CheckCircle, XCircle, Trash2, ChevronLeft, ChevronRight, Key, Copy } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -20,6 +20,15 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
 import type { PlayerListItem } from '@ku/types';
 
 interface Pagination {
@@ -50,6 +59,20 @@ export function PlayerTable({
   onApprove,
   onReject,
 }: PlayerTableProps) {
+  const { toast } = useToast();
+  const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
+  const [apiKeyPlayer, setApiKeyPlayer] = useState<PlayerListItem | null>(null);
+
+  const handleShowApiKey = (player: PlayerListItem) => {
+    setApiKeyPlayer(player);
+    setApiKeyDialogOpen(true);
+  };
+
+  const handleCopyApiKey = () => {
+    if (!apiKeyPlayer?.player_api_key) return;
+    navigator.clipboard.writeText(apiKeyPlayer.player_api_key);
+    toast({ title: 'API Key가 클립보드에 복사되었습니다.' });
+  };
 
   const columns = useMemo<ColumnDef<PlayerListItem>[]>(
     () => [
@@ -160,6 +183,14 @@ export function PlayerTable({
               <Button
                 variant="ghost"
                 size="sm"
+                onClick={() => handleShowApiKey(player)}
+                title="API Key 보기"
+              >
+                <Key className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => onEdit(player)}
                 title="수정"
               >
@@ -198,7 +229,7 @@ export function PlayerTable({
         },
       },
     ],
-    [onEdit, onDelete, onApprove, onReject]
+    [onEdit, onDelete, onApprove, onReject, toast]
   );
 
   const table = useReactTable({
@@ -294,6 +325,38 @@ export function PlayerTable({
           </div>
         </div>
       )}
+      {/* API Key Dialog */}
+      <Dialog open={apiKeyDialogOpen} onOpenChange={setApiKeyDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>API Key</DialogTitle>
+            <DialogDescription>
+              <strong>{apiKeyPlayer?.player_name}</strong> 플레이어의 API Key입니다.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 rounded-md border bg-muted p-3">
+              <code className="flex-1 break-all text-sm">{apiKeyPlayer?.player_api_key}</code>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCopyApiKey}
+                title="복사"
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              이 키는 플레이어 디바이스 인증에 사용됩니다. 안전한 곳에 보관해주세요.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setApiKeyDialogOpen(false)}>
+              확인
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

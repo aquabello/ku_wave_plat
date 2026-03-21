@@ -14,6 +14,9 @@ import { TbPlayList } from '@modules/playlists/entities/tb-play-list.entity';
 import { TbPlayListContent } from '@modules/playlists/entities/tb-play-list-content.entity';
 import { TbContent } from '@modules/contents/entities/tb-content.entity';
 import { TbSetting } from '@modules/settings/entities/tb-setting.entity';
+import { TbRecorder } from '@modules/recorders/entities/recorder.entity';
+import { TbRecordingSession } from '@modules/recorders/entities/recording-session.entity';
+import { SessionStatus } from '@modules/recorders/enums/session-status.enum';
 import { CreatePlayerDto } from './dto/create-player.dto';
 import { UpdatePlayerDto } from './dto/update-player.dto';
 import { ListPlayersDto } from './dto/list-players.dto';
@@ -42,6 +45,10 @@ export class PlayersService {
     private readonly contentRepository: Repository<TbContent>,
     @InjectRepository(TbSetting)
     private readonly settingRepository: Repository<TbSetting>,
+    @InjectRepository(TbRecorder)
+    private readonly recorderRepository: Repository<TbRecorder>,
+    @InjectRepository(TbRecordingSession)
+    private readonly recordingSessionRepository: Repository<TbRecordingSession>,
   ) {}
 
   async findAll(query: ListPlayersDto) {
@@ -132,6 +139,7 @@ export class PlayersService {
         default_volume: player.defaultVolume,
         player_status: player.playerStatus,
         player_approval: player.playerApproval,
+        player_api_key: player.playerApiKey,
         last_heartbeat_at: player.lastHeartbeatAt,
         building: player.building
           ? {
@@ -430,7 +438,7 @@ export class PlayersService {
       playerDescription: createPlayerDto.player_description,
       defaultVolume: 50,
       playerApiKey: apiKey,
-      playerApproval: 'PENDING',
+      playerApproval: 'APPROVED',
       playerStatus: 'OFFLINE',
     });
 
@@ -524,15 +532,18 @@ export class PlayersService {
 
   async remove(playerSeq: number) {
     const player = await this.playerRepository.findOne({
-      where: { playerSeq, playerIsdel: 'N' },
+      where: { playerSeq },
     });
 
     if (!player) {
       throw new NotFoundException('플레이어를 찾을 수 없습니다.');
     }
 
-    player.playerIsdel = 'Y';
-    await this.playerRepository.save(player);
+    // 관련 로그 물리 삭제
+    await this.heartbeatLogRepository.delete({ playerSeq });
+
+    // 플레이어 물리 삭제
+    await this.playerRepository.remove(player);
 
     return { message: '플레이어가 삭제되었습니다.' };
   }
@@ -925,7 +936,19 @@ export class PlayersService {
       order: { seq: 'ASC' },
     });
 
-    // 7. 레거시 포맷 응답 구성
+    // 7. 같은 건물 내 녹화 중인 녹화기 확인
+    const recordingCount = await this.recordingSessionRepository
+      .createQueryBuilder('session')
+      .innerJoin(TbRecorder, 'recorder', 'recorder.recorderSeq = session.recorderSeq')
+      .innerJoin('recorder.space', 'space', 'space.buildingSeq = :buildingSeq', {
+        buildingSeq: player.buildingSeq,
+      })
+      .where('session.sessionStatus = :status', { status: SessionStatus.RECORDING })
+      .getCount();
+
+    const isRecording = recordingCount > 0;
+
+    // 8. 레거시 포맷 응답 구성
     return {
       result: 'SUCCESS',
       msg: '정상처리 되었습니다.',
@@ -949,6 +972,9 @@ export class PlayersService {
         watcher_link: setting?.watcherLink ? `${domain}/${setting.watcherLink}` : '',
         default_image: setting?.defaultImage ? `${domain}/${setting.defaultImage}` : '',
         watcher_name: player.playerName,
+      },
+      recorder: {
+        useYn: isRecording ? 'Y' : 'N',
       },
     };
   }
