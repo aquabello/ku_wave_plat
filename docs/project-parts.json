@@ -1,0 +1,236 @@
+{
+  "project_name": "KU-WAVE-PLAT",
+  "project_description": "건국대학교 WAVE AI 관리자 시스템 — 캠퍼스 스마트 인프라 통합 관리 플랫폼",
+  "generated_date": "2026-03-22",
+  "repository_type": "monorepo",
+  "package_manager": "pnpm",
+  "build_system": "turborepo",
+  "node_version": ">=20.0.0",
+  "parts": {
+    "apps": [
+      {
+        "part_id": "api",
+        "display_name": "NestJS Backend API",
+        "project_type": "backend",
+        "root_path": "apps/api/",
+        "package_name": "@ku/api",
+        "framework": "NestJS 10.3+",
+        "language": "TypeScript 5.3+",
+        "port": 8000,
+        "entry_point": "src/main.ts",
+        "build_output": "dist/",
+        "key_stats": {
+          "modules": 22,
+          "entities": 41,
+          "endpoints": "~120",
+          "guards": ["JwtAuthGuard", "RolesGuard", "NfcApiKeyGuard", "PlayerApiKeyGuard", "CallbackGuard", "WsJwtGuard"]
+        },
+        "dependencies": ["@ku/types", "@ku/contracts"],
+        "database": {
+          "type": "MariaDB",
+          "orm": "TypeORM 0.3.19+",
+          "tables": 40,
+          "synchronize": false
+        }
+      },
+      {
+        "part_id": "console",
+        "display_name": "Next.js Admin Dashboard",
+        "project_type": "web",
+        "root_path": "apps/console/",
+        "package_name": "@ku/console",
+        "framework": "Next.js 16+",
+        "language": "TypeScript 5.3+",
+        "port": 3000,
+        "entry_point": "src/app/layout.tsx",
+        "key_stats": {
+          "pages": 28,
+          "source_files": "~164",
+          "api_clients": 19,
+          "query_hooks": 13,
+          "ui_primitives": 22
+        },
+        "dependencies": ["@ku/types", "@ku/ui"],
+        "ui_library": "shadcn/ui + Radix UI",
+        "styling": "Tailwind CSS 3.4+"
+      },
+      {
+        "part_id": "nfc",
+        "display_name": "NFC Agent (Node.js standalone)",
+        "project_type": "cli",
+        "root_path": "apps/nfc/",
+        "package_name": "@ku/nfc",
+        "framework": "Node.js standalone",
+        "language": "TypeScript 5.3+",
+        "entry_point": "src/index.ts",
+        "build_output": "dist/",
+        "key_stats": {
+          "source_files": 9,
+          "modes": ["tag", "aid-test"]
+        },
+        "dependencies": ["@ku/types"],
+        "hardware": "ACR122U USB NFC Reader (nfc-pcsc)"
+      }
+    ],
+    "packages": [
+      {
+        "part_id": "types",
+        "display_name": "Shared TypeScript Types",
+        "root_path": "packages/types/",
+        "package_name": "@ku/types",
+        "key_stats": {
+          "type_files": 27,
+          "types_count": "200+"
+        },
+        "consumed_by": ["api", "console", "nfc"]
+      },
+      {
+        "part_id": "contracts",
+        "display_name": "Zod Validation Schemas",
+        "root_path": "packages/contracts/",
+        "package_name": "@ku/contracts",
+        "description": "Single Source of Truth for validation",
+        "consumed_by": ["api"]
+      },
+      {
+        "part_id": "ui",
+        "display_name": "Shared UI Components (shadcn/ui)",
+        "root_path": "packages/ui/",
+        "package_name": "@ku/ui",
+        "consumed_by": ["console"]
+      },
+      {
+        "part_id": "config",
+        "display_name": "Shared ESLint/TypeScript/Prettier Config",
+        "root_path": "packages/config/",
+        "package_name": "@ku/config",
+        "consumed_by": ["api", "console", "nfc", "types", "contracts", "ui"]
+      }
+    ]
+  },
+  "integration_points": [
+    {
+      "from": "console",
+      "to": "api",
+      "protocol": "REST API",
+      "auth": "JWT Bearer Token",
+      "description": "관리자 대시보드 → 백엔드 API (~120 엔드포인트)"
+    },
+    {
+      "from": "console",
+      "to": "api",
+      "protocol": "WebSocket (socket.io)",
+      "auth": "JWT handshake (WsJwtGuard)",
+      "description": "실시간 상태 업데이트 (녹화기, NFC, IoT)"
+    },
+    {
+      "from": "nfc",
+      "to": "api",
+      "protocol": "REST API",
+      "auth": "X-API-Key (NfcApiKeyGuard)",
+      "description": "NFC 태깅 데이터 전송 (M2M)"
+    },
+    {
+      "from": "api",
+      "to": "mariadb",
+      "protocol": "MySQL",
+      "description": "TypeORM을 통한 DB 접근 (40 테이블)"
+    },
+    {
+      "from": "api",
+      "to": "iot_controller",
+      "protocol": "TCP socket",
+      "port": 9090,
+      "description": "IoT 디바이스 제어 명령 (조명, 에어컨 등)"
+    },
+    {
+      "from": "api",
+      "to": "recorder",
+      "protocol": "TCP socket",
+      "port": 6060,
+      "description": "ONVIF 녹화기 제어 (녹화, PTZ)"
+    },
+    {
+      "from": "api",
+      "to": "ftp_server",
+      "protocol": "FTP/SFTP/FTPS",
+      "description": "녹화 파일 업로드"
+    },
+    {
+      "from": "ai_worker",
+      "to": "api",
+      "protocol": "HTTP callback",
+      "auth": "HMAC (CallbackGuard)",
+      "description": "AI 처리 결과 콜백 (강의 요약, 음성 분석)"
+    },
+    {
+      "from": "player",
+      "to": "api",
+      "protocol": "REST API",
+      "auth": "API Key (PlayerApiKeyGuard)",
+      "description": "디스플레이 장치 자체등록, 하트비트, 플레이리스트 수신"
+    },
+    {
+      "from": "ku_ai_pc",
+      "to": "api",
+      "protocol": "REST API",
+      "auth": "JWT",
+      "description": "강의실 PC → STT 결과 전송, 음성 명령 매칭"
+    }
+  ],
+  "deployment": {
+    "production_server": {
+      "os": "Ubuntu 24.04",
+      "process_manager": "PM2",
+      "web_server": "Nginx (reverse proxy, :80)",
+      "database": "MariaDB 11.2 (:3306)",
+      "setup_doc": "docs/dev/plan_ku_wave_plat.md"
+    },
+    "classroom_pc": {
+      "os": "Ubuntu 24.04",
+      "process_manager": "systemd",
+      "runtime": "Python venv + Node.js v24.4.1",
+      "setup_doc": "docs/dev/plan_ku_ai_pc.md"
+    }
+  },
+  "database": {
+    "type": "MariaDB 11.2",
+    "charset": "utf8mb4",
+    "total_tables": 40,
+    "domains": [
+      {"name": "시스템/인증", "tables": 3},
+      {"name": "RBAC", "tables": 2},
+      {"name": "물리 계층", "tables": 3},
+      {"name": "IoT 컨트롤러", "tables": 5},
+      {"name": "NFC/RFID", "tables": 4},
+      {"name": "디스플레이/DID", "tables": 11},
+      {"name": "녹화", "tables": 7},
+      {"name": "AI 시스템", "tables": 6}
+    ],
+    "hub_tables": ["tb_users (15 FK)", "tb_space (8 references)"],
+    "schema_file": "docs/init_database.sql"
+  },
+  "documentation": {
+    "bmad_docs": [
+      "docs/project-overview.md",
+      "docs/source-tree-analysis.md",
+      "docs/architecture-api.md",
+      "docs/architecture-console.md",
+      "docs/architecture-nfc.md",
+      "docs/data-models.md",
+      "docs/api-contracts.md",
+      "docs/component-inventory-console.md",
+      "docs/integration-architecture.md",
+      "docs/development-guide.md",
+      "docs/deployment-guide.md",
+      "docs/project-parts.json",
+      "docs/index.md"
+    ],
+    "existing_docs": {
+      "api_specs": "docs/api/ (16 files)",
+      "db_schema": "docs/init_database.sql",
+      "deployment": "docs/dev/plan_ku_wave_plat.md, docs/dev/plan_ku_ai_pc.md",
+      "project_instructions": "CLAUDE.md"
+    }
+  }
+}
