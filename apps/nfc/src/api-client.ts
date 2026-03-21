@@ -29,13 +29,13 @@ export class ApiClient {
 
   async healthCheck(): Promise<boolean> {
     try {
-      const res = await ofetch.raw(`${this.baseUrl}/nfc/stats`, {
+      const res = await ofetch.raw(`${this.baseUrl}/nfc/health`, {
         method: 'GET',
         headers: { 'X-NFC-Api-Key': this.apiKey },
         timeout: 5000,
         ignoreResponseError: true,
       });
-      return res.status !== 401 && res.status !== 403;
+      return res.status === 200;
     } catch {
       return false;
     }

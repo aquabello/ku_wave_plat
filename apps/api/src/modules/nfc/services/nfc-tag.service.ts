@@ -46,13 +46,43 @@ export class NfcTagService {
     // Get space information early (needed for all responses)
     const space = await this.spaceRepository.findOne({
       where: { spaceSeq: reader.spaceSeq },
+      relations: ['building'],
     });
     const spaceName = space?.spaceName ?? '';
+    const buildingName = space?.building?.buildingName ?? '';
 
-    // [Step 1] Card Identification
-    const card = await this.nfcCardRepository.findOne({
+    // [Step 0] 식별 불가 카드 즉시 반환
+    if (!dto.identifier || dto.identifier === 'UNKNOWN') {
+      return {
+        result: 'UNKNOWN',
+        logType: 'UNKNOWN' as const,
+        spaceName,
+        userName: null,
+        controlResult: null,
+        controlSummary: null,
+        message: '카드 식별값을 읽을 수 없습니다',
+      };
+    }
+
+    // [Step 1] Card Identification (소프트 삭제 포함 조회)
+    let card = await this.nfcCardRepository.findOne({
       where: { cardIdentifier: dto.identifier, cardIsdel: 'N' },
     });
+
+    // 소프트 삭제된 카드가 있으면 복구
+    if (!card) {
+      const deletedCard = await this.nfcCardRepository.findOne({
+        where: { cardIdentifier: dto.identifier, cardIsdel: 'Y' },
+      });
+      if (deletedCard) {
+        deletedCard.cardIsdel = 'N';
+        deletedCard.cardStatus = 'ACTIVE';
+        deletedCard.cardAid = dto.aid ?? deletedCard.cardAid;
+        await this.nfcCardRepository.save(deletedCard);
+        this.logger.log(`카드 복구: ${deletedCard.cardLabel ?? deletedCard.cardIdentifier}`);
+        card = deletedCard;
+      }
+    }
 
     // [Step 2] UNKNOWN - Unregistered card
     if (!card) {
@@ -62,10 +92,15 @@ export class NfcTagService {
           deviceStatus: 'ACTIVE',
           deviceIsdel: 'N',
         },
+        relations: ['preset'],
         order: { deviceOrder: 'ASC' },
       });
 
-      if (!device) {
+      // IP/port 해석: device override > preset default (control.service.ts와 동일 패턴)
+      const deviceIp = device?.deviceIp ?? device?.preset?.commIp;
+      const devicePort = device?.devicePort ?? device?.preset?.commPort ?? 9090;
+
+      if (!device || !deviceIp) {
         await this.nfcLogRepository.save(
           this.nfcLogRepository.create({
             readerSeq: reader.readerSeq,
@@ -94,20 +129,31 @@ export class NfcTagService {
       let nfcResult: 'save' | 'no' | 'timeout' = 'timeout';
       try {
         nfcResult = await this.socketService.sendNfcSequence(
-          device.deviceIp,
-          device.devicePort ?? 9090,
+          deviceIp,
+          devicePort,
         );
       } catch (err) {
         this.logger.error(`sendNfcSequence failed: ${(err as Error).message}`);
       }
 
       if (nfcResult === 'save') {
+        // card_label 자동 채번 (NFC-0001, NFC-0002, ...)
+        const lastCard = await this.nfcCardRepository
+          .createQueryBuilder('c')
+          .where("c.card_label LIKE 'NFC-%'")
+          .orderBy('c.card_seq', 'DESC')
+          .getOne();
+        const lastNum = lastCard?.cardLabel
+          ? parseInt(lastCard.cardLabel.replace('NFC-', ''), 10) || 0
+          : 0;
+        const cardLabel = `NFC-${String(lastNum + 1).padStart(4, '0')}`;
+
         const newCard = this.nfcCardRepository.create({
           cardIdentifier: dto.identifier,
           cardAid: dto.aid ?? null,
-          cardLabel: null,
+          cardLabel,
           cardType: dto.aid ? 'PHONE' : 'CARD',
-          cardStatus: 'INACTIVE',
+          cardStatus: 'ACTIVE',
           tuSeq: null,
           cardIsdel: 'N',
         });
@@ -142,60 +188,19 @@ export class NfcTagService {
           userName: null,
           controlResult: null,
           controlSummary: null,
-          message: '카드가 등록되었습니다 (승인 대기)',
+          message: '카드가 등록되었습니다',
         };
       }
 
-      const logType = nfcResult === 'no' ? 'REGISTER_NO' : 'REGISTER_TIMEOUT';
-      await this.nfcLogRepository.save(
-        this.nfcLogRepository.create({
-          readerSeq: reader.readerSeq,
-          cardSeq: null,
-          tuSeq: null,
-          tagIdentifier: dto.identifier,
-          tagAid: dto.aid ?? null,
-          logType,
-          spaceSeq: reader.spaceSeq,
-          controlResult: null,
-          controlDetail: null,
-        }),
-      );
-
+      // NO/TIMEOUT: 로그 저장 없이 반환 (MAIN 페이지 전환은 sendNfcSequence 내부에서 자동 처리)
       return {
-        result: logType,
-        logType,
+        result: nfcResult === 'no' ? 'REGISTER_NO' : 'REGISTER_TIMEOUT',
+        logType: nfcResult === 'no' ? 'REGISTER_NO' as const : 'REGISTER_TIMEOUT' as const,
         spaceName,
         userName: null,
         controlResult: null,
         controlSummary: null,
         message: nfcResult === 'no' ? '등록이 취소되었습니다' : '응답 시간 초과',
-      };
-    }
-
-    // [Step 2.5] DENIED - Card without assigned user
-    if (card.tuSeq === null) {
-      await this.nfcLogRepository.save(
-        this.nfcLogRepository.create({
-          readerSeq: reader.readerSeq,
-          cardSeq: card.cardSeq,
-          tuSeq: null,
-          spaceSeq: reader.spaceSeq,
-          logType: 'DENIED',
-          tagIdentifier: dto.identifier,
-          tagAid: dto.aid || null,
-          controlResult: null,
-          controlDetail: null,
-        }),
-      );
-
-      return {
-        result: 'DENIED',
-        logType: 'DENIED',
-        spaceName,
-        userName: null,
-        controlResult: null,
-        controlSummary: null,
-        message: '사용자가 배정되지 않은 카드입니다',
       };
     }
 
@@ -215,14 +220,16 @@ export class NfcTagService {
         }),
       );
 
-      const user = await this.userRepository.findOne({ where: { seq: card.tuSeq } });
+      const user = card.tuSeq ? await this.userRepository.findOne({ where: { seq: card.tuSeq } }) : null;
       const userName = user?.name ?? null;
 
       return {
         result: 'DENIED',
         logType: 'DENIED',
         spaceName,
+        buildingName,
         userName,
+        cardLabel: card.cardLabel ?? null,
         controlResult: null,
         controlSummary: null,
         message: '미승인 카드입니다',
@@ -245,69 +252,64 @@ export class NfcTagService {
         }),
       );
 
-      const user = await this.userRepository.findOne({ where: { seq: card.tuSeq } });
+      const user = card.tuSeq ? await this.userRepository.findOne({ where: { seq: card.tuSeq } }) : null;
       const userName = user?.name ?? null;
 
       return {
         result: 'DENIED',
         logType: 'DENIED',
         spaceName,
+        buildingName,
         userName,
+        cardLabel: card.cardLabel ?? null,
         controlResult: null,
         controlSummary: null,
         message: '차단된 카드입니다',
       };
     }
 
-    // [Step 4] Permission Check
-    const buildingSeq = space?.buildingSeq;
-    if (!buildingSeq) {
-      this.logger.error(`Space ${reader.spaceSeq} has no building association`);
-      return {
-        result: 'DENIED',
-        logType: 'DENIED',
-        spaceName,
-        userName: null,
-        controlResult: null,
-        controlSummary: null,
-        message: '공간 설정 오류',
-      };
+    // [Step 4] Permission Check (사용자 배정된 카드만)
+    if (card.tuSeq !== null) {
+      const buildingSeq = space?.buildingSeq;
+      if (buildingSeq) {
+        const permission = await this.userBuildingRepository.findOne({
+          where: { tuSeq: card.tuSeq, buildingSeq },
+        });
+
+        if (!permission) {
+          await this.nfcLogRepository.save(
+            this.nfcLogRepository.create({
+              readerSeq: reader.readerSeq,
+              cardSeq: card.cardSeq,
+              tuSeq: card.tuSeq,
+              spaceSeq: reader.spaceSeq,
+              logType: 'DENIED',
+              tagIdentifier: dto.identifier,
+              tagAid: dto.aid || null,
+              controlResult: null,
+              controlDetail: null,
+            }),
+          );
+
+          const user = await this.userRepository.findOne({ where: { seq: card.tuSeq } });
+          const userName = user?.name ?? null;
+
+          return {
+            result: 'DENIED',
+            logType: 'DENIED',
+            spaceName,
+            buildingName,
+            userName,
+            cardLabel: card.cardLabel ?? null,
+            controlResult: null,
+            controlSummary: null,
+            message: '해당 건물 접근 권한이 없습니다',
+          };
+        }
+      }
     }
 
-    const permission = await this.userBuildingRepository.findOne({
-      where: { tuSeq: card.tuSeq, buildingSeq },
-    });
-
-    if (!permission) {
-      await this.nfcLogRepository.save(
-        this.nfcLogRepository.create({
-          readerSeq: reader.readerSeq,
-          cardSeq: card.cardSeq,
-          tuSeq: card.tuSeq,
-          spaceSeq: reader.spaceSeq,
-          logType: 'DENIED',
-          tagIdentifier: dto.identifier,
-          tagAid: dto.aid || null,
-          controlResult: null,
-          controlDetail: null,
-        }),
-      );
-
-      const user = await this.userRepository.findOne({ where: { seq: card.tuSeq } });
-      const userName = user?.name ?? null;
-
-      return {
-        result: 'DENIED',
-        logType: 'DENIED',
-        spaceName,
-        userName,
-        controlResult: null,
-        controlSummary: null,
-        message: '해당 건물 접근 권한이 없습니다',
-      };
-    }
-
-    // [Step 5] ENTER/EXIT Toggle
+    // [Step 5] ENTER/EXIT Toggle (최소 10초 간격 제한)
     const lastLog = await this.nfcLogRepository
       .createQueryBuilder('nl')
       .where('nl.reader_seq = :readerSeq', { readerSeq: reader.readerSeq })
@@ -315,6 +317,25 @@ export class NfcTagService {
       .andWhere('nl.log_type IN (:...types)', { types: ['ENTER', 'EXIT'] })
       .orderBy('nl.tagged_at', 'DESC')
       .getOne();
+
+    if (lastLog?.taggedAt) {
+      const elapsed = Date.now() - new Date(lastLog.taggedAt).getTime();
+      const COOLDOWN_MS = 30000;
+      if (elapsed < COOLDOWN_MS) {
+        const remaining = Math.ceil((COOLDOWN_MS - elapsed) / 1000);
+        return {
+          result: 'DENIED',
+          logType: lastLog.logType as any,
+          spaceName,
+          buildingName,
+          userName: null,
+          cardLabel: card.cardLabel ?? null,
+          controlResult: null,
+          controlSummary: null,
+          message: `${remaining}초 후 다시 태깅해주세요`,
+        };
+      }
+    }
 
     const logType = lastLog?.logType === 'ENTER' ? 'EXIT' : 'ENTER';
     const commandType = logType === 'ENTER' ? 'POWER_ON' : 'POWER_OFF';
@@ -427,7 +448,7 @@ export class NfcTagService {
     );
 
     // [Step 8] Get user name for response
-    const user = await this.userRepository.findOne({ where: { seq: card.tuSeq } });
+    const user = card.tuSeq ? await this.userRepository.findOne({ where: { seq: card.tuSeq } }) : null;
     const userName = user?.name ?? null;
 
     // [Step 9] Return response
@@ -442,13 +463,15 @@ export class NfcTagService {
       result,
       logType,
       spaceName,
+      buildingName,
       userName,
+      cardLabel: card.cardLabel ?? null,
       controlResult,
       controlSummary,
       message:
         logType === 'ENTER'
-          ? `${spaceName} 입실 처리되었습니다`
-          : `${spaceName} 퇴실 처리되었습니다`,
+          ? `${buildingName} ${spaceName} 입실 처리되었습니다`
+          : `${buildingName} ${spaceName} 퇴실 처리되었습니다`,
     };
   }
 }

@@ -156,7 +156,7 @@ export class NfcLogService {
 
     if (query.search) {
       queryBuilder.andWhere(
-        '(nl.tag_identifier LIKE :search OR u.tu_name LIKE :search)',
+        '(nl.tag_identifier LIKE :search OR u.tu_name LIKE :search OR r.reader_name LIKE :search OR r.reader_code LIKE :search OR c.card_label LIKE :search)',
         {
           search: `%${query.search}%`,
         },

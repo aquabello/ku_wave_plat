@@ -52,6 +52,20 @@ export class NfcController {
   ) {}
 
   // ========================================
+  // 0. NFC Agent 헬스체크 (API Key auth)
+  // ========================================
+
+  @Public()
+  @UseGuards(NfcApiKeyGuard)
+  @Get('health')
+  @ApiOperation({ summary: 'NFC Agent 헬스체크' })
+  @ApiResponse({ status: 200, description: 'API 연결 정상' })
+  @ApiResponse({ status: 401, description: '유효하지 않은 API Key' })
+  async health() {
+    return { status: 'ok' };
+  }
+
+  // ========================================
   // 1. NFC 태깅 처리 (API Key auth)
   // ========================================
 

@@ -75,10 +75,10 @@ export class TbNfcLog {
     name: 'tagged_at',
     type: 'datetime',
     default: () => 'CURRENT_TIMESTAMP',
-    nullable: true,
+    nullable: false,
     comment: '태그 시각',
   })
-  taggedAt: Date | null;
+  taggedAt: Date;
 
   @ManyToOne(() => TbNfcReader)
   @JoinColumn({ name: 'reader_seq' })

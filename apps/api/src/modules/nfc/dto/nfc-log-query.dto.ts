@@ -45,12 +45,12 @@ export class NfcLogQueryDto {
 
   @ApiPropertyOptional({
     description: '로그 유형 필터',
-    enum: ['ENTER', 'EXIT', 'DENIED', 'UNKNOWN'],
+    enum: ['ENTER', 'EXIT', 'DENIED', 'UNKNOWN', 'REGISTER_SAVE', 'REGISTER_NO', 'REGISTER_TIMEOUT'],
     example: 'ENTER',
   })
   @IsOptional()
-  @IsIn(['ENTER', 'EXIT', 'DENIED', 'UNKNOWN'])
-  logType?: 'ENTER' | 'EXIT' | 'DENIED' | 'UNKNOWN';
+  @IsIn(['ENTER', 'EXIT', 'DENIED', 'UNKNOWN', 'REGISTER_SAVE', 'REGISTER_NO', 'REGISTER_TIMEOUT'])
+  logType?: 'ENTER' | 'EXIT' | 'DENIED' | 'UNKNOWN' | 'REGISTER_SAVE' | 'REGISTER_NO' | 'REGISTER_TIMEOUT';
 
   @ApiPropertyOptional({
     description: '제어 결과 필터',

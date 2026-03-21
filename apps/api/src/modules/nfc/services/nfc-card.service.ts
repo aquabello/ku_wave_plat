@@ -323,14 +323,20 @@ export class NfcCardService {
   }
 
   /**
-   * NFC 카드 삭제 (소프트 삭제)
+   * NFC 카드 삭제 (물리 삭제 + 관련 로그 삭제)
    */
   async remove(cardSeq: number): Promise<void> {
     const card = await this.findOne(cardSeq);
 
-    await this.nfcCardRepository.update(card.cardSeq, {
-      cardIsdel: 'Y',
-    });
+    // 관련 로그 물리 삭제
+    await this.nfcLogRepository
+      .createQueryBuilder()
+      .delete()
+      .where('card_seq = :cardSeq', { cardSeq: card.cardSeq })
+      .execute();
+
+    // 카드 물리 삭제
+    await this.nfcCardRepository.delete(card.cardSeq);
   }
 
   /**

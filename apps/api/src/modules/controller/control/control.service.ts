@@ -318,7 +318,7 @@ export class ControlService {
   async executeForNfc(
     spaceSeq: number,
     commandType: 'POWER_ON' | 'POWER_OFF',
-    tuSeq: number,
+    tuSeq: number | null,
   ): Promise<{
     results: Array<{
       spaceDeviceSeq: number;
@@ -425,7 +425,7 @@ export class ControlService {
 
   async executeForNfcWithMappings(
     mappings: Array<{ spaceDeviceSeq: number; commandSeq: number }>,
-    tuSeq: number,
+    tuSeq: number | null,
   ): Promise<{
     results: Array<{
       spaceDeviceSeq: number;

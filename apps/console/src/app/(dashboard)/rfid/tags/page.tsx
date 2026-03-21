@@ -145,7 +145,7 @@ export default function NfcTagManagementPage() {
   const pageSize = 10;
 
   // ---- Tab state ----
-  const [activeTab, setActiveTab] = useState('unregistered');
+  const [activeTab, setActiveTab] = useState('registered');
 
   // ---- Unregistered tags state ----
   const [unregPage, setUnregPage] = useState(1);
@@ -421,8 +421,8 @@ export default function NfcTagManagementPage() {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="unregistered">미등록 태그</TabsTrigger>
           <TabsTrigger value="registered">등록된 카드</TabsTrigger>
+          <TabsTrigger value="unregistered">미등록 태그</TabsTrigger>
           <TabsTrigger value="test">AID 테스트</TabsTrigger>
         </TabsList>
 
@@ -616,9 +616,8 @@ export default function NfcTagManagementPage() {
                     <TableRow>
                       <TableHead className="w-16">No.</TableHead>
                       <TableHead>소유자</TableHead>
-                      <TableHead>식별값</TableHead>
-                      <TableHead>AID</TableHead>
                       <TableHead>별칭</TableHead>
+                      <TableHead>AID</TableHead>
                       <TableHead className="w-24 text-center">유형</TableHead>
                       <TableHead className="w-24 text-center">상태</TableHead>
                       <TableHead>마지막 태깅</TableHead>
@@ -629,13 +628,13 @@ export default function NfcTagManagementPage() {
                   <TableBody>
                     {cardsLoading ? (
                       <TableRow>
-                        <TableCell colSpan={10} className="text-center">
+                        <TableCell colSpan={9} className="text-center">
                           <Loader2 className="mx-auto h-6 w-6 animate-spin" />
                         </TableCell>
                       </TableRow>
                     ) : cardsData?.items.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={10} className="text-center text-muted-foreground">
+                        <TableCell colSpan={9} className="text-center text-muted-foreground">
                           등록된 카드가 없습니다.
                         </TableCell>
                       </TableRow>
@@ -644,9 +643,8 @@ export default function NfcTagManagementPage() {
                         <TableRow key={card.cardSeq}>
                           <TableCell>{cardStartNum - index}</TableCell>
                           <TableCell className="font-medium">{card.userName}</TableCell>
-                          <TableCell className="font-mono text-sm">{card.cardIdentifier}</TableCell>
-                          <TableCell className="font-mono text-sm">{card.cardAid || '-'}</TableCell>
                           <TableCell>{card.cardLabel || '-'}</TableCell>
+                          <TableCell className="font-mono text-sm">{card.cardAid || '-'}</TableCell>
                           <TableCell className="text-center">
                             {getCardTypeBadge(card.cardType)}
                           </TableCell>
@@ -1011,7 +1009,7 @@ export default function NfcTagManagementPage() {
                       <TableRow>
                         <TableHead className="w-12">No</TableHead>
                         <TableHead>시각</TableHead>
-                        <TableHead>식별값</TableHead>
+                        <TableHead>카드</TableHead>
                         <TableHead>AID</TableHead>
                         <TableHead className="text-center">결과</TableHead>
                         <TableHead className="text-center">유형</TableHead>
@@ -1023,7 +1021,7 @@ export default function NfcTagManagementPage() {
                         <TableRow key={entry.id}>
                           <TableCell>{entry.id}</TableCell>
                           <TableCell className="text-sm">{entry.timestamp}</TableCell>
-                          <TableCell className="font-mono text-xs">{entry.identifier}</TableCell>
+                          <TableCell className="text-sm">{(entry.response as any).cardLabel ?? entry.identifier}</TableCell>
                           <TableCell className="font-mono text-xs">{entry.aid || '-'}</TableCell>
                           <TableCell className="text-center">
                             {entry.response.result === 'SUCCESS' && <Badge className="bg-green-100 text-green-800">성공</Badge>}
@@ -1342,10 +1340,7 @@ export default function NfcTagManagementPage() {
           <DialogHeader>
             <DialogTitle>카드 삭제</DialogTitle>
             <DialogDescription>
-              정말로 <strong>{cardToDelete?.userName}</strong>님의 카드
-              (<span className="font-mono">{cardToDelete?.cardIdentifier}</span>)를
-              삭제하시겠습니까?
-              <br />이 작업은 되돌릴 수 없습니다.
+              정말로 카드(<strong>{cardToDelete?.cardLabel || '별칭 없음'}</strong>)를 삭제하시겠습니까?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -1386,8 +1381,7 @@ export default function NfcTagManagementPage() {
           <DialogHeader>
             <DialogTitle>카드 차단</DialogTitle>
             <DialogDescription>
-              <strong>{cardToBlock?.userName}</strong>님의 카드
-              (<span className="font-mono">{cardToBlock?.cardIdentifier}</span>)를
+              카드(<strong>{cardToBlock?.cardLabel || '별칭 없음'}</strong>)를
               차단하시겠습니까?
               <br />차단된 카드는 태깅이 거부됩니다.
             </DialogDescription>

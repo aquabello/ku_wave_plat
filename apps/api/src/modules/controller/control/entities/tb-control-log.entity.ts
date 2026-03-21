@@ -25,9 +25,10 @@ export class TbControlLog {
   @Column({
     name: 'tu_seq',
     type: 'int',
+    nullable: true,
     comment: '실행자 시퀀스',
   })
-  tuSeq: number;
+  tuSeq: number | null;
 
   @Column({
     name: 'trigger_type',
