@@ -1118,10 +1118,10 @@ INSERT INTO `tb_setting` (`ts_seq`, `ts_api_time`, `ts_player_time`, `ts_player_
 VALUES (1, '30', '1', '1.0.0', '1.0.0', NOW());
 
 -- ----------------------------------------------------------------------------
--- 2. tb_users — admin 계정 (password: admin1234)
+-- 2. tb_users — admin 계정 (password: !konkuk@)
 -- ----------------------------------------------------------------------------
 INSERT INTO `tb_users` (`tu_seq`, `tu_id`, `tu_pw`, `tu_name`, `tu_phone`, `tu_email`, `tu_isdel`, `tu_step`, `tu_type`, `tu_approved_date`, `reg_date`)
-VALUES (1, 'admin', '$2b$10$8K1p/a0dL1LXMIgoEDFrwOfMQkVUIjbOo0X3INbVmUzp8s.mB3SXe', '관리자', '010-0000-0000', 'admin@ku.ac.kr', 'N', '10', 'ADMIN', NOW(), NOW());
+VALUES (1, 'admin', '$2b$10$x55JtEt43CKG5t9rDt8zj.FXpwDrBrm1GFgnWPy7PXEonKM3xXjwi', '관리자', '010-0000-0000', 'admin@ku.ac.kr', 'N', '10', 'ADMIN', NOW(), NOW());
 
 -- ----------------------------------------------------------------------------
 -- 3. tb_menu — GNB 7개 + LNB 메뉴

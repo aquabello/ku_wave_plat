@@ -102,8 +102,19 @@ pnpm --filter @ku/contracts build 2>/dev/null || true
 echo "🔨 API (NestJS) 빌드..."
 pnpm --filter @ku/api build
 
-# --- Console 빌드 ---
-echo "🔨 Console (Next.js) 빌드..."
+# --- Console 빌드 (NEXT_PUBLIC_API_URL 검증) ---
+CURRENT_API_URL=$(grep '^NEXT_PUBLIC_API_URL=' "$PROJECT_DIR/.env" | cut -d= -f2-)
+if echo "$CURRENT_API_URL" | grep -q "localhost"; then
+    # .env에서 공인 IP 추출 (ALLOWED_ORIGINS에서)
+    PUBLIC_IP=$(grep '^ALLOWED_ORIGINS=' "$PROJECT_DIR/.env" | sed 's|.*http://||;s|,.*||')
+    if [ -n "$PUBLIC_IP" ] && [ "$PUBLIC_IP" != "localhost" ]; then
+        sed -i "s|NEXT_PUBLIC_API_URL=.*|NEXT_PUBLIC_API_URL=http://${PUBLIC_IP}/api/v1|" "$PROJECT_DIR/.env"
+        echo "⚠️  NEXT_PUBLIC_API_URL이 localhost → http://${PUBLIC_IP}/api/v1 로 자동 수정됨"
+    else
+        echo "⚠️  NEXT_PUBLIC_API_URL이 localhost입니다. 외부 접근이 안 될 수 있습니다."
+    fi
+fi
+echo "🔨 Console (Next.js) 빌드... (API_URL: $(grep '^NEXT_PUBLIC_API_URL=' "$PROJECT_DIR/.env" | cut -d= -f2-))"
 pnpm --filter @ku/console build
 
 # --- NFC Agent 빌드 ---

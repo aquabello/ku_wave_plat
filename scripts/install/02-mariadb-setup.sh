@@ -93,13 +93,11 @@ echo "✅ DB 생성 완료: ku_wave_plat / sqlgw (로컬+외부)"
 # --- init_database.sql 실행 ---
 INIT_SQL="/opt/ku_wave_plat/docs/init_database.sql"
 if [ -f "$INIT_SQL" ]; then
-    read -p "init_database.sql 스키마를 적용하시겠습니까? (y/N): " APPLY_SCHEMA
-    if [ "$APPLY_SCHEMA" = "y" ] || [ "$APPLY_SCHEMA" = "Y" ]; then
-        mariadb -u root -p"${ROOT_PASSWORD}" ku_wave_plat < "$INIT_SQL"
-        TABLE_COUNT=$(mariadb -u root -p"${ROOT_PASSWORD}" ku_wave_plat \
-            -sN -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='ku_wave_plat';")
-        echo "✅ 스키마 적용 완료 (테이블 ${TABLE_COUNT}개)"
-    fi
+    echo "📄 init_database.sql 스키마 적용 중..."
+    mariadb -u root -p"${ROOT_PASSWORD}" ku_wave_plat < "$INIT_SQL"
+    TABLE_COUNT=$(mariadb -u root -p"${ROOT_PASSWORD}" ku_wave_plat \
+        -sN -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='ku_wave_plat';")
+    echo "✅ 스키마 적용 완료 (테이블 ${TABLE_COUNT}개)"
 else
     echo "⚠️  $INIT_SQL 없음. 프로젝트 배포 후 수동 실행."
 fi

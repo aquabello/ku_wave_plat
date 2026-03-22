@@ -10,13 +10,9 @@ LOCAL_IP=$(hostname -I | awk '{print $1}')
 # --- 공인 IP 입력 또는 .env에서 추출 ---
 ENV_FILE="/opt/ku_wave_plat/.env"
 if [ -f "$ENV_FILE" ]; then
-    # .env의 NEXT_PUBLIC_API_URL에서 공인 IP 추출
+    # .env의 NEXT_PUBLIC_API_URL에서 공인 IP 자동 추출
     PUBLIC_IP=$(grep '^NEXT_PUBLIC_API_URL=' "$ENV_FILE" | sed 's|.*http://||;s|/.*||')
-    echo "📋 .env에서 공인 IP 감지: ${PUBLIC_IP}"
-    read -p "이 공인 IP를 사용하시겠습니까? (Y/n): " USE_DETECTED
-    if [ "$USE_DETECTED" = "n" ] || [ "$USE_DETECTED" = "N" ]; then
-        read -p "공인 IP 입력: " PUBLIC_IP
-    fi
+    echo "📋 .env에서 공인 IP 자동 적용: ${PUBLIC_IP}"
 else
     read -p "공인 IP (ipTIME 외부 IP, 예: 117.16.139.145): " PUBLIC_IP
 fi
@@ -116,12 +112,18 @@ nginx -t
 systemctl restart nginx
 
 echo ""
-echo "=== Nginx 설정 완료 ==="
-echo ""
-echo "📌 접속 정보:"
-echo "   내부: http://${LOCAL_IP}"
-echo "   외부: http://${PUBLIC_IP}"
-echo "   API:     http://${PUBLIC_IP}/api/v1/health"
-echo "   Swagger: http://${PUBLIC_IP}/api/v1/docs"
+echo "╔══════════════════════════════════════════════╗"
+echo "║  Nginx 설정 완료                              ║"
+echo "╠══════════════════════════════════════════════╣"
+echo "║                                              ║"
+echo "║  내부 접속: http://${LOCAL_IP}                ║"
+echo "║  외부 접속: http://${PUBLIC_IP}               ║"
+echo "║                                              ║"
+echo "╠══════════════════════════════════════════════╣"
+echo "║  Console : http://${PUBLIC_IP}                ║"
+echo "║  API     : http://${PUBLIC_IP}/api/v1/health  ║"
+echo "║  Swagger : http://${PUBLIC_IP}/api/v1/docs    ║"
+echo "║  Uploads : http://${PUBLIC_IP}/uploads/       ║"
+echo "╚══════════════════════════════════════════════╝"
 echo ""
 echo "다음: sudo ./scripts/install/05-backup-cron.sh"
