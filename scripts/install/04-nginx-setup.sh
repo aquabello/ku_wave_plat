@@ -3,7 +3,7 @@
 # Usage: sudo ./scripts/install/04-nginx-setup.sh
 set -euo pipefail
 
-echo "=== [5/6] Nginx 설정 ==="
+# echo "=== [5/6] Nginx 설정 ==="
 
 LOCAL_IP=$(hostname -I | awk '{print $1}')
 

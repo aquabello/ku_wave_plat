@@ -4,7 +4,7 @@
 set -euo pipefail
 export CI=true
 
-echo "=== [4/6] 앱 빌드 + PM2 ==="
+# echo "=== [4/6] 앱 빌드 + PM2 ==="
 
 PROJECT_DIR="/opt/ku_wave_plat"
 cd "$PROJECT_DIR"

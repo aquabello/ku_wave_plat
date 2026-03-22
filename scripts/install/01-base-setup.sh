@@ -3,7 +3,7 @@
 # Usage: sudo ./scripts/install/01-base-setup.sh
 set -euo pipefail
 
-echo "=== [1/6] OS 기본 설정 ==="
+# echo "=== [1/6] OS 기본 설정 ==="
 
 # --- 시스템 업데이트 ---
 apt-get update && apt-get upgrade -y

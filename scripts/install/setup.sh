@@ -258,57 +258,61 @@ step3() {
         return
     fi
 
+    # DB 쿼리 헬퍼 함수
+    run_sql() {
+        mariadb -u root -p"!today25@" ku_wave_plat -e "$1" 2>/dev/null
+    }
+
     source "$SETUP_DATA"
-    MYSQL_CMD="mariadb -u root -p'!today25@' ku_wave_plat"
+
+    echo ""
+    echo "📋 입력 데이터를 DB에 반영합니다..."
 
     # --- 고정 IP 반영 ---
     if [ -n "${INPUT_SERVER_IP:-}" ]; then
-        $MYSQL_CMD -e "
-            UPDATE tb_device_preset SET comm_ip='${INPUT_SERVER_IP}' WHERE comm_ip IS NOT NULL;
-            UPDATE tb_ftp_config SET ftp_host='${INPUT_SERVER_IP}' WHERE ftp_isdel='N';
-        " 2>/dev/null && \
-            echo "✅ comm_ip/ftp_host → ${INPUT_SERVER_IP}" || true
+        run_sql "UPDATE tb_device_preset SET comm_ip='${INPUT_SERVER_IP}' WHERE comm_ip IS NOT NULL;" || true
+        run_sql "UPDATE tb_ftp_config SET ftp_host='${INPUT_SERVER_IP}' WHERE ftp_isdel='N';" || true
+        echo "✅ comm_ip/ftp_host → ${INPUT_SERVER_IP}"
     fi
 
     # --- 건물/호실/녹화기 반영 ---
     if [ -n "${BLD_NAME:-}" ]; then
-        # 기존 데이터 삭제
-        $MYSQL_CMD -e "DELETE FROM tb_recorder; DELETE FROM tb_space; DELETE FROM tb_user_building; DELETE FROM tb_building;" 2>/dev/null
+        run_sql "DELETE FROM tb_recorder; DELETE FROM tb_space; DELETE FROM tb_user_building; DELETE FROM tb_building;" || true
 
-        # 건물
-        $MYSQL_CMD -e "
+        run_sql "
             INSERT INTO tb_building (building_seq, building_name, building_code, building_location, building_floor_count, building_order)
             VALUES (1, '${BLD_NAME}', '${BLD_CODE}', '${BLD_LOCATION}', ${BLD_FLOORS}, 1);
-            INSERT INTO tb_user_building (tub_seq, tu_seq, building_seq) VALUES (1, 1, 1);
-        "
+        " || true
+        run_sql "INSERT INTO tb_user_building (tub_seq, tu_seq, building_seq) VALUES (1, 1, 1);" || true
         echo "✅ 건물: ${BLD_NAME} (${BLD_CODE})"
 
-        # 호실 + 녹화기
-        for entry in "${SPACES[@]}"; do
-            IFS='|' read -r SEQ NAME CODE FLOOR TYPE CAP REC_IP REC_PORT REC_MODEL <<< "$entry"
-            $MYSQL_CMD -e "
-                INSERT INTO tb_space (space_seq, building_seq, space_name, space_code, space_floor, space_type, space_capacity, space_order)
-                VALUES (${SEQ}, 1, '${NAME}', '${CODE}', '${FLOOR}', '${TYPE}', ${CAP}, ${SEQ});
-            "
-            echo "  ✅ ${NAME} (${CODE})"
+        if [ -n "${SPACES+x}" ] && [ ${#SPACES[@]} -gt 0 ]; then
+            for entry in "${SPACES[@]}"; do
+                IFS='|' read -r SEQ NAME CODE FLOOR TYPE CAP REC_IP REC_PORT REC_MODEL <<< "$entry"
+                run_sql "
+                    INSERT INTO tb_space (space_seq, building_seq, space_name, space_code, space_floor, space_type, space_capacity, space_order)
+                    VALUES (${SEQ}, 1, '${NAME}', '${CODE}', '${FLOOR}', '${TYPE}', ${CAP}, ${SEQ});
+                " || true
+                echo "  ✅ ${NAME} (${CODE})"
 
-            if [ -n "$REC_IP" ]; then
-                $MYSQL_CMD -e "
-                    INSERT INTO tb_recorder (recorder_seq, space_seq, recorder_name, recorder_ip, recorder_port, recorder_protocol, recorder_model, recorder_status)
-                    VALUES (${SEQ}, ${SEQ}, 'BON 녹화기', '${REC_IP}', ${REC_PORT}, 'HTTP', '${REC_MODEL}', 'OFFLINE');
-                "
-                echo "     녹화기: ${REC_IP}:${REC_PORT}"
-            fi
-        done
+                if [ -n "$REC_IP" ]; then
+                    run_sql "
+                        INSERT INTO tb_recorder (recorder_seq, space_seq, recorder_name, recorder_ip, recorder_port, recorder_protocol, recorder_model, recorder_status)
+                        VALUES (${SEQ}, ${SEQ}, 'BON 녹화기', '${REC_IP}', ${REC_PORT}, 'HTTP', '${REC_MODEL}', 'OFFLINE');
+                    " || true
+                    echo "     녹화기: ${REC_IP}:${REC_PORT}"
+                fi
+            done
+        fi
     fi
 
     # --- FTP 반영 ---
     if [ -n "${FTP_HOST:-}" ]; then
-        $MYSQL_CMD -e "
-            DELETE FROM tb_ftp_config;
+        run_sql "DELETE FROM tb_ftp_config;" || true
+        run_sql "
             INSERT INTO tb_ftp_config (ftp_config_seq, recorder_seq, ftp_name, ftp_host, ftp_port, ftp_username, ftp_password, ftp_path, ftp_protocol, ftp_passive_mode, is_default)
             VALUES (1, NULL, '기본 FTP', '${FTP_HOST}', ${FTP_PORT}, '${FTP_USER}', '${FTP_PASS}', '${FTP_PATH}', 'FTP', 'Y', 'Y');
-        "
+        " || true
         echo "✅ FTP: ${FTP_USER}@${FTP_HOST}:${FTP_PORT}"
     fi
 
@@ -317,9 +321,9 @@ step3() {
     echo "╔══════════════════════════════════════════════╗"
     echo "║  DB 데이터 현황                               ║"
     echo "╚══════════════════════════════════════════════╝"
-    $MYSQL_CMD -e "SELECT building_name AS '건물명', building_code AS '코드' FROM tb_building;" 2>/dev/null || true
-    $MYSQL_CMD -e "SELECT s.space_seq AS 'SEQ', s.space_name AS '호실', s.space_code AS '코드', s.space_floor AS '층', IFNULL(r.recorder_ip, '-') AS '녹화기IP' FROM tb_space s LEFT JOIN tb_recorder r ON s.space_seq = r.space_seq ORDER BY s.space_seq;" 2>/dev/null || true
-    $MYSQL_CMD -e "SELECT ftp_name AS 'FTP', CONCAT(ftp_username,'@',ftp_host,':',ftp_port) AS '접속정보' FROM tb_ftp_config WHERE ftp_isdel='N';" 2>/dev/null || true
+    run_sql "SELECT building_name AS '건물명', building_code AS '코드' FROM tb_building;" || true
+    run_sql "SELECT s.space_seq AS 'SEQ', s.space_name AS '호실', s.space_code AS '코드', s.space_floor AS '층', IFNULL(r.recorder_ip, '-') AS '녹화기IP' FROM tb_space s LEFT JOIN tb_recorder r ON s.space_seq = r.space_seq ORDER BY s.space_seq;" || true
+    run_sql "SELECT ftp_name AS 'FTP', CONCAT(ftp_username,'@',ftp_host,':',ftp_port) AS '접속정보' FROM tb_ftp_config WHERE ftp_isdel='N';" || true
 
     # 임시 파일 정리
     rm -f "$SETUP_DATA"
