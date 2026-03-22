@@ -40,6 +40,7 @@ step0() {
     if [ -z "$(git config --global user.email)" ]; then
         git config --global user.email "aquabello@today25.com"
         git config --global user.name "aquabello"
+        git config --global --add safe.directory /opt/ku_wave_plat
         echo "✅ git 사용자 설정 완료"
     fi
     if [ -d "$INSTALL_DIR/.git" ]; then
