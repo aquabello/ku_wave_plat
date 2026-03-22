@@ -194,12 +194,13 @@ ENVEOF
             SPACE_CAP="${SPACE_CAP:-40}"
 
             REC_IP=""
-            REC_PORT="80"
+            REC_PORT="6060"
             REC_MODEL="BON BR-500"
-            read -p "녹화기 IP (없으면 빈칸): " REC_IP
+            read -p "녹화기 IP (기본: ${INPUT_SERVER_IP}, 없으면 빈칸): " INPUT_REC_IP
+            REC_IP="${INPUT_REC_IP:-$INPUT_SERVER_IP}"
             if [ -n "$REC_IP" ]; then
-                read -p "녹화기 포트 (기본: 80): " INPUT_REC_PORT
-                REC_PORT="${INPUT_REC_PORT:-80}"
+                read -p "녹화기 포트 (기본: 6060): " INPUT_REC_PORT
+                REC_PORT="${INPUT_REC_PORT:-6060}"
                 read -p "녹화기 모델 (기본: BON BR-500): " INPUT_REC_MODEL
                 REC_MODEL="${INPUT_REC_MODEL:-BON BR-500}"
             fi

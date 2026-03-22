@@ -3,7 +3,7 @@
 # Usage: sudo ./scripts/install/02-mariadb-setup.sh
 set -euo pipefail
 
-echo "=== [2/6] MariaDB 설정 ==="
+echo "=== [3/6] MariaDB 설정 ==="
 
 # --- MariaDB 설치 ---
 if ! command -v mariadb &> /dev/null; then
@@ -111,4 +111,4 @@ echo "   Port: 3306"
 echo "   User: sqlgw"
 echo "   DB:   ku_wave_plat"
 echo ""
-echo "다음: ./scripts/install/03-app-build.sh"
+echo "다음: 데이터 반영 → 앱 빌드"
