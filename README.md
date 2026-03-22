@@ -342,6 +342,18 @@ Private
 **Made with ❤️ by KU Wave Plat**
 
 
+ku_wave_plat (운영 서버)
+
+curl -O https://raw.githubusercontent.com/aquabello/ku_wave_plat/main/scripts/install/setup.sh
+chmod +x setup.sh
+sudo ./setup.sh
+
+ku_ai_pc (강의실)
+
+curl -O https://raw.githubusercontent.com/aquabello/ku_ai_pc/main/scripts/install/setup.sh
+chmod +x setup.sh
+sudo ./setup.sh
+
 
 # ku_wave_plat 운영 서버
 

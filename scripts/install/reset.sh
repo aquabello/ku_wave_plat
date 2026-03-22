@@ -143,15 +143,23 @@ if crontab -l 2>/dev/null | grep -q "db-backup.sh"; then
     fi
 fi
 
+# =============================================
+# 7. 프로젝트 디렉토리 전체 삭제 (선택)
+# =============================================
+read -p "🔹 [7/7] /opt/ku_wave_plat 전체를 삭제하시겠습니까? (y/N): " DEL_PROJECT
+if [ "$DEL_PROJECT" = "y" ] || [ "$DEL_PROJECT" = "Y" ]; then
+    rm -rf "$PROJECT_DIR"
+    echo "  ✅ /opt/ku_wave_plat 전체 삭제"
+else
+    echo "  ℹ️  프로젝트 디렉토리 유지"
+fi
+
 echo ""
 echo "============================================"
 echo "  초기화 완료!"
 echo "============================================"
 echo ""
-echo "재설치 순서:"
-echo "  1. sudo ./scripts/install/01-base-setup.sh"
-echo "  2. sudo ./scripts/install/02-mariadb-setup.sh"
-echo "  3. ./scripts/install/03-app-build.sh"
-echo "  4. sudo ./scripts/install/04-nginx-setup.sh"
-echo "  5. sudo ./scripts/install/05-backup-cron.sh"
+echo "재설치:"
+echo "  curl -O https://raw.githubusercontent.com/aquabello/ku_wave_plat/main/scripts/install/setup.sh"
+echo "  chmod +x setup.sh && sudo bash setup.sh"
 echo ""

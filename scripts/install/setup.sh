@@ -71,15 +71,20 @@ step3() {
     echo ""
     echo "========== [3/6] .env 설정 =========="
     if [ ! -f "$PROJECT_DIR/.env" ]; then
+        # 쓰기 권한 확보
+        touch "$PROJECT_DIR/.env" 2>/dev/null || sudo touch "$PROJECT_DIR/.env"
+        sudo chmod 666 "$PROJECT_DIR/.env"
+
         echo ""
-        echo "📋 운영 환경변수를 입력하세요."
+        echo "📋 운영 환경변수를 설정합니다."
         echo ""
         read -p "서버 고정 IP (외부 접근용, 예: 117.16.145.227): " INPUT_SERVER_IP
-        echo ""
-        read -p "DB 비밀번호 (sqlgw): " -s INPUT_DB_PASSWORD
-        echo ""
-        read -p "JWT Secret (32자 이상): " INPUT_JWT_SECRET
-        read -p "JWT Refresh Secret (32자 이상): " INPUT_JWT_REFRESH_SECRET
+
+        # 고정값
+        INPUT_DB_PASSWORD='!sqlgw@'
+        INPUT_JWT_SECRET='ku-wave-plat-jwt-secret-2026-x7k9m2p4'
+        INPUT_JWT_REFRESH_SECRET='ku-wave-plat-refresh-secret-2026-q3w8n5v1'
+        echo "✅ DB/JWT 설정 자동 적용"
 
         cat > "$PROJECT_DIR/.env" << ENVEOF
 # ==========================================

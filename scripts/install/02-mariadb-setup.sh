@@ -48,10 +48,8 @@ systemctl restart mariadb
 # --- DB + 서비스 계정(sqlgw) 생성 ---
 echo ""
 echo "📋 DB 및 서비스 계정을 생성합니다..."
-read -p "DB 비밀번호 입력 (sqlgw용): " -s DB_PASSWORD
-echo ""
-read -p "root 비밀번호 설정: " -s ROOT_PASSWORD
-echo ""
+DB_PASSWORD='!sqlgw@'
+ROOT_PASSWORD='!today25@'
 
 mariadb -u root << SQLEOF
 -- root 비밀번호 설정 + 외부 접근 허용
