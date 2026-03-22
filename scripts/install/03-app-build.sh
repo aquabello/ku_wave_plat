@@ -86,6 +86,9 @@ ENVEOF
     echo ""
 fi
 
+# --- node-gyp 권한 수정 (pcsclite/bcrypt 네이티브 빌드용) ---
+find /root/.local/share/pnpm -name "gyp_main.py" -exec chmod +x {} \; 2>/dev/null || true
+
 # --- 의존성 설치 ---
 echo "📦 의존성 설치..."
 pnpm install --frozen-lockfile
