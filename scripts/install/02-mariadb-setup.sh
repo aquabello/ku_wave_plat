@@ -103,12 +103,4 @@ else
 fi
 
 echo ""
-echo "=== MariaDB 설정 완료 ==="
-echo ""
-echo "📌 외부 접속 정보:"
-echo "   Host: $(hostname -I | awk '{print $1}')"
-echo "   Port: 3306"
-echo "   User: sqlgw"
-echo "   DB:   ku_wave_plat"
-echo ""
-echo "다음: 데이터 반영 → 앱 빌드"
+echo "✅ MariaDB 설정 완료 (sqlgw@$(hostname -I | awk '{print $1}'):3306)"
