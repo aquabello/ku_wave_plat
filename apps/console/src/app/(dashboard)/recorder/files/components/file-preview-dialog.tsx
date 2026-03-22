@@ -40,7 +40,7 @@ function formatFileSize(bytes: number | undefined): string {
   return `${size.toFixed(1)} ${units[i]}`;
 }
 
-export function FilePreviewDialog({ recFileSeq, fileName, sessionTitle, fileSize, fileSizeFormatted, fileDurationSec, fileFormat, filePath }: FilePreviewDialogProps) {
+export function FilePreviewDialog({ recFileSeq, fileName, sessionTitle, fileSize, fileSizeFormatted, fileDurationSec, fileFormat, filePath: _filePath }: FilePreviewDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [previewInfo, setPreviewInfo] = useState<FilePreviewInfo | null>(null);

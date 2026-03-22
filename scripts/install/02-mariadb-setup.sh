@@ -54,8 +54,10 @@ read -p "root 비밀번호 설정: " -s ROOT_PASSWORD
 echo ""
 
 mariadb -u root << SQLEOF
--- root 비밀번호 설정
+-- root 비밀번호 설정 + 외부 접근 허용
 ALTER USER 'root'@'localhost' IDENTIFIED BY '${ROOT_PASSWORD}';
+CREATE USER IF NOT EXISTS 'root'@'%' IDENTIFIED BY '${ROOT_PASSWORD}';
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;
 
 -- 데이터베이스 생성
 CREATE DATABASE IF NOT EXISTS ku_wave_plat

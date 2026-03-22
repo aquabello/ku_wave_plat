@@ -44,7 +44,7 @@ import { AppService } from './app.service';
     // Configuration
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env',
+      envFilePath: ['.env', '../../.env'],
     }),
 
     // Database (MariaDB)

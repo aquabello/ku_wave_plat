@@ -7,7 +7,7 @@ import {
   flexRender,
   type ColumnDef,
 } from '@tanstack/react-table';
-import { ChevronLeft, ChevronRight, RefreshCw, Loader2, AlertCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -21,7 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { FileDownloadButton } from './file-download-button';
 import { FilePreviewDialog } from './file-preview-dialog';
 import { useRetryUploadMutation } from '@/hooks/use-recordings';
-import type { RecordingFileListItem, FtpUploadStatus } from '@ku/types';
+import type { RecordingFileListItem } from '@ku/types';
 
 interface Pagination {
   total: number;
@@ -37,35 +37,10 @@ interface FileTableProps {
   onPageChange: (page: number) => void;
 }
 
-const ftpStatusColorMap: Record<FtpUploadStatus, string> = {
-  PENDING: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100',
-  UPLOADING: 'bg-blue-100 text-blue-800 hover:bg-blue-100',
-  COMPLETED: 'bg-green-100 text-green-800 hover:bg-green-100',
-  FAILED: 'bg-red-100 text-red-800 hover:bg-red-100',
-  RETRY: 'bg-orange-100 text-orange-800 hover:bg-orange-100',
-};
-
-const ftpStatusLabelMap: Record<FtpUploadStatus, string> = {
-  PENDING: '대기',
-  UPLOADING: '업로드 중',
-  COMPLETED: '완료',
-  FAILED: '실패',
-  RETRY: '재시도',
-};
-
 function formatDuration(seconds: number): string {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
   return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-}
-
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return '-';
-  return new Date(dateStr).toLocaleDateString('ko-KR', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
 }
 
 export function FileTable({ data, pagination, isLoading, onPageChange }: FileTableProps) {

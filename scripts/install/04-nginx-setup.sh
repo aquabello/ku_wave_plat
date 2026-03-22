@@ -5,7 +5,31 @@ set -euo pipefail
 
 echo "=== [4/5] Nginx 리버스 프록시 설정 ==="
 
-SERVER_IP=$(hostname -I | awk '{print $1}')
+LOCAL_IP=$(hostname -I | awk '{print $1}')
+
+# --- 공인 IP 입력 또는 .env에서 추출 ---
+ENV_FILE="/opt/ku_wave_plat/.env"
+if [ -f "$ENV_FILE" ]; then
+    # .env의 NEXT_PUBLIC_API_URL에서 공인 IP 추출
+    PUBLIC_IP=$(grep '^NEXT_PUBLIC_API_URL=' "$ENV_FILE" | sed 's|.*http://||;s|/.*||')
+    echo "📋 .env에서 공인 IP 감지: ${PUBLIC_IP}"
+    read -p "이 공인 IP를 사용하시겠습니까? (Y/n): " USE_DETECTED
+    if [ "$USE_DETECTED" = "n" ] || [ "$USE_DETECTED" = "N" ]; then
+        read -p "공인 IP 입력: " PUBLIC_IP
+    fi
+else
+    read -p "공인 IP (ipTIME 외부 IP, 예: 117.16.139.145): " PUBLIC_IP
+fi
+
+if [ -z "$PUBLIC_IP" ]; then
+    echo "❌ 공인 IP를 입력해야 합니다."
+    exit 1
+fi
+
+echo ""
+echo "🌐 로컬 IP:  ${LOCAL_IP}"
+echo "🌐 공인 IP:  ${PUBLIC_IP}"
+echo ""
 
 apt-get install -y nginx
 systemctl enable nginx
@@ -24,7 +48,7 @@ upstream ku_console {
 
 server {
     listen 80;
-    server_name ${SERVER_IP} _;
+    server_name ${PUBLIC_IP} ${LOCAL_IP} _;
 
     client_max_body_size 100M;
 
@@ -93,8 +117,11 @@ systemctl restart nginx
 
 echo ""
 echo "=== Nginx 설정 완료 ==="
-echo "   Console: http://${SERVER_IP}"
-echo "   API:     http://${SERVER_IP}/api/v1/health"
-echo "   Swagger: http://${SERVER_IP}/api/v1/docs"
+echo ""
+echo "📌 접속 정보:"
+echo "   내부: http://${LOCAL_IP}"
+echo "   외부: http://${PUBLIC_IP}"
+echo "   API:     http://${PUBLIC_IP}/api/v1/health"
+echo "   Swagger: http://${PUBLIC_IP}/api/v1/docs"
 echo ""
 echo "다음: sudo ./scripts/install/05-backup-cron.sh"

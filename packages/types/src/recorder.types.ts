@@ -296,6 +296,8 @@ export interface FtpConfigListItem {
   isDefault: 'Y' | 'N';
   recorderSeq: number | null;
   recorderName: string | null;
+  buildingName: string | null;
+  spaceName: string | null;
   regDate: string;
 }
 

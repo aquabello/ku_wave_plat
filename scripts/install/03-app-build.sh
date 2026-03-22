@@ -2,29 +2,59 @@
 # 앱 빌드 + PM2 실행
 # Usage: ./scripts/install/03-app-build.sh
 set -euo pipefail
+export CI=true
 
 echo "=== [3/5] 앱 빌드 + PM2 실행 ==="
 
 PROJECT_DIR="/opt/ku_wave_plat"
 cd "$PROJECT_DIR"
 
-# --- .env 확인 ---
+# --- .env 생성 (없을 때만) ---
 if [ ! -f ".env" ]; then
-    cat > .env << 'ENVEOF'
+    echo ""
+    echo "📋 환경 설정을 시작합니다."
+    echo ""
+
+    # --- 네트워크 정보 수집 ---
+    LOCAL_IP=$(hostname -I | awk '{print $1}')
+    echo "🌐 감지된 로컬 IP: ${LOCAL_IP}"
+    echo ""
+
+    read -p "공인 IP (ipTIME 외부 IP, 예: 117.16.139.145): " PUBLIC_IP
+    if [ -z "$PUBLIC_IP" ]; then
+        echo "❌ 공인 IP를 입력해야 합니다."
+        exit 1
+    fi
+
+    # --- DB 정보 수집 ---
+    read -p "DB 비밀번호 (sqlgw): " -s DB_PASSWORD
+    echo ""
+    if [ -z "$DB_PASSWORD" ]; then
+        echo "❌ DB 비밀번호를 입력해야 합니다."
+        exit 1
+    fi
+
+    # --- JWT Secret 자동 생성 ---
+    JWT_SECRET=$(openssl rand -base64 48)
+    JWT_REFRESH_SECRET=$(openssl rand -base64 48)
+
+    # --- .env 생성 ---
+    cat > .env << ENVEOF
 # ==========================================
 # ku_wave_plat 운영 환경변수
+# Generated: $(date '+%Y-%m-%d %H:%M:%S')
 # ==========================================
 
 # Database
 DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_USERNAME=sqlgw
-DB_PASSWORD=CHANGE_ME
+DB_PASSWORD=${DB_PASSWORD}
 DB_DATABASE=ku_wave_plat
 
 # JWT
-JWT_SECRET=CHANGE_ME_jwt_secret_minimum_32_characters
-JWT_REFRESH_SECRET=CHANGE_ME_jwt_refresh_secret_minimum_32_chars
+JWT_SECRET=${JWT_SECRET}
+JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
 JWT_ACCESS_TOKEN_EXPIRATION=15m
 JWT_REFRESH_TOKEN_EXPIRATION=7d
 
@@ -34,10 +64,10 @@ API_PREFIX=api/v1
 
 # Console
 CONSOLE_PORT=3000
-NEXT_PUBLIC_API_URL=http://SERVER_IP/api/v1
+NEXT_PUBLIC_API_URL=http://${PUBLIC_IP}/api/v1
 
 # CORS
-ALLOWED_ORIGINS=http://SERVER_IP
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8000,http://${PUBLIC_IP},http://${LOCAL_IP}
 
 # Environment
 NODE_ENV=production
@@ -47,11 +77,13 @@ THROTTLE_TTL=60000
 THROTTLE_LIMIT=100
 ENVEOF
 
-    echo "⚠️  .env 파일이 생성되었습니다. 반드시 편집하세요:"
-    echo "    nano $PROJECT_DIR/.env"
     echo ""
-    echo "변경 필수: DB_PASSWORD, JWT_SECRET, JWT_REFRESH_SECRET, SERVER_IP"
-    exit 1
+    echo "✅ .env 생성 완료"
+    echo "   공인 IP:  ${PUBLIC_IP}"
+    echo "   로컬 IP:  ${LOCAL_IP}"
+    echo "   DB User:  sqlgw"
+    echo "   JWT:      자동 생성됨"
+    echo ""
 fi
 
 # --- 의존성 설치 ---
@@ -70,6 +102,10 @@ pnpm --filter @ku/api build
 # --- Console 빌드 ---
 echo "🔨 Console (Next.js) 빌드..."
 pnpm --filter @ku/console build
+
+# --- NFC Agent 빌드 ---
+echo "🔨 NFC Agent 빌드..."
+pnpm --filter @ku/nfc build
 
 # --- uploads 디렉토리 ---
 mkdir -p "$PROJECT_DIR/apps/api/uploads"
@@ -94,8 +130,19 @@ sleep 10
 API_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/api/v1/health 2>/dev/null || echo "000")
 CONSOLE_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 2>/dev/null || echo "000")
 
-[ "$API_STATUS" = "200" ] && echo "✅ API OK" || echo "⚠️  API: $API_STATUS (pm2 logs ku-api)"
-[ "$CONSOLE_STATUS" = "200" ] && echo "✅ Console OK" || echo "⚠️  Console: $CONSOLE_STATUS (pm2 logs ku-console)"
+# API는 JWT 인증이 글로벌이므로 401도 정상
+if [ "$API_STATUS" = "200" ] || [ "$API_STATUS" = "401" ]; then
+    echo "✅ API OK (${API_STATUS})"
+else
+    echo "⚠️  API: $API_STATUS (pm2 logs ku-api)"
+fi
+
+# Console은 로그인 리다이렉트(307)도 정상
+if [ "$CONSOLE_STATUS" = "200" ] || [ "$CONSOLE_STATUS" = "307" ]; then
+    echo "✅ Console OK (${CONSOLE_STATUS})"
+else
+    echo "⚠️  Console: $CONSOLE_STATUS (pm2 logs ku-console)"
+fi
 
 echo ""
 echo "=== 앱 배포 완료 ==="

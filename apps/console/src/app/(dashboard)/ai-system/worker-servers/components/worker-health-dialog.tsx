@@ -69,9 +69,9 @@ export function WorkerHealthDialog({
                 <CardContent className="flex items-center gap-3 pt-4 pb-4">
                   <Cpu className="h-5 w-5 text-blue-500" />
                   <div>
-                    <p className="text-xs text-muted-foreground">GPU</p>
+                    <p className="text-xs text-muted-foreground">GPU 사용률</p>
                     <p className="text-lg font-bold">
-                      {(data as Record<string, unknown>).gpu_available ? '사용 가능' : '없음'}
+                      {data.gpuUsage != null ? `${data.gpuUsage}%` : '없음'}
                     </p>
                   </div>
                 </CardContent>
@@ -80,9 +80,9 @@ export function WorkerHealthDialog({
                 <CardContent className="flex items-center gap-3 pt-4 pb-4">
                   <HardDrive className="h-5 w-5 text-purple-500" />
                   <div>
-                    <p className="text-xs text-muted-foreground">버전</p>
+                    <p className="text-xs text-muted-foreground">메모리 사용률</p>
                     <p className="text-lg font-bold">
-                      {(data as Record<string, unknown>).version ?? '-'}
+                      {data.memoryUsage != null ? `${data.memoryUsage}%` : '-'}
                     </p>
                   </div>
                 </CardContent>
@@ -93,7 +93,7 @@ export function WorkerHealthDialog({
                   <div>
                     <p className="text-xs text-muted-foreground">활성 / 대기 Job</p>
                     <p className="text-lg font-bold">
-                      {(data as Record<string, unknown>).active_jobs ?? 0} / {(data as Record<string, unknown>).pending_jobs ?? 0}
+                      {data.activeJobs} / {data.queuedJobs}
                     </p>
                   </div>
                 </CardContent>
@@ -102,9 +102,11 @@ export function WorkerHealthDialog({
                 <CardContent className="flex items-center gap-3 pt-4 pb-4">
                   <RefreshCw className="h-5 w-5 text-orange-500" />
                   <div>
-                    <p className="text-xs text-muted-foreground">상태</p>
+                    <p className="text-xs text-muted-foreground">가동 시간</p>
                     <p className="text-lg font-bold">
-                      {(data as Record<string, unknown>).status === 'ok' ? '정상' : '오류'}
+                      {data.uptime > 3600
+                        ? `${Math.floor(data.uptime / 3600)}시간`
+                        : `${Math.floor(data.uptime / 60)}분`}
                     </p>
                   </div>
                 </CardContent>
