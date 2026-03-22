@@ -389,4 +389,4 @@ sudo ./scripts/install/03-service-setup.sh        # systemd + 헬스모니터
 npm install -g @anthropic-ai/claude-code
 
 # 2. 실행 + 로그인
-claude
+sudo claude --dangerously-skip-permissions
