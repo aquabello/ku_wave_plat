@@ -205,8 +205,33 @@ ENVEOF
 
             echo "  '${SPACE_SEQ}|${SPACE_NAME}|${SPACE_CODE}|${SPACE_FLOOR}|${SPACE_TYPE}|${SPACE_CAP}|${REC_IP}|${REC_PORT}|${REC_MODEL}'" >> "$SETUP_DATA"
             echo "  ✅ ${SPACE_NAME} (${SPACE_CODE}) 녹화기: ${REC_IP}:${REC_PORT}"
+
+            # 장비 등록 (전자칠판/프로젝터/스크린)
+            echo ""
+            echo "  📋 ${SPACE_NAME} 연동 장비 선택"
+            DEVICES=""
+            read -p "  전자칠판 연동? (Y/n): " DEV_BOARD
+            if [ "$DEV_BOARD" != "n" ] && [ "$DEV_BOARD" != "N" ]; then
+                DEVICES="${DEVICES}BOARD,"
+                echo "    ✅ 전자칠판"
+            fi
+            read -p "  프로젝터 연동? (Y/n): " DEV_PROJ
+            if [ "$DEV_PROJ" != "n" ] && [ "$DEV_PROJ" != "N" ]; then
+                DEVICES="${DEVICES}PROJECTOR,"
+                echo "    ✅ 프로젝터"
+            fi
+            read -p "  스크린 연동? (Y/n): " DEV_SCREEN
+            if [ "$DEV_SCREEN" != "n" ] && [ "$DEV_SCREEN" != "N" ]; then
+                DEVICES="${DEVICES}SCREEN,"
+                echo "    ✅ 스크린"
+            fi
+            DEVICES="${DEVICES%,}"
         fi
         echo ")" >> "$SETUP_DATA"
+        # 장비 데이터는 SPACES 밖에 별도 저장
+        if [ -n "${DEVICES:-}" ]; then
+            echo "DEVICES_1='${DEVICES}'" >> "$SETUP_DATA"
+        fi
 
         # FTP 설정
         echo ""
@@ -301,6 +326,38 @@ step3() {
                         VALUES (${SEQ}, ${SEQ}, 'BON 녹화기', '${REC_IP}', ${REC_PORT}, 'HTTP', '${REC_MODEL}', 'OFFLINE');
                     " || true
                     echo "     녹화기: ${REC_IP}:${REC_PORT}"
+                fi
+
+                # 장비 연동 (tb_space_device)
+                # 프리셋: 1=프로젝터, 2=전자칠판, 3=녹화기, 4=스크린
+                DEVVAR="DEVICES_${SEQ}"
+                DEVLIST="${!DEVVAR:-}"
+                if [ -n "$DEVLIST" ]; then
+                    run_sql "DELETE FROM tb_space_device WHERE space_seq=${SEQ};" || true
+                    DEV_ORDER=1
+                    if echo "$DEVLIST" | grep -q "BOARD"; then
+                        run_sql "
+                            INSERT INTO tb_space_device (space_seq, preset_seq, device_name, device_ip, device_port, device_order)
+                            VALUES (${SEQ}, 2, '${NAME} 전자칠판', '${INPUT_SERVER_IP}', 9090, ${DEV_ORDER});
+                        " || true
+                        echo "     장비: 전자칠판 (${INPUT_SERVER_IP}:9090)"
+                        DEV_ORDER=$((DEV_ORDER + 1))
+                    fi
+                    if echo "$DEVLIST" | grep -q "PROJECTOR"; then
+                        run_sql "
+                            INSERT INTO tb_space_device (space_seq, preset_seq, device_name, device_ip, device_port, device_order)
+                            VALUES (${SEQ}, 1, '${NAME} 프로젝터', '${INPUT_SERVER_IP}', 9090, ${DEV_ORDER});
+                        " || true
+                        echo "     장비: 프로젝터 (${INPUT_SERVER_IP}:9090)"
+                        DEV_ORDER=$((DEV_ORDER + 1))
+                    fi
+                    if echo "$DEVLIST" | grep -q "SCREEN"; then
+                        run_sql "
+                            INSERT INTO tb_space_device (space_seq, preset_seq, device_name, device_ip, device_port, device_order)
+                            VALUES (${SEQ}, 4, '${NAME} 스크린', '${INPUT_SERVER_IP}', 9090, ${DEV_ORDER});
+                        " || true
+                        echo "     장비: 스크린 (${INPUT_SERVER_IP}:9090)"
+                    fi
                 fi
             done
         fi

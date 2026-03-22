@@ -1224,7 +1224,7 @@ INSERT INTO `tb_space` (`space_seq`, `building_seq`, `space_name`, `space_code`,
 INSERT INTO `tb_device_preset` (`preset_seq`, `preset_name`, `protocol_type`, `comm_ip`, `comm_port`, `preset_description`, `preset_order`) VALUES
 (1, '프로젝터', 'TCP', '117.16.139.145', 9090, '강의실용 프로젝터', 1),
 (2, '전자칠판', 'TCP', '117.16.139.145', 9090, '전자칠판', 2),
-(3, '녹화기', 'TCP', '117.16.139.145', 5050, '녹화기', 3),
+(3, '녹화기', 'TCP', '117.16.139.145', 6060, '녹화기', 3),
 (4, '스크린', 'TCP', '117.16.139.145', 9090, '스크린 프리셋', 4);
 
 -- ----------------------------------------------------------------------------
