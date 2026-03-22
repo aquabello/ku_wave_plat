@@ -162,7 +162,8 @@ ENVEOF
         read -p "건물명 (예: 산학협동관): " BLD_NAME
         read -p "건물 코드 (기본: BLD-001): " BLD_CODE
         BLD_CODE="${BLD_CODE:-BLD-001}"
-        read -p "건물 위치 (예: 서울시 광진구 능동로 120): " BLD_LOCATION
+        read -p "건물 위치 (기본: 서울시 광진구 능동로 120): " BLD_LOCATION
+        BLD_LOCATION="${BLD_LOCATION:-서울시 광진구 능동로 120}"
         read -p "건물 층수 (기본: 5): " BLD_FLOORS
         BLD_FLOORS="${BLD_FLOORS:-5}"
 
@@ -173,21 +174,20 @@ ENVEOF
 
         echo "✅ 건물: ${BLD_NAME} (${BLD_CODE})"
 
-        # 호실 + 녹화기 입력 (반복)
+        # 호실 + 녹화기 입력 (1개)
         SPACE_SEQ=1
         echo "" >> "$SETUP_DATA"
         echo "SPACES=(" >> "$SETUP_DATA"
 
         echo ""
-        echo "📋 호실 정보를 입력하세요. (빈 값 입력 시 종료)"
-        while true; do
-            echo ""
-            read -p "호실명 (예: 220호, 빈칸=종료): " SPACE_NAME
-            [ -z "$SPACE_NAME" ] && break
-
-            read -p "호실 코드 (기본: SPC-$(printf '%03d' $SPACE_SEQ)): " SPACE_CODE
-            SPACE_CODE="${SPACE_CODE:-SPC-$(printf '%03d' $SPACE_SEQ)}"
-            read -p "층 (예: 2): " SPACE_FLOOR
+        echo "📋 호실 정보를 입력하세요."
+        echo ""
+        read -p "호실명 (예: 220호): " SPACE_NAME
+        if [ -n "$SPACE_NAME" ]; then
+            read -p "호실 코드 (기본: SPC-001): " SPACE_CODE
+            SPACE_CODE="${SPACE_CODE:-SPC-001}"
+            read -p "층 (기본: 1): " SPACE_FLOOR
+            SPACE_FLOOR="${SPACE_FLOOR:-1}"
             read -p "공간 유형 (기본: 강의실): " SPACE_TYPE
             SPACE_TYPE="${SPACE_TYPE:-강의실}"
             read -p "수용 인원 (기본: 40): " SPACE_CAP
@@ -196,20 +196,16 @@ ENVEOF
             REC_IP=""
             REC_PORT="6060"
             REC_MODEL="BON BR-500"
-            read -p "녹화기 IP (기본: ${INPUT_SERVER_IP}, 없으면 빈칸): " INPUT_REC_IP
+            read -p "녹화기 IP (기본: ${INPUT_SERVER_IP}): " INPUT_REC_IP
             REC_IP="${INPUT_REC_IP:-$INPUT_SERVER_IP}"
-            if [ -n "$REC_IP" ]; then
-                read -p "녹화기 포트 (기본: 6060): " INPUT_REC_PORT
-                REC_PORT="${INPUT_REC_PORT:-6060}"
-                read -p "녹화기 모델 (기본: BON BR-500): " INPUT_REC_MODEL
-                REC_MODEL="${INPUT_REC_MODEL:-BON BR-500}"
-            fi
+            read -p "녹화기 포트 (기본: 6060): " INPUT_REC_PORT
+            REC_PORT="${INPUT_REC_PORT:-6060}"
+            read -p "녹화기 모델 (기본: BON BR-500): " INPUT_REC_MODEL
+            REC_MODEL="${INPUT_REC_MODEL:-BON BR-500}"
 
             echo "  '${SPACE_SEQ}|${SPACE_NAME}|${SPACE_CODE}|${SPACE_FLOOR}|${SPACE_TYPE}|${SPACE_CAP}|${REC_IP}|${REC_PORT}|${REC_MODEL}'" >> "$SETUP_DATA"
-            echo "  ✅ ${SPACE_NAME} (${SPACE_CODE}) ${REC_IP:+녹화기: $REC_IP}"
-
-            SPACE_SEQ=$((SPACE_SEQ + 1))
-        done
+            echo "  ✅ ${SPACE_NAME} (${SPACE_CODE}) 녹화기: ${REC_IP}:${REC_PORT}"
+        fi
         echo ")" >> "$SETUP_DATA"
 
         # FTP 설정
