@@ -51,7 +51,21 @@ echo "📋 DB 및 서비스 계정을 생성합니다..."
 DB_PASSWORD='!sqlgw@'
 ROOT_PASSWORD='!today25@'
 
-mariadb -u root << SQLEOF
+# root 비밀번호 유무 자동 감지
+MYSQL_CMD="mariadb -u root"
+if ! $MYSQL_CMD -e "SELECT 1" &>/dev/null; then
+    # 비밀번호가 이미 설정된 경우
+    MYSQL_CMD="mariadb -u root -p${ROOT_PASSWORD}"
+    if ! $MYSQL_CMD -e "SELECT 1" &>/dev/null; then
+        echo "❌ MariaDB root 접속 실패. 비밀번호를 확인하세요."
+        exit 1
+    fi
+    echo "✅ MariaDB root 접속 (비밀번호 사용)"
+else
+    echo "✅ MariaDB root 접속 (비밀번호 없음 → 설정 예정)"
+fi
+
+$MYSQL_CMD << SQLEOF
 -- root 비밀번호 설정 + 외부 접근 허용
 ALTER USER 'root'@'localhost' IDENTIFIED BY '${ROOT_PASSWORD}';
 CREATE USER IF NOT EXISTS 'root'@'%' IDENTIFIED BY '${ROOT_PASSWORD}';

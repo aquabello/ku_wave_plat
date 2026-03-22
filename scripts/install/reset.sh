@@ -14,6 +14,12 @@
 
 set -euo pipefail
 
+# root 권한 확인
+if [ "$(id -u)" -ne 0 ]; then
+    echo "❌ root 권한이 필요합니다: sudo bash $0"
+    exit 1
+fi
+
 PROJECT_DIR="/opt/ku_wave_plat"
 
 echo "============================================"

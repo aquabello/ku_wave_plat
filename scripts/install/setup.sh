@@ -53,6 +53,10 @@ step0() {
         cd "$INSTALL_DIR"
         echo "✅ clone 완료: $INSTALL_DIR"
     fi
+    # 이후 단계를 위해 SCRIPT_DIR/PROJECT_DIR 갱신
+    SCRIPT_DIR="$INSTALL_DIR/scripts/install"
+    PROJECT_DIR="$INSTALL_DIR"
+    echo "📂 작업 디렉토리: $INSTALL_DIR"
 }
 
 step1() {
