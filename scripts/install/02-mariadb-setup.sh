@@ -3,7 +3,7 @@
 # Usage: sudo ./scripts/install/02-mariadb-setup.sh
 set -euo pipefail
 
-echo "=== [2/5] MariaDB 설치 + 외부 접근 설정 ==="
+echo "=== [2/6] MariaDB 설정 ==="
 
 # --- MariaDB 설치 ---
 if ! command -v mariadb &> /dev/null; then

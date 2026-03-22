@@ -1121,7 +1121,7 @@ VALUES (1, '30', '1', '1.0.0', '1.0.0', NOW());
 -- 2. tb_users — admin 계정 (password: !konkuk@)
 -- ----------------------------------------------------------------------------
 INSERT INTO `tb_users` (`tu_seq`, `tu_id`, `tu_pw`, `tu_name`, `tu_phone`, `tu_email`, `tu_isdel`, `tu_step`, `tu_type`, `tu_approved_date`, `reg_date`)
-VALUES (1, 'admin', '$2b$10$x55JtEt43CKG5t9rDt8zj.FXpwDrBrm1GFgnWPy7PXEonKM3xXjwi', '관리자', '010-0000-0000', 'admin@ku.ac.kr', 'N', '10', 'ADMIN', NOW(), NOW());
+VALUES (1, 'admin', '$2b$10$x55JtEt43CKG5t9rDt8zj.FXpwDrBrm1GFgnWPy7PXEonKM3xXjwi', '관리자', '010-0000-0000', 'kuwave@konkuk.ac.kr', 'N', 'OK', 'SUPER', NOW(), NOW());
 
 -- ----------------------------------------------------------------------------
 -- 3. tb_menu — GNB 7개 + LNB 메뉴
@@ -1201,10 +1201,10 @@ INSERT INTO `tb_menu_users` (`tu_seq`, `menu_seq`) VALUES
 (1, 73), (1, 74);
 
 -- ----------------------------------------------------------------------------
--- 5. tb_building — 샘플 건물
+-- 5. tb_building — 산학협동관
 -- ----------------------------------------------------------------------------
 INSERT INTO `tb_building` (`building_seq`, `building_name`, `building_code`, `building_location`, `building_floor_count`, `building_order`)
-VALUES (1, '본관', 'BLD-001', '건국대학교 본관', 5, 1);
+VALUES (1, '산학협동관', 'BLD-001', '서울시 광진구 능동로 120', 5, 1);
 
 -- ----------------------------------------------------------------------------
 -- 6. tb_user_building — admin에게 건물 권한
@@ -1213,11 +1213,10 @@ INSERT INTO `tb_user_building` (`tub_seq`, `tu_seq`, `building_seq`)
 VALUES (1, 1, 1);
 
 -- ----------------------------------------------------------------------------
--- 7. tb_space — 샘플 공간
+-- 7. tb_space — 산학협동관 호실
 -- ----------------------------------------------------------------------------
 INSERT INTO `tb_space` (`space_seq`, `building_seq`, `space_name`, `space_code`, `space_floor`, `space_type`, `space_capacity`, `space_order`) VALUES
-(1, 1, '101호', 'SPC-101', '1', '강의실', 50, 1),
-(2, 1, '102호', 'SPC-102', '1', '강의실', 40, 2);
+(1, 1, '201호', 'SPC-001', '2', '강의실', 40, 1);
 
 -- ----------------------------------------------------------------------------
 -- 8. tb_device_preset — 장비 프리셋
@@ -1255,7 +1254,19 @@ INSERT INTO `tb_socket_command` (`socket_cmd_seq`, `cmd_label`, `cmd_hex`, `cmd_
 (2, 'MAIN 페이지 전환', 'EEB111000103E6100100FFFCFFFF', 'NFC', 'TX — NFC 페이지에서 MAIN으로 전환', 2);
 
 -- ----------------------------------------------------------------------------
--- 11. tb_ai_worker_server — GPU 서버
+-- 11. tb_recorder — 녹화기 (호실당 1대, space_seq와 매핑)
+-- ----------------------------------------------------------------------------
+INSERT INTO `tb_recorder` (`recorder_seq`, `space_seq`, `recorder_name`, `recorder_ip`, `recorder_port`, `recorder_protocol`, `recorder_model`, `recorder_status`) VALUES
+(1, 1, 'BON 녹화기', '192.168.1.2', 6060, 'HTTP', 'BON BR-500', 'OFFLINE');
+
+-- ----------------------------------------------------------------------------
+-- 12. tb_ftp_config — FTP 설정 (글로벌 기본 1개)
+-- ----------------------------------------------------------------------------
+INSERT INTO `tb_ftp_config` (`ftp_config_seq`, `recorder_seq`, `ftp_name`, `ftp_host`, `ftp_port`, `ftp_username`, `ftp_password`, `ftp_path`, `ftp_protocol`, `ftp_passive_mode`, `is_default`) VALUES
+(1, NULL, '기본 FTP', '117.16.145.227', 21, 'kuwave', 'kuwave', '/', 'FTP', 'Y', 'Y');
+
+-- ----------------------------------------------------------------------------
+-- 13. tb_ai_worker_server — GPU 서버
 -- ----------------------------------------------------------------------------
 INSERT INTO `tb_ai_worker_server` (`worker_server_seq`, `server_name`, `server_url`, `api_key`, `callback_secret`, `server_status`, `gpu_info`, `max_concurrent_jobs`, `default_stt_model`, `default_llm_model`) VALUES
 (1, '건국대 AI GPU 서버', 'http://203.252.151.52:9000', '4b9a528ac855348e01efee832f64f3d933b57d75f40aaa3b', 'ku-wave-callback-secret-2026', 'ONLINE', 'GPU Server', 1, 'large-v3', 'llama3');

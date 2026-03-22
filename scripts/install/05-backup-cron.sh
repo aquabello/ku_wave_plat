@@ -3,7 +3,7 @@
 # Usage: sudo ./scripts/install/05-backup-cron.sh
 set -euo pipefail
 
-echo "=== [5/5] DB 백업 cron 설정 ==="
+echo "=== [6/6] DB 백업 cron ==="
 
 BACKUP_DIR="/opt/ku_wave_plat/backups"
 mkdir -p "$BACKUP_DIR"

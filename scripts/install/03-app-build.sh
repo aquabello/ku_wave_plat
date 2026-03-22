@@ -4,7 +4,7 @@
 set -euo pipefail
 export CI=true
 
-echo "=== [3/5] 앱 빌드 + PM2 실행 ==="
+echo "=== [4/6] 앱 빌드 + PM2 ==="
 
 PROJECT_DIR="/opt/ku_wave_plat"
 cd "$PROJECT_DIR"
@@ -114,7 +114,12 @@ if echo "$CURRENT_API_URL" | grep -q "localhost"; then
         echo "⚠️  NEXT_PUBLIC_API_URL이 localhost입니다. 외부 접근이 안 될 수 있습니다."
     fi
 fi
+# .env를 apps/console/에 복사 (Next.js는 빌드 시 자체 디렉토리의 .env를 읽음)
+cp "$PROJECT_DIR/.env" "$PROJECT_DIR/apps/console/.env"
+echo "📋 .env → apps/console/.env 복사 완료"
+
 echo "🔨 Console (Next.js) 빌드... (API_URL: $(grep '^NEXT_PUBLIC_API_URL=' "$PROJECT_DIR/.env" | cut -d= -f2-))"
+rm -rf "$PROJECT_DIR/apps/console/.next"
 pnpm --filter @ku/console build
 
 # --- NFC Agent 빌드 ---
