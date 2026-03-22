@@ -382,3 +382,11 @@ sudo -u ku ./scripts/install/02-app-install.sh    # venv + 의존성
 sudo apt install -y vim
 sudo vim /opt/ku_ai_pc/.env                       # 호실별 설정
 sudo ./scripts/install/03-service-setup.sh        # systemd + 헬스모니터
+
+
+
+⏺ # 1. npm으로 설치
+npm install -g @anthropic-ai/claude-code
+
+# 2. 실행 + 로그인
+claude

@@ -56,7 +56,7 @@ server {
     add_header X-Content-Type-Options nosniff always;
     add_header X-XSS-Protection "1; mode=block" always;
 
-    # API
+    # API (REST + WebSocket)
     location /api/ {
         limit_req zone=api_limit burst=50 nodelay;
         proxy_pass http://ku_api;
@@ -66,6 +66,10 @@ server {
         proxy_set_header X-Forwarded-Proto \$scheme;
         proxy_read_timeout 120s;
         proxy_send_timeout 120s;
+        # WebSocket 지원 (소켓연동 등)
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
     }
 
     # 로그인 (강화 Rate Limit)
