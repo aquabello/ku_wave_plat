@@ -340,3 +340,31 @@ Private
 ---
 
 **Made with ❤️ by KU Wave Plat**
+
+
+
+# ku_wave_plat 운영 서버
+
+## 1. 소스 배포
+git clone <repo> /opt/ku_wave_plat
+cd /opt/ku_wave_plat
+
+## 2. 순서대로 실행
+sudo ./scripts/install/01-base-setup.sh          # Node.js 24 + PM2 + pcscd
+sudo ./scripts/install/02-mariadb-setup.sh       # MariaDB + sqlgw 계정
+nano .env                                         # DB 비밀번호, JWT, 서버 IP 수정
+sudo ./scripts/install/03-app-build.sh                 # pnpm build + PM2 시작
+sudo ./scripts/install/04-nginx-setup.sh          # Nginx 리버스 프록시
+sudo ./scripts/install/05-backup-cron.sh          # DB 백업 cron
+
+# ku_ai_pc 강의실
+
+## 1. 소스 배포
+git clone <repo> /opt/ku_ai_pc
+cd /opt/ku_ai_pc
+
+## 2. 순서대로 실행
+sudo ./scripts/install/01-base-setup.sh           # Python + 시스템 패키지
+sudo -u ku ./scripts/install/02-app-install.sh    # venv + 의존성
+nano /opt/ku_ai_pc/.env                           # 호실별 설정
+sudo ./scripts/install/03-service-setup.sh        # systemd + 헬스모니터
