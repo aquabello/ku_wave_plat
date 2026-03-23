@@ -1,7 +1,7 @@
 # ku_wave_plat 운영 서버 셋업 (PM2 + Nginx)
 
 > **대상**: 운영 서버 (Ubuntu 24.04, 고정 IP)
-> **작성일**: 2026-03-22
+> **작성일**: 2026-03-23 (업데이트)
 > **방식**: PM2 직접 설치, HTTP(고정 IP), MariaDB 외부 접근 허용
 
 ---
@@ -9,34 +9,81 @@
 ## 1. 아키텍처
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                운영 서버 (Ubuntu 24.04)                        │
-│                고정 IP: xxx.xxx.xxx.xxx                        │
-│                                                              │
-│  ┌──────────┐    ┌─────────────┐    ┌───────────────────┐    │
-│  │  Nginx   │───▶│  API        │───▶│  MariaDB          │    │
-│  │  :80     │    │  :8000 (PM2)│    │  :3306            │    │
-│  │          │    └─────────────┘    │  (0.0.0.0 바인딩)  │    │
-│  │          │    ┌─────────────┐    │  외부 접근 허용     │    │
-│  │          │───▶│  Console    │    └───────────────────┘    │
-│  │          │    │  :3000 (PM2)│                              │
-│  └──────────┘    └─────────────┘    ┌───────────────────┐    │
-│                                     │  uploads/          │    │
-│                                     │  (로컬 디렉토리)    │    │
-│                                     └───────────────────┘    │
-└──────────────────────────────────────────────────────────────┘
-        ▲                    ▲                    ▲
-        │ HTTP :80           │ REST API           │ MySQL :3306
-        │                    │ (JWT)              │
-┌───────┴──────┐    ┌───────┴──────────┐    ┌────┴──────────┐
-│  관리자       │    │ ku_ai_pc          │    │ 외부 DB 툴    │
-│  브라우저     │    │ ku_ai_pc         │    │ (DBeaver 등)  │
-└──────────────┘    └──────────────────┘    └───────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                  운영 서버 (Ubuntu 24.04)                         │
+│                  고정 IP: xxx.xxx.xxx.xxx                         │
+│                                                                  │
+│  ┌──────────┐    ┌─────────────┐    ┌───────────────────┐        │
+│  │  Nginx   │───▶│  API        │───▶│  MariaDB          │        │
+│  │  :80     │    │  :8000 (PM2)│    │  :3306            │        │
+│  │          │    └─────────────┘    │  (0.0.0.0 바인딩)  │        │
+│  │          │    ┌─────────────┐    │  외부 접근 허용     │        │
+│  │          │───▶│  Console    │    └───────────────────┘        │
+│  │          │    │  :3000 (PM2)│                                  │
+│  └──────────┘    └─────────────┘    ┌───────────────────┐        │
+│                                     │  uploads/          │        │
+│  ┌─────────────┐                    │  (로컬 디렉토리)    │        │
+│  │  NFC Agent  │                    └───────────────────┘        │
+│  │  (PM2, USB) │                                                  │
+│  └─────────────┘                                                  │
+└──────────┬──────────────────┬──────────────────┬─────────────────┘
+           │                  │                  │
+     HTTP :80           MySQL :3306        HTTP (내부)
+           │                  │                  │
+    ┌──────┴──────┐    ┌──────┴──────┐    ┌──────┴──────────┐
+    │ 브라우저     │    │ DBeaver 등  │    │ ku_ai_pc (:9100) │
+    │ (관리자)     │    │ (DB 툴)     │    │ (강의실 PC)      │
+    └─────────────┘    └─────────────┘    └─────────────────┘
 ```
 
 ---
 
-## 2. 서버 요구사항
+## 2. AI 연동 변경 사항 (NFC → ku_ai_pc)
+
+> plan_nfc.md에서 상세 플로우 참조
+
+### 변경 요약
+
+| 구분 | 내용 |
+|------|------|
+| **수정** | `NfcTagService.processTag()` — ENTER/EXIT 시 ku_ai_pc HTTP 호출 추가 |
+| **수정** | `tb_space` Entity — aiPcUrl 컬럼 매핑 |
+| **유지** | SpeechSession, SpeechLog, VoiceCommand, AiCallback API 전부 기존 그대로 |
+
+### NfcTagService 수정 포인트
+
+```
+기존 processTag() 흐름:
+  Step 1~5: 카드 인증 → ENTER/EXIT 판정
+  Step 6: IoT 디바이스 제어 (ControlService)
+  Step 7: NFC 로그 저장
+  Step 8: 응답 반환
+
+변경:
+  Step 6 이후, Step 7 이전에 추가:
+  ──────────────────────────────────────
+  Step 6-1: AI 녹음 연동 [신규]
+    - space.aiPcUrl 조회
+    - ENTER → POST {aiPcUrl}/ai/start
+    - EXIT  → POST {aiPcUrl}/ai/stop
+    - try-catch (AI 실패해도 IoT 정상 반환)
+    - 타임아웃 3초
+  ──────────────────────────────────────
+```
+
+### 기존 AI System API (변경 없음, ku_ai_pc가 호출)
+
+| API | 서비스 | 용도 |
+|-----|--------|------|
+| `POST /speech-sessions` | SpeechSessionsService.create() | 세션 생성 |
+| `POST /speech-sessions/:seq/logs` | SpeechSessionsService.createSpeechLog() | STT 로그 저장 |
+| `PATCH /speech-sessions/:seq/end` | SpeechSessionsService.end() | 세션 종료 |
+| `POST /voice-commands/execute` | VoiceCommandsService.executeCommand() | 음성→IoT 제어 |
+| `POST /ai-system/ai/callback` | AiCallbackService.processCallback() | Worker 결과 수신 |
+
+---
+
+## 3. 서버 요구사항
 
 | 항목 | 최소 | 권장 |
 |------|------|------|
@@ -48,7 +95,7 @@
 
 ---
 
-## 3. 셋업 스크립트 구조
+## 4. 셋업 스크립트 구조
 
 ```
 ku_wave_plat/
@@ -65,7 +112,7 @@ ku_wave_plat/
 
 ---
 
-## 4. 스크립트 상세
+## 5. 스크립트 상세
 
 ### 01-base-setup.sh — OS + Node.js + PM2
 
@@ -244,13 +291,6 @@ fi
 
 echo ""
 echo "=== MariaDB 설정 완료 ==="
-echo ""
-echo "📌 외부 접속 정보:"
-echo "   Host: $(hostname -I | awk '{print $1}')"
-echo "   Port: 3306"
-echo "   User: sqlgw"
-echo "   DB:   ku_wave_plat"
-echo ""
 echo "다음: ./scripts/install/03-app-build.sh"
 ```
 
@@ -306,12 +346,15 @@ NODE_ENV=production
 # Rate Limiting
 THROTTLE_TTL=60000
 THROTTLE_LIMIT=100
+
+# AI Callback (ku_ai_worker → ku_wave_plat)
+AI_CALLBACK_SECRET=CHANGE_ME_hmac_secret
 ENVEOF
 
     echo "⚠️  .env 파일이 생성되었습니다. 반드시 편집하세요:"
     echo "    nano $PROJECT_DIR/.env"
     echo ""
-    echo "변경 필수: DB_PASSWORD, JWT_SECRET, JWT_REFRESH_SECRET, SERVER_IP"
+    echo "변경 필수: DB_PASSWORD, JWT_SECRET, JWT_REFRESH_SECRET, SERVER_IP, AI_CALLBACK_SECRET"
     exit 1
 fi
 
@@ -377,10 +420,7 @@ module.exports = {
       script: 'dist/main.js',
       instances: 1,
       exec_mode: 'fork',
-      env: {
-        NODE_ENV: 'production',
-        PORT: 8000,
-      },
+      env: { NODE_ENV: 'production', PORT: 8000 },
       max_restarts: 10,
       min_uptime: '10s',
       restart_delay: 5000,
@@ -397,10 +437,7 @@ module.exports = {
       args: 'start -p 3000',
       instances: 1,
       exec_mode: 'fork',
-      env: {
-        NODE_ENV: 'production',
-        PORT: 3000,
-      },
+      env: { NODE_ENV: 'production', PORT: 3000 },
       max_restarts: 10,
       min_uptime: '10s',
       restart_delay: 5000,
@@ -416,9 +453,7 @@ module.exports = {
       script: 'dist/index.js',
       instances: 1,
       exec_mode: 'fork',
-      env: {
-        NODE_ENV: 'production',
-      },
+      env: { NODE_ENV: 'production' },
       max_restarts: 10,
       min_uptime: '10s',
       restart_delay: 5000,
@@ -610,7 +645,7 @@ echo "=== 업데이트 완료 ==="
 
 ---
 
-## 5. 실행 순서
+## 6. 실행 순서
 
 ```
 순서    명령어                                              소요
@@ -627,7 +662,7 @@ echo "=== 업데이트 완료 ==="
 
 ---
 
-## 6. 환경변수 (.env)
+## 7. 환경변수 (.env)
 
 | 변수 | 필수 | 설명 |
 |------|------|------|
@@ -642,10 +677,11 @@ echo "=== 업데이트 완료 ==="
 | `CONSOLE_PORT` | Y | `3000` |
 | `NEXT_PUBLIC_API_URL` | Y | `http://서버IP/api/v1` |
 | `ALLOWED_ORIGINS` | Y | `http://서버IP` |
+| `AI_CALLBACK_SECRET` | Y | HMAC 서명용 시크릿 |
 
 ---
 
-## 7. 포트 구성
+## 8. 포트 구성
 
 | 서비스 | 포트 | 외부 접근 | 비고 |
 |--------|------|----------|------|
@@ -658,7 +694,7 @@ echo "=== 업데이트 완료 ==="
 
 ---
 
-## 8. PM2 명령어
+## 9. PM2 명령어
 
 ```bash
 pm2 status                  # 프로세스 상태
@@ -675,15 +711,6 @@ pm2 install pm2-logrotate   # 로그 로테이션 모듈
 
 ---
 
-## 9. 이후 업데이트
-
-```bash
-cd /opt/ku_wave_plat
-./scripts/install/update.sh
-```
-
----
-
 ## 10. 트러블슈팅
 
 | 증상 | 확인 | 해결 |
@@ -696,4 +723,4 @@ cd /opt/ku_wave_plat
 | 메모리 부족 | `free -h` / `pm2 monit` | 스왑 추가 |
 | NFC 리더 미감지 | `lsusb \| grep 072f` | USB 연결 확인, pcscd 재시작 |
 | NFC 태깅 안 됨 | `pm2 logs ku-nfc` | pcscd 실행 확인: `systemctl status pcscd` |
-| NFC 리더 재연결 | 리더 뽑았다 꽂음 | `pm2 restart ku-nfc` |
+| AI 연동 실패 | `pm2 logs ku-api \| grep "AI"` | ku_ai_pc 서버 상태 / aiPcUrl 설정 확인 |
