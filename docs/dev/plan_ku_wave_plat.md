@@ -347,6 +347,10 @@ NODE_ENV=production
 THROTTLE_TTL=60000
 THROTTLE_LIMIT=100
 
+# AI PC (ku_ai_pc 강의실 클라이언트, 1:1 고정 IP)
+AI_PC_URL=http://192.168.1.19:9100
+WAVE_PLAT_SELF_URL=http://192.168.1.18/api/v1
+
 # AI Callback (ku_ai_worker → ku_wave_plat)
 AI_CALLBACK_SECRET=CHANGE_ME_hmac_secret
 ENVEOF
@@ -354,7 +358,7 @@ ENVEOF
     echo "⚠️  .env 파일이 생성되었습니다. 반드시 편집하세요:"
     echo "    nano $PROJECT_DIR/.env"
     echo ""
-    echo "변경 필수: DB_PASSWORD, JWT_SECRET, JWT_REFRESH_SECRET, SERVER_IP, AI_CALLBACK_SECRET"
+    echo "변경 필수: DB_PASSWORD, JWT_SECRET, JWT_REFRESH_SECRET, SERVER_IP, AI_CALLBACK_SECRET, AI_PC_URL"
     exit 1
 fi
 
@@ -677,6 +681,8 @@ echo "=== 업데이트 완료 ==="
 | `CONSOLE_PORT` | Y | `3000` |
 | `NEXT_PUBLIC_API_URL` | Y | `http://서버IP/api/v1` |
 | `ALLOWED_ORIGINS` | Y | `http://서버IP` |
+| `AI_PC_URL` | Y | `http://192.168.1.19:9100` |
+| `WAVE_PLAT_SELF_URL` | Y | `http://192.168.1.18/api/v1` |
 | `AI_CALLBACK_SECRET` | Y | HMAC 서명용 시크릿 |
 
 ---

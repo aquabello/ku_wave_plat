@@ -438,7 +438,8 @@ export class NfcTagService {
 
     // [Step 6-1] AI Recording Control (ku_ai_pc 연동)
     let aiResultDetail: Record<string, unknown> | null = null;
-    if (space?.aiPcUrl) {
+    const aiPcUrl = this.configService.get<string>('AI_PC_URL');
+    if (aiPcUrl) {
       const wavePlatUrl = this.configService.get<string>('WAVE_PLAT_SELF_URL')
         ?? `http://localhost:${this.configService.get<number>('API_PORT', 8000)}/api/v1`;
 
@@ -446,7 +447,7 @@ export class NfcTagService {
 
       if (logType === 'ENTER') {
         const aiResult = await this.aiPcClientService.startRecording(
-          space.aiPcUrl,
+          aiPcUrl,
           {
             spaceSeq: reader.spaceSeq,
             tuSeq: card.tuSeq,
@@ -462,7 +463,7 @@ export class NfcTagService {
         };
       } else {
         const aiResult = await this.aiPcClientService.stopRecording(
-          space.aiPcUrl,
+          aiPcUrl,
           { spaceSeq: reader.spaceSeq },
         );
         aiResultDetail = {

@@ -82,7 +82,7 @@
 
 ### Phase 1: ku_wave_plat — NfcTagService AI 연동 ✅ 완료
 
-- [x] Space ↔ ku_ai_pc URL 매핑 방식 결정 → `tb_space.ai_pc_url` 컬럼 (VARCHAR 255, nullable)
+- [x] Space ↔ ku_ai_pc URL 매핑 방식 결정 → `.env` `AI_PC_URL` (1:1 고정 IP)
 - [x] NfcTagService.processTag() 수정 — ENTER 시 ku_ai_pc `/ai/start` 호출
 - [x] NfcTagService.processTag() 수정 — EXIT 시 ku_ai_pc `/ai/stop` 호출
 - [x] AI 호출 에러 처리 (AiPcClientService, 3초 타임아웃, try-catch 격리)
@@ -90,10 +90,10 @@
 - [x] .http 테스트 파일 작성 (`docs/api/nfc-ai.http`)
 - [x] API 빌드 성공 확인
 
-**DB 설정 필요 (운영 시):**
-```sql
-ALTER TABLE tb_space ADD COLUMN ai_pc_url VARCHAR(255) NULL COMMENT 'AI PC 클라이언트 URL';
-UPDATE tb_space SET ai_pc_url = 'http://192.168.1.50:9100' WHERE space_seq = 1;
+**환경변수 (.env):**
+```env
+AI_PC_URL=http://192.168.1.19:9100
+WAVE_PLAT_SELF_URL=http://192.168.1.18/api/v1
 ```
 
 **변경 파일:**
@@ -101,8 +101,8 @@ UPDATE tb_space SET ai_pc_url = 'http://192.168.1.50:9100' WHERE space_seq = 1;
 |------|------|
 | `apps/api/src/modules/nfc/services/ai-pc-client.service.ts` | 신규 — ofetch 기반, 3초 타임아웃 |
 | `apps/api/src/modules/nfc/services/nfc-tag.service.ts` | Step 6-1 AI 연동 추가 + controlDetail 확장 + 응답에 aiResult |
-| `apps/api/src/modules/spaces/entities/tb-space.entity.ts` | aiPcUrl 컬럼 추가 |
 | `apps/api/src/modules/nfc/nfc.module.ts` | AiPcClientService 등록 |
+| `.env` / `.env.example` | AI_PC_URL, WAVE_PLAT_SELF_URL 추가 |
 | `docs/api/nfc-ai.http` | 신규 — 테스트 시나리오 |
 
 ### Phase 2: ku_ai_pc — FastAPI HTTP 서버
