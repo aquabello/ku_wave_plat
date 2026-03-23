@@ -1,0 +1,50 @@
+@host = http://localhost:8000/api/v1
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.PASTE_YOUR_TOKEN_HERE
+
+### ============================================
+### NFC 태깅 → AI 연동 테스트
+### ============================================
+
+### 1. 로그인 (토큰 발급)
+# @name login
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "loginId": "admin",
+  "password": "admin1234"
+}
+
+### 2. NFC 태깅 테스트 (ENTER → AI 시작)
+### NFC Agent가 호출하는 API (NfcApiKeyGuard)
+### 실제 환경에서는 X-API-Key 헤더 사용
+POST {{host}}/nfc/tag
+Content-Type: application/json
+X-API-Key: your-nfc-api-key
+
+{
+  "identifier": "04A1B2C3D4E5F6",
+  "aid": null,
+  "readerCode": "NFC-R-001"
+}
+
+### 3. NFC 태깅 테스트 (EXIT → AI 종료)
+### 동일 카드로 다시 태깅 (30초 쿨다운 후)
+POST {{host}}/nfc/tag
+Content-Type: application/json
+X-API-Key: your-nfc-api-key
+
+{
+  "identifier": "04A1B2C3D4E5F6",
+  "aid": null,
+  "readerCode": "NFC-R-001"
+}
+
+### 4. NFC 로그 조회 (AI 결과 확인)
+### controlDetail에 iotControl + aiControl 포함 확인
+GET {{host}}/nfc/logs?limit=5
+Authorization: Bearer {{token}}
+
+### 5. Space의 aiPcUrl 설정 확인
+### tb_space 테이블에 ai_pc_url 컬럼이 있어야 함
+### 설정 예: UPDATE tb_space SET ai_pc_url = 'http://192.168.1.50:9100' WHERE space_seq = 1;

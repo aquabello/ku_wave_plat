@@ -103,6 +103,15 @@ export class TbSpace {
   })
   updDate: Date | null;
 
+  @Column({
+    name: 'ai_pc_url',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+    comment: 'AI PC 클라이언트 URL (예: http://192.168.1.50:9100)',
+  })
+  aiPcUrl: string | null;
+
   @ManyToOne(() => TbBuilding)
   @JoinColumn({ name: 'building_seq' })
   building: TbBuilding;

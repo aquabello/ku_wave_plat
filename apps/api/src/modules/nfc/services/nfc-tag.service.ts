@@ -11,6 +11,8 @@ import { TbUserBuilding } from '@modules/permissions/entities/tb-user-building.e
 import { ControlService } from '@modules/controller/control/control.service';
 import { SocketService } from '@modules/controller/socket/socket.service';
 import { NfcTagDto } from '../dto';
+import { ConfigService } from '@nestjs/config';
+import { AiPcClientService } from './ai-pc-client.service';
 
 interface NfcReaderInfo {
   readerSeq: number;
@@ -40,6 +42,8 @@ export class NfcTagService {
     private readonly spaceDeviceRepository: Repository<TbSpaceDevice>,
     private readonly controlService: ControlService,
     private readonly socketService: SocketService,
+    private readonly aiPcClientService: AiPcClientService,
+    private readonly configService: ConfigService,
   ) {}
 
   async processTag(dto: NfcTagDto, reader: NfcReaderInfo) {
@@ -432,7 +436,65 @@ export class NfcTagService {
       controlDetailJson = JSON.stringify([{ error: error.message }]);
     }
 
+    // [Step 6-1] AI Recording Control (ku_ai_pc 연동)
+    let aiResultDetail: Record<string, unknown> | null = null;
+    if (space?.aiPcUrl) {
+      const wavePlatUrl = this.configService.get<string>('WAVE_PLAT_SELF_URL')
+        ?? `http://localhost:${this.configService.get<number>('API_PORT', 8000)}/api/v1`;
+
+      const callbackUrl = `${wavePlatUrl}/ai-system/ai/callback`;
+
+      if (logType === 'ENTER') {
+        const aiResult = await this.aiPcClientService.startRecording(
+          space.aiPcUrl,
+          {
+            spaceSeq: reader.spaceSeq,
+            tuSeq: card.tuSeq,
+            callbackUrl,
+            wavePlatUrl,
+          },
+        );
+        aiResultDetail = {
+          action: 'AI_START',
+          success: aiResult.success,
+          sessionSeq: aiResult.data?.sessionSeq ?? null,
+          error: aiResult.error ?? null,
+        };
+      } else {
+        const aiResult = await this.aiPcClientService.stopRecording(
+          space.aiPcUrl,
+          { spaceSeq: reader.spaceSeq },
+        );
+        aiResultDetail = {
+          action: 'AI_STOP',
+          success: aiResult.success,
+          sessionSeq: aiResult.data?.sessionSeq ?? null,
+          filename: aiResult.data?.filename ?? null,
+          durationSec: aiResult.data?.durationSec ?? null,
+          error: aiResult.error ?? null,
+        };
+      }
+    }
+
     // [Step 7] Save NFC Log
+    // controlDetail에 AI 결과 포함
+    let finalControlDetail = controlDetailJson;
+    if (aiResultDetail) {
+      try {
+        const existingDetail = controlDetailJson ? JSON.parse(controlDetailJson) : [];
+        const combined = {
+          iotControl: existingDetail,
+          aiControl: aiResultDetail,
+        };
+        finalControlDetail = JSON.stringify(combined);
+      } catch {
+        finalControlDetail = JSON.stringify({
+          iotControl: controlDetailJson,
+          aiControl: aiResultDetail,
+        });
+      }
+    }
+
     await this.nfcLogRepository.save(
       this.nfcLogRepository.create({
         readerSeq: reader.readerSeq,
@@ -443,7 +505,7 @@ export class NfcTagService {
         tagIdentifier: dto.identifier,
         tagAid: dto.aid || null,
         controlResult,
-        controlDetail: controlDetailJson,
+        controlDetail: finalControlDetail,
       }),
     );
 
@@ -468,6 +530,7 @@ export class NfcTagService {
       cardLabel: card.cardLabel ?? null,
       controlResult,
       controlSummary,
+      aiResult: aiResultDetail,
       message:
         logType === 'ENTER'
           ? `${buildingName} ${spaceName} 입실 처리되었습니다`

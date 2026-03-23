@@ -20,6 +20,7 @@ import { NfcLogService } from './services/nfc-log.service';
 import { NfcStatsService } from './services/nfc-stats.service';
 import { NfcReaderCommandService } from './services/nfc-reader-command.service';
 import { NfcApiKeyGuard } from './guards/nfc-api-key.guard';
+import { AiPcClientService } from './services/ai-pc-client.service';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { NfcApiKeyGuard } from './guards/nfc-api-key.guard';
     NfcStatsService,
     NfcReaderCommandService,
     NfcApiKeyGuard,
+    AiPcClientService,
   ],
   exports: [NfcTagService],
 })
