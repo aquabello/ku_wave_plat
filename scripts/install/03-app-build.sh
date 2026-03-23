@@ -75,6 +75,10 @@ NODE_ENV=production
 # Rate Limiting
 THROTTLE_TTL=60000
 THROTTLE_LIMIT=100
+
+# AI PC (ku_ai_pc 강의실 클라이언트, 1:1 고정 IP)
+AI_PC_URL=http://192.168.1.19:9100
+WAVE_PLAT_SELF_URL=http://192.168.1.18/api/v1
 ENVEOF
 
     echo ""
