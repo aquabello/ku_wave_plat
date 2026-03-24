@@ -1,3 +1,7 @@
+// .env를 모든 모듈 import 전에 로드 (데코레이터에서 process.env 참조 보장)
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+require('dotenv').config({ path: ['.env', '../../.env'] });
+
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { ValidationPipe } from '@nestjs/common';
