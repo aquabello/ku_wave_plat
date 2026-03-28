@@ -134,75 +134,78 @@ export class NfcTagService {
         };
       }
 
-      let nfcResult: 'save' | 'no' | 'timeout' = 'timeout';
+      // IoT 컨트롤러에 등록 확인 시도 (실패해도 자동 등록)
+      let nfcResult: 'save' | 'no' | 'timeout' = 'save';
       try {
         nfcResult = await this.socketService.sendNfcSequence(
           deviceIp,
           devicePort,
         );
       } catch (err) {
-        this.logger.error(`sendNfcSequence failed: ${(err as Error).message}`);
+        this.logger.warn(`sendNfcSequence failed, auto-registering: ${(err as Error).message}`);
+        nfcResult = 'save'; // 컨트롤러 연결 실패 시 자동 등록
       }
 
-      if (nfcResult === 'save') {
-        // card_label 자동 채번 (NFC-0001, NFC-0002, ...)
-        const lastCard = await this.nfcCardRepository
-          .createQueryBuilder('c')
-          .where("c.card_label LIKE 'NFC-%'")
-          .orderBy('c.card_seq', 'DESC')
-          .getOne();
-        const lastNum = lastCard?.cardLabel
-          ? parseInt(lastCard.cardLabel.replace('NFC-', ''), 10) || 0
-          : 0;
-        const cardLabel = `NFC-${String(lastNum + 1).padStart(4, '0')}`;
-
-        const newCard = this.nfcCardRepository.create({
-          cardIdentifier: dto.identifier,
-          cardAid: dto.aid ?? null,
-          cardLabel,
-          cardType: dto.aid ? 'PHONE' : 'CARD',
-          cardStatus: 'ACTIVE',
-          tuSeq: null,
-          cardIsdel: 'N',
-        });
-        await this.nfcCardRepository.save(newCard);
-
-        await this.nfcLogRepository
-          .createQueryBuilder()
-          .update()
-          .set({ cardSeq: newCard.cardSeq })
-          .where('tag_identifier = :id', { id: dto.identifier })
-          .andWhere('card_seq IS NULL')
-          .execute();
-
-        await this.nfcLogRepository.save(
-          this.nfcLogRepository.create({
-            readerSeq: reader.readerSeq,
-            cardSeq: newCard.cardSeq,
-            tuSeq: null,
-            tagIdentifier: dto.identifier,
-            tagAid: dto.aid ?? null,
-            logType: 'REGISTER_SAVE',
-            spaceSeq: reader.spaceSeq,
-            controlResult: null,
-            controlDetail: null,
-          }),
-        );
-
-        card = newCard;
-        isNewRegistration = true;
-      } else {
-        // NO/TIMEOUT: 로그 저장 없이 반환 (MAIN 페이지 전환은 sendNfcSequence 내부에서 자동 처리)
+      if (nfcResult === 'no') {
+        // 사용자가 명시적으로 등록 거부한 경우만 반환
         return {
-          result: nfcResult === 'no' ? 'REGISTER_NO' : 'REGISTER_TIMEOUT',
-          logType: nfcResult === 'no' ? 'REGISTER_NO' as const : 'REGISTER_TIMEOUT' as const,
+          result: 'REGISTER_NO',
+          logType: 'REGISTER_NO' as const,
           spaceName,
           userName: null,
           controlResult: null,
           controlSummary: null,
-          message: nfcResult === 'no' ? '등록이 취소되었습니다' : '응답 시간 초과',
+          message: '등록이 취소되었습니다',
         };
       }
+
+      // 자동 등록 (save 또는 timeout → 자동 등록)
+      // card_label 자동 채번 (NFC-0001, NFC-0002, ...)
+      const lastCard = await this.nfcCardRepository
+        .createQueryBuilder('c')
+        .where("c.card_label LIKE 'NFC-%'")
+        .orderBy('c.card_seq', 'DESC')
+        .getOne();
+      const lastNum = lastCard?.cardLabel
+        ? parseInt(lastCard.cardLabel.replace('NFC-', ''), 10) || 0
+        : 0;
+      const cardLabel = `NFC-${String(lastNum + 1).padStart(4, '0')}`;
+
+      const newCard = this.nfcCardRepository.create({
+        cardIdentifier: dto.identifier,
+        cardAid: dto.aid ?? null,
+        cardLabel,
+        cardType: dto.aid ? 'PHONE' : 'CARD',
+        cardStatus: 'ACTIVE',
+        tuSeq: null,
+        cardIsdel: 'N',
+      });
+      await this.nfcCardRepository.save(newCard);
+
+      await this.nfcLogRepository
+        .createQueryBuilder()
+        .update()
+        .set({ cardSeq: newCard.cardSeq })
+        .where('tag_identifier = :id', { id: dto.identifier })
+        .andWhere('card_seq IS NULL')
+        .execute();
+
+      await this.nfcLogRepository.save(
+        this.nfcLogRepository.create({
+          readerSeq: reader.readerSeq,
+          cardSeq: newCard.cardSeq,
+          tuSeq: null,
+          tagIdentifier: dto.identifier,
+          tagAid: dto.aid ?? null,
+          logType: 'REGISTER_SAVE',
+          spaceSeq: reader.spaceSeq,
+          controlResult: null,
+          controlDetail: null,
+        }),
+      );
+
+      card = newCard;
+      isNewRegistration = true;
     }
 
     // [Step 3] DENIED - Inactive card
@@ -343,9 +346,12 @@ export class NfcTagService {
       where: { readerSeq: reader.readerSeq },
     });
 
+    const prevStatus = currentReader?.readerTagStatus ?? null;
+    const prevCardSeq = currentReader?.readerTagCardSeq ?? null;
+
     let logType: 'ENTER' | 'EXIT';
 
-    if (currentReader?.readerTagStatus === 'ENTER' && currentReader.readerTagCardSeq === card.cardSeq) {
+    if (prevStatus === 'ENTER' && prevCardSeq === card.cardSeq) {
       // 본인이 다시 태깅 → 퇴실
       logType = 'EXIT';
     } else {
@@ -354,12 +360,17 @@ export class NfcTagService {
     }
 
     // 리더기 상태 업데이트
+    const newTagCardSeq = logType === 'ENTER' ? card.cardSeq : null;
     await this.nfcReaderRepository.update(reader.readerSeq, {
       readerTagStatus: logType,
-      readerTagCardSeq: logType === 'ENTER' ? card.cardSeq : null,
+      readerTagCardSeq: newTagCardSeq,
     });
 
+    // reader_tag_status 기반 IoT 명령 결정
     const commandType = logType === 'ENTER' ? 'POWER_ON' : 'POWER_OFF';
+    this.logger.log(
+      `[NFC] 리더기 상태: ${prevStatus ?? 'NULL'}(카드:${prevCardSeq ?? '-'}) → ${logType}(카드:${newTagCardSeq ?? '-'}) | IoT: ${commandType}`,
+    );
 
     // [Step 6] Device Control
     let controlResult: 'SUCCESS' | 'FAIL' | 'PARTIAL' | 'SKIPPED' | null = null;
@@ -447,8 +458,12 @@ export class NfcTagService {
       };
 
       controlDetailJson = JSON.stringify(controlResponse.results);
+      this.logger.log(`[IoT 제어] ${commandType} → ${controlResult} (${controlResponse.successCount}/${controlResponse.results.length} 성공)`);
+      controlResponse.results.forEach((r) => {
+        this.logger.log(`  장비: ${r.deviceName} → ${r.resultStatus} ${r.resultMessage ?? ''}`);
+      });
     } catch (error: any) {
-      this.logger.error(`Device control failed: ${error.message}`);
+      this.logger.error(`[IoT 제어 실패] ${commandType}: ${error.message}`);
       controlResult = 'FAIL';
       controlDetailJson = JSON.stringify([{ error: error.message }]);
     }

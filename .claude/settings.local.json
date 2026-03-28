@@ -153,7 +153,20 @@
       "mcp__playwright__browser_type",
       "mcp__playwright__browser_snapshot",
       "Bash(pnpm --filter @ku/api build:*)",
-      "Bash(pnpm --filter @ku/api start:dev:*)"
+      "Bash(pnpm --filter @ku/api start:dev:*)",
+      "Bash(pnpm --filter @ku/api build)",
+      "Bash(pm2 restart:*)",
+      "Bash(pnpm --filter @ku/nfc build)",
+      "Bash(pm2 describe:*)",
+      "Bash(curl -s http://117.16.145.227/rfid/readers)",
+      "Bash(curl -s http://117.16.145.227/api/v1/health)",
+      "Bash(pm2 kill:*)",
+      "Bash(sudo lsof:*)",
+      "Bash(xargs sudo:*)",
+      "Bash(pm2 start:*)",
+      "Bash(sudo ss:*)",
+      "Bash(mysql:*)",
+      "Bash(sudo mariadb:*)"
     ]
   }
 }

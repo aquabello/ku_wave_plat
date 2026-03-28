@@ -22,6 +22,8 @@ export interface NfcReaderListItem {
   readerCode: string;
   readerSerial: string | null;
   readerStatus: 'ACTIVE' | 'INACTIVE';
+  readerTagStatus: 'ENTER' | 'EXIT' | null;
+  readerTagCardLabel: string | null;
   spaceSeq: number;
   spaceName: string;
   buildingName: string;

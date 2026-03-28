@@ -12,6 +12,8 @@ export class NfcReader {
   private currentReader: any = null;
   private mode: NfcMode = 'tag';
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private lastTagTime = 0; // 태깅 중복 방지 (밀리초)
+  private processing = false; // 처리 중 락
 
   constructor(
     private config: NfcAgentConfig,
@@ -48,8 +50,24 @@ export class NfcReader {
       }
 
       reader.on('card', async (card: any) => {
-        logger.debug(`[카드 감지] ATR: ${card.atr?.toString('hex') ?? 'N/A'}`);
-        await this.handleTag(reader, card);
+        // 중복 방지: 처리 중이거나 5초 이내 재태깅
+        if (this.processing) {
+          logger.info('[카드 감지] 이전 태깅 처리 중 — 무시');
+          return;
+        }
+        const now = Date.now();
+        const elapsed = now - this.lastTagTime;
+        if (elapsed < 5000) {
+          logger.info(`[카드 감지] ${Math.ceil((5000 - elapsed) / 1000)}초 후 태깅 가능 — 무시`);
+          return;
+        }
+        this.processing = true;
+        this.lastTagTime = now;
+        try {
+          await this.handleTag(reader, card);
+        } finally {
+          this.processing = false;
+        }
       });
 
       reader.on('card.off', () => {
@@ -169,21 +187,13 @@ export class NfcReader {
     }
 
     const atr = card.atr?.toString('hex').toUpperCase() ?? '';
-    logger.info(`[태깅 감지] UID: ${uid || '(unknown)'} | ATR: ${atr || 'N/A'}`);
+    logger.info('────────────────────────────────────────');
+    logger.info(`[태깅] UID: ${uid || '-'} | ATR: ${atr || '-'}`);
 
-    // AID 스캔 (최대 3회 재시도, 카드 통신 안정화)
-    let aidResults: NfcAidScanResult[] = [];
-    let firstMatchedAid: string | null = null;
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      const scan = await this.scanAllAids(reader, transmit);
-      aidResults = scan.aidResults;
-      firstMatchedAid = scan.firstMatchedAid;
-      if (firstMatchedAid) break;
-      if (attempt < 2) {
-        logger.warn(`[AID 스캔] ${attempt}차 실패, 재시도...`);
-        await new Promise(r => setTimeout(r, 200));
-      }
-    }
+    // AID 스캔 (1회 시도, 실패 시 재태깅 요청)
+    const scan = await this.scanAllAids(reader, transmit);
+    const aidResults = scan.aidResults;
+    const firstMatchedAid = scan.firstMatchedAid;
     const matchedAids = aidResults.filter(r => r.status === 'SUCCESS').map(r => r.aid);
 
     const scanData: NfcWsScanEventData = {
@@ -195,22 +205,44 @@ export class NfcReader {
     };
     this.wsServer.broadcastScan(scanData);
 
-    logger.info(`[스캔 결과] 매칭 AID: ${matchedAids.length > 0 ? matchedAids.join(', ') : '없음'}`);
+    if (firstMatchedAid) {
+      logger.info(`[AID] ${firstMatchedAid} 매칭`);
+    } else {
+      logger.warn(`[AID] 매칭 실패 — 다시 태깅해주세요`);
+    }
 
     if (this.mode === 'aid-test') {
       logger.info('[AID 테스트 모드] API 호출 생략, 스캔 결과만 브로드캐스트');
       return;
     }
 
-    // identifier 우선순위: UID > AID 스캔 serialNumber > 'UNKNOWN'
-    let identifier = uid;
-    if (!identifier) {
-      const matchedResult = aidResults.find(r => r.status === 'SUCCESS' && r.appData?.serialNumber);
-      if (matchedResult?.appData?.serialNumber) {
-        identifier = matchedResult.appData.serialNumber;
-        logger.info(`[식별값] AID 앱 데이터 기반: ${identifier}`);
+    // identifier 결정: AID 시리얼 > UID (랜덤 UID 카드 대응)
+    let identifier = '';
+
+    // 1순위: AID SELECT 후 카드 고유 시리얼 읽기
+    if (firstMatchedAid && connected) {
+      try {
+        // GET DATA (카드 시리얼)
+        const getSerial = Buffer.from([0x80, 0xCA, 0x00, 0x04, 0x00]);
+        const resp = await transmit(getSerial, 256);
+        const sw = resp.slice(-2);
+        if (sw[0] === 0x90 && sw[1] === 0x00 && resp.length > 2) {
+          identifier = resp.slice(0, -2).toString('hex').toUpperCase();
+        }
+      } catch { /* GET DATA 미지원 */ }
+
+      // GET DATA 실패 시 FCI 응답 사용
+      if (!identifier) {
+        const matchedResult = aidResults.find(r => r.status === 'SUCCESS' && r.appData?.serialNumber);
+        if (matchedResult?.appData?.serialNumber) {
+          identifier = matchedResult.appData.serialNumber;
+        }
       }
     }
+
+    // UID fallback 사용 안 함 (랜덤 UID 카드 중복 등록 방지)
+    // AID 스캔 실패 시 재태깅 요청
+
     if (!identifier) {
       logger.warn('[식별 실패] 카드 식별값을 읽을 수 없습니다. 다시 태깅해주세요.');
       try { this.buzzer.denied(); } catch { /* 카드 제거됨 */ }
@@ -222,14 +254,24 @@ export class NfcReader {
       aid: firstMatchedAid || undefined,
     };
 
-    logger.info(`[API 요청] identifier: ${identifier} | aid: ${firstMatchedAid ?? '없음'}`);
+    logger.info(`[API 전송] POST /nfc/tag | identifier: ${identifier.substring(0, 20)}... | aid: ${firstMatchedAid ?? '없음'}`);
 
     try {
       const response = await this.apiClient.sendTag(request);
+      const label = (response as any).cardLabel ?? '-';
+      const ctrlResult = response.controlResult ?? '-';
+      const ctrl = response.controlSummary ? `${response.controlSummary.successCount}/${response.controlSummary.totalDevices}` : '-';
+      if (response.result === 'SUCCESS' || response.result === 'PARTIAL') {
+        logger.info(`[API 결과] 성공 | ${response.logType === 'ENTER' ? '입실' : '퇴실'} | 카드: ${label} | 장비제어: ${ctrlResult}(${ctrl}) | ${response.message}`);
+      } else if (response.result === 'DENIED') {
+        logger.warn(`[API 결과] 거부 | 카드: ${label} | ${response.message}`);
+      } else {
+        logger.info(`[API 결과] ${response.result} | ${response.message}`);
+      }
       this.wsServer.broadcastTag(request, response);
       this.handleResponse(response, identifier);
     } catch (err: any) {
-      logger.error(`[API 호출 실패] ${err.message}`);
+      logger.error(`[API 실패] ${err.message}`);
       try { this.buzzer.error(); } catch { /* 카드 제거됨 */ }
     }
   }
@@ -378,49 +420,6 @@ export class NfcReader {
   }
 
   private handleResponse(response: NfcTagResponse, identifier: string): void {
-    const cardLabel = (response as any).cardLabel ?? identifier;
-    const building = (response as any).buildingName ?? '';
-    const isRegister = response.result === 'REGISTER_SAVE' || response.result === 'REGISTER_NO' || response.result === 'REGISTER_TIMEOUT';
-    const isDenied = response.result === 'DENIED' || response.result === 'UNKNOWN';
-    const isSuccess = response.result === 'SUCCESS' || response.result === 'PARTIAL';
-
-    if (isDenied) {
-      // 거부/쿨다운/미등록
-      logger.warn(`━━━ [태깅 거부] ━━━`);
-      logger.warn(`  카드: ${cardLabel}`);
-      logger.warn(`  메시지: ${response.message}`);
-    } else if (isSuccess) {
-      // 등록된 카드 태깅 성공
-      const dir = response.logType === 'ENTER' ? '입실' : '퇴실';
-      logger.info(`━━━ [등록 카드 태깅] ━━━`);
-      logger.info(`  카드: ${cardLabel}`);
-      logger.info(`  사용자: ${response.userName ?? '(없음)'}`);
-      logger.info(`  공간: ${building} ${response.spaceName}`);
-      logger.info(`  유형: ${dir}`);
-      if (response.controlResult) {
-        logger.info(`  제어 결과: ${response.controlResult}`);
-        if (response.controlSummary) {
-          logger.info(`  장비: ${response.controlSummary.successCount}/${response.controlSummary.totalDevices} 성공`);
-        }
-      }
-      logger.info(`  메시지: ${response.message}`);
-    } else if (isRegister) {
-      // 첫 태깅 (미등록 카드)
-      logger.info(`━━━ [미등록 카드 태깅] ━━━`);
-      logger.info(`  식별값: ${identifier}`);
-      if (response.result === 'REGISTER_SAVE') {
-        logger.info(`  상태: 등록 완료`);
-      } else if (response.result === 'REGISTER_NO') {
-        logger.info(`  상태: 등록 취소`);
-      } else {
-        logger.info(`  상태: 응답 시간 초과`);
-      }
-      logger.info(`  메시지: ${response.message}`);
-    } else {
-      logger.error(`━━━ [태깅 오류] ━━━`);
-      logger.error(`  카드: ${cardLabel}`);
-      logger.error(`  메시지: ${response.message}`);
-    }
 
     // Buzzer (카드 제거 시 TransmitError 방어)
     try {
