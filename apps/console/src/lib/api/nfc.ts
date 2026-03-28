@@ -50,6 +50,8 @@ export async function getReader(readerSeq: number): Promise<NfcReaderDetail> {
     spaceFloor: (space?.spaceFloor as string) ?? '',
     buildingSeq: (space?.buildingSeq as number) ?? (building?.buildingSeq as number) ?? 0,
     buildingName: (building?.buildingName as string) ?? '',
+    readerTagStatus: (raw.readerTagStatus as 'ENTER' | 'EXIT' | null) ?? null,
+    readerTagCardSeq: (raw.readerTagCardSeq as number | null) ?? null,
     readerIsdel: raw.readerIsdel as string,
     regDate: raw.regDate as string,
     updDate: raw.updDate as string,
