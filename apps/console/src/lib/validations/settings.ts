@@ -25,8 +25,8 @@ export const systemSettingsSchema = z
       .int('실행주기는 정수여야 합니다')
       .min(1, '실행주기는 최소 1분이어야 합니다')
       .max(60, '실행주기는 최대 60분이어야 합니다'),
-    blackoutStartTime: z.string().optional().default(''),
-    blackoutEndTime: z.string().optional().default(''),
+    blackoutStartTime: z.string().default(''),
+    blackoutEndTime: z.string().default(''),
     defaultImagePath: z.string().nullable().optional(),
   });
 
