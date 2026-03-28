@@ -42,7 +42,7 @@ export class NfcReader {
       this.wsServer.setReaderConnected(true, reader.name);
       this.wsServer.broadcastReaderConnected(reader.name);
 
-      this.buzzer.setTransmit((data: Buffer, len: number) => reader.transmit(data, len));
+      this.buzzer.setReader(reader.reader);
 
       if (this.reconnectTimer) {
         clearTimeout(this.reconnectTimer);
@@ -53,12 +53,14 @@ export class NfcReader {
         // 중복 방지: 처리 중이거나 5초 이내 재태깅
         if (this.processing) {
           logger.info('[카드 감지] 이전 태깅 처리 중 — 무시');
+          try { this.buzzer.cooldown(); } catch { /* ignore */ }
           return;
         }
         const now = Date.now();
         const elapsed = now - this.lastTagTime;
         if (elapsed < 5000) {
           logger.info(`[카드 감지] ${Math.ceil((5000 - elapsed) / 1000)}초 후 태깅 가능 — 무시`);
+          try { this.buzzer.cooldown(); } catch { /* ignore */ }
           return;
         }
         this.processing = true;
@@ -79,7 +81,7 @@ export class NfcReader {
         this.wsServer.setReaderConnected(false);
         this.wsServer.broadcastReaderDisconnected(reader.name);
         this.currentReader = null;
-        this.buzzer.clearTransmit();
+        this.buzzer.clearReader();
         this.scheduleReconnect();
       });
     });
@@ -244,8 +246,8 @@ export class NfcReader {
     // AID 스캔 실패 시 재태깅 요청
 
     if (!identifier) {
-      logger.warn('[식별 실패] 카드 식별값을 읽을 수 없습니다. 다시 태깅해주세요.');
-      try { this.buzzer.denied(); } catch { /* 카드 제거됨 */ }
+      logger.warn('[식별 실패] 다시 태깅해주세요');
+      try { this.buzzer.cooldown(); } catch { /* 카드 제거됨 */ }
       return;
     }
 
