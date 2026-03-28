@@ -373,6 +373,26 @@ step3() {
         echo "✅ FTP: ${FTP_USER}@${FTP_HOST}:${FTP_PORT}"
     fi
 
+    # --- NFC 리더기 등록 + config.json ---
+    NFC_API_KEY="rdr_3db60088-be2b-484d-8972-56ac3bbf4aca"
+    NFC_READER_NAME="${BLD_NAME:-산학협동관}-${SPACE_NAME:-220호}-ACR122U"
+
+    run_sql "DELETE FROM tb_nfc_reader;" || true
+    run_sql "
+        INSERT INTO tb_nfc_reader (reader_seq, space_seq, reader_name, reader_code, reader_api_key, reader_status)
+        VALUES (1, 1, '${NFC_READER_NAME}', 'RDR-001', '${NFC_API_KEY}', 'ACTIVE');
+    " || true
+    echo "✅ NFC 리더기: ${NFC_READER_NAME} (API Key: ${NFC_API_KEY})"
+
+    # NFC config.json 생성
+    NFC_CONFIG_DIR="$PROJECT_DIR/apps/nfc"
+    if [ -f "$NFC_CONFIG_DIR/config.example.json" ]; then
+        NFC_API_URL="http://${INPUT_SERVER_IP}/api/v1"
+        sed "s|rdr_YOUR_API_KEY_HERE|${NFC_API_KEY}|;s|http://localhost:8000/api/v1|${NFC_API_URL}|" \
+            "$NFC_CONFIG_DIR/config.example.json" > "$NFC_CONFIG_DIR/config.json"
+        echo "✅ NFC config.json 생성 (API: ${NFC_API_URL})"
+    fi
+
     # 결과 표시
     echo ""
     echo "╔══════════════════════════════════════════════╗"
@@ -381,6 +401,7 @@ step3() {
     run_sql "SELECT building_name AS '건물명', building_code AS '코드' FROM tb_building;" || true
     run_sql "SELECT s.space_seq AS 'SEQ', s.space_name AS '호실', s.space_code AS '코드', s.space_floor AS '층', IFNULL(r.recorder_ip, '-') AS '녹화기IP' FROM tb_space s LEFT JOIN tb_recorder r ON s.space_seq = r.space_seq ORDER BY s.space_seq;" || true
     run_sql "SELECT ftp_name AS 'FTP', CONCAT(ftp_username,'@',ftp_host,':',ftp_port) AS '접속정보' FROM tb_ftp_config WHERE ftp_isdel='N';" || true
+    run_sql "SELECT reader_name AS 'NFC리더기', reader_api_key AS 'API Key' FROM tb_nfc_reader WHERE reader_isdel='N';" || true
 
     # 임시 파일 정리
     rm -f "$SETUP_DATA"
