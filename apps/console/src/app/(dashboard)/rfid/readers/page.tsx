@@ -593,14 +593,14 @@ export default function NfcReadersPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-16">No.</TableHead>
+                  <TableHead className="w-28">건물명</TableHead>
+                  <TableHead className="w-36">설치 공간</TableHead>
                   <TableHead>리더기명</TableHead>
                   <TableHead className="w-36">리더기코드</TableHead>
                   <TableHead className="w-36">시리얼번호</TableHead>
-                  <TableHead className="w-36">설치 공간</TableHead>
-                  <TableHead className="w-28">건물명</TableHead>
                   <TableHead className="w-24 text-center">상태</TableHead>
-                  <TableHead className="w-24 text-center">태깅상태</TableHead>
                   <TableHead className="w-28">태깅인</TableHead>
+                  <TableHead className="w-24 text-center">태깅상태</TableHead>
                   <TableHead className="w-28">등록일</TableHead>
                   <TableHead className="w-44 text-center">관리</TableHead>
                 </TableRow>
@@ -622,16 +622,17 @@ export default function NfcReadersPage() {
                   readersData?.items.map((reader, index) => (
                     <TableRow key={reader.readerSeq}>
                       <TableCell>{startNum - index}</TableCell>
+                      <TableCell>{reader.buildingName}</TableCell>
+                      <TableCell>{reader.spaceName}</TableCell>
                       <TableCell className="font-medium">{reader.readerName}</TableCell>
                       <TableCell className="font-mono text-xs">{reader.readerCode}</TableCell>
                       <TableCell>{reader.readerSerial || '-'}</TableCell>
-                      <TableCell>{reader.spaceName}</TableCell>
-                      <TableCell>{reader.buildingName}</TableCell>
                       <TableCell className="text-center">
                         <Badge className={getStatusBadgeColor(reader.readerStatus)}>
                           {getStatusLabel(reader.readerStatus)}
                         </Badge>
                       </TableCell>
+                      <TableCell>{reader.readerTagCardLabel || '-'}</TableCell>
                       <TableCell className="text-center">
                         {reader.readerTagStatus === 'ENTER' ? (
                           <Badge className="bg-green-100 text-green-700 hover:bg-green-100">입실</Badge>
@@ -641,7 +642,6 @@ export default function NfcReadersPage() {
                           <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
-                      <TableCell>{reader.readerTagCardLabel || '-'}</TableCell>
                       <TableCell>{new Date(reader.regDate).toLocaleDateString('ko-KR')}</TableCell>
                       <TableCell>
                         <div className="flex items-center justify-center gap-1">
