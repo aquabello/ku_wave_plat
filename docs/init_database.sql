@@ -1152,8 +1152,8 @@ CREATE TABLE `tb_users` (
 -- ----------------------------------------------------------------------------
 -- 1. tb_setting — 기본 설정
 -- ----------------------------------------------------------------------------
-INSERT INTO `tb_setting` (`ts_seq`, `ts_api_time`, `ts_player_time`, `ts_player_ver`, `ts_watcher_ver`, `reg_date`)
-VALUES (1, '30', '1', '1.0.0', '1.0.0', NOW());
+INSERT INTO `tb_setting` (`ts_seq`, `ts_api_time`, `ts_player_time`, `ts_player_ver`, `ts_watcher_ver`, `ts_screen_start`, `ts_screen_end`, `reg_date`)
+VALUES (1, '30', '1', '1.0.0', '1.0.0', '23:00', '07:00', NOW());
 
 -- ----------------------------------------------------------------------------
 -- 2. tb_users — admin 계정 (password: !konkuk@)
