@@ -1134,7 +1134,7 @@ INSERT INTO `tb_menu` (`menu_seq`, `menu_name`, `menu_code`, `menu_path`, `menu_
 (1, '컨트롤러', 'controller', NULL, 'GNB', NULL, 1),
 (2, 'RFID', 'rfid', NULL, 'GNB', NULL, 2),
 (3, '녹화기관리', 'recorder', NULL, 'GNB', NULL, 3),
-(4, 'AI시스템', 'ai-system', NULL, 'GNB', NULL, 4),
+-- (4, 'AI시스템', 'ai-system', NULL, 'GNB', NULL, 4),  -- 비활성화
 (5, '디스플레이', 'display', NULL, 'GNB', NULL, 5),
 (6, '회원관리', 'member', NULL, 'GNB', NULL, 6),
 (7, '환경설정', 'settings', NULL, 'GNB', NULL, 7);
@@ -1158,12 +1158,12 @@ INSERT INTO `tb_menu` (`menu_seq`, `menu_name`, `menu_code`, `menu_path`, `menu_
 (34, '녹화파일 관리', 'recorder-files', '/recorder/files', 'LNB', 3, 4),
 (35, 'FTP 설정', 'recorder-ftp', '/recorder/ftp', 'LNB', 3, 5);
 
--- LNB: AI시스템 하위
-INSERT INTO `tb_menu` (`menu_seq`, `menu_name`, `menu_code`, `menu_path`, `menu_type`, `parent_seq`, `menu_order`) VALUES
-(41, '강의요약', 'ai-lecture-summary', '/ai-system/lecture-summary', 'LNB', 4, 1),
-(42, '실시간 음성인식', 'ai-speech', '/ai-system/speech', 'LNB', 4, 2),
-(43, '음성 명령', 'ai-voice-commands', '/ai-system/voice-commands', 'LNB', 4, 3),
-(44, 'Worker 서버', 'ai-worker-servers', '/ai-system/worker-servers', 'LNB', 4, 4);
+-- LNB: AI시스템 하위 (비활성화)
+-- INSERT INTO `tb_menu` (`menu_seq`, `menu_name`, `menu_code`, `menu_path`, `menu_type`, `parent_seq`, `menu_order`) VALUES
+-- (41, '강의요약', 'ai-lecture-summary', '/ai-system/lecture-summary', 'LNB', 4, 1),
+-- (42, '실시간 음성인식', 'ai-speech', '/ai-system/speech', 'LNB', 4, 2),
+-- (43, '음성 명령', 'ai-voice-commands', '/ai-system/voice-commands', 'LNB', 4, 3),
+-- (44, 'Worker 서버', 'ai-worker-servers', '/ai-system/worker-servers', 'LNB', 4, 4);
 
 -- LNB: 디스플레이 하위
 INSERT INTO `tb_menu` (`menu_seq`, `menu_name`, `menu_code`, `menu_path`, `menu_type`, `parent_seq`, `menu_order`) VALUES
