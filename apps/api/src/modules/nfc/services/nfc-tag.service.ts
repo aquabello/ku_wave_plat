@@ -134,28 +134,28 @@ export class NfcTagService {
         };
       }
 
-      // IoT 컨트롤러에 등록 확인 시도 (실패해도 자동 등록)
-      let nfcResult: 'save' | 'no' | 'timeout' = 'save';
+      // IoT 컨트롤러에 등록 확인 요청 — save 응답만 카드 등록
+      let nfcResult: 'save' | 'no' | 'timeout' = 'timeout';
       try {
         nfcResult = await this.socketService.sendNfcSequence(
           deviceIp,
           devicePort,
         );
       } catch (err) {
-        this.logger.warn(`sendNfcSequence failed, auto-registering: ${(err as Error).message}`);
-        nfcResult = 'save'; // 컨트롤러 연결 실패 시 자동 등록
+        this.logger.warn(`sendNfcSequence failed: ${(err as Error).message}`);
       }
 
-      if (nfcResult === 'no') {
-        // 사용자가 명시적으로 등록 거부한 경우만 반환
+      if (nfcResult !== 'save') {
+        const resultType = nfcResult === 'no' ? 'REGISTER_NO' : 'REGISTER_TIMEOUT';
+        const message = nfcResult === 'no' ? '등록이 취소되었습니다' : '장비 응답 없음 — 다시 태깅해주세요';
         return {
-          result: 'REGISTER_NO',
-          logType: 'REGISTER_NO' as const,
+          result: resultType,
+          logType: resultType as any,
           spaceName,
           userName: null,
           controlResult: null,
           controlSummary: null,
-          message: '등록이 취소되었습니다',
+          message,
         };
       }
 
@@ -314,22 +314,23 @@ export class NfcTagService {
     }
 
     // [Step 5] ENTER/EXIT - 리더기 상태 기반 판단
-    // 쿨다운 체크 (최소 30초 간격)
-    const lastLog = await this.nfcLogRepository
+    // 쿨다운: 성공한 입실/퇴실 이후 30초만 적용 (장비 실패 등은 쿨다운 없음)
+    const lastSuccessLog = await this.nfcLogRepository
       .createQueryBuilder('nl')
       .where('nl.reader_seq = :readerSeq', { readerSeq: reader.readerSeq })
       .andWhere('nl.log_type IN (:...types)', { types: ['ENTER', 'EXIT'] })
+      .andWhere('nl.control_result IN (:...results)', { results: ['SUCCESS', 'PARTIAL', 'SKIPPED'] })
       .orderBy('nl.tagged_at', 'DESC')
       .getOne();
 
-    if (lastLog?.taggedAt) {
-      const elapsed = Date.now() - new Date(lastLog.taggedAt).getTime();
+    if (lastSuccessLog?.taggedAt) {
+      const elapsed = Date.now() - new Date(lastSuccessLog.taggedAt).getTime();
       const COOLDOWN_MS = 30000;
       if (elapsed < COOLDOWN_MS) {
         const remaining = Math.ceil((COOLDOWN_MS - elapsed) / 1000);
         return {
           result: 'DENIED',
-          logType: lastLog.logType as any,
+          logType: lastSuccessLog.logType as any,
           spaceName,
           buildingName,
           userName: null,
@@ -359,17 +360,10 @@ export class NfcTagService {
       logType = 'ENTER';
     }
 
-    // 리더기 상태 업데이트
-    const newTagCardSeq = logType === 'ENTER' ? card.cardSeq : null;
-    await this.nfcReaderRepository.update(reader.readerSeq, {
-      readerTagStatus: logType,
-      readerTagCardSeq: newTagCardSeq,
-    });
-
-    // reader_tag_status 기반 IoT 명령 결정
+    // reader_tag_status 기반 IoT 명령 결정 (장비제어 먼저, 성공 시에만 상태 업데이트)
     const commandType = logType === 'ENTER' ? 'POWER_ON' : 'POWER_OFF';
     this.logger.log(
-      `[NFC] 리더기 상태: ${prevStatus ?? 'NULL'}(카드:${prevCardSeq ?? '-'}) → ${logType}(카드:${newTagCardSeq ?? '-'}) | IoT: ${commandType}`,
+      `[NFC] 리더기 상태: ${prevStatus ?? 'NULL'}(카드:${prevCardSeq ?? '-'}) → ${logType} 시도 | IoT: ${commandType}`,
     );
 
     // [Step 6] Device Control
@@ -467,6 +461,35 @@ export class NfcTagService {
       controlResult = 'FAIL';
       controlDetailJson = JSON.stringify([{ error: error.message }]);
     }
+
+    // 장비 제어 실패 시 입실/퇴실 처리 안 함 + 신규 등록 카드 롤백
+    if (controlResult === 'FAIL') {
+      if (isNewRegistration && card) {
+        await this.nfcCardRepository.delete(card.cardSeq);
+        await this.nfcLogRepository.delete({ cardSeq: card.cardSeq });
+        this.logger.warn(`[NFC] 장비 제어 실패 → 카드 등록 롤백 (${card.cardLabel})`);
+      }
+      this.logger.warn(`[NFC] 장비 제어 실패 → ${logType} 처리 취소 (리더기 상태 유지: ${prevStatus ?? 'NULL'})`);
+      return {
+        result: 'DENIED',
+        logType: prevStatus ?? 'UNKNOWN',
+        spaceName,
+        buildingName,
+        userName: null,
+        cardLabel: card?.cardLabel ?? null,
+        controlResult: 'FAIL',
+        controlSummary,
+        message: '장비 제어 실패 — 다시 태깅해주세요',
+      };
+    }
+
+    // 장비 제어 성공 → 리더기 상태 업데이트
+    const newTagCardSeq = logType === 'ENTER' ? card.cardSeq : null;
+    await this.nfcReaderRepository.update(reader.readerSeq, {
+      readerTagStatus: logType,
+      readerTagCardSeq: newTagCardSeq,
+    });
+    this.logger.log(`[NFC] 리더기 상태 업데이트: ${logType}(카드:${newTagCardSeq ?? '-'})`);
 
     // [Step 6-1] AI Recording Control (ku_ai_pc 연동)
     let aiResultDetail: Record<string, unknown> | null = null;

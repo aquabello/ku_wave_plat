@@ -144,6 +144,15 @@ export class NfcController {
     return { message: 'NFC 리더기가 삭제되었습니다' };
   }
 
+  @Post('readers/:readerSeq/reset-tag-status')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'NFC 리더기 태깅 상태 초기화' })
+  @ApiResponse({ status: 200, description: '태깅 상태 초기화 성공' })
+  @ApiResponse({ status: 404, description: '리더기를 찾을 수 없음' })
+  async resetTagStatus(@Param('readerSeq', ParseIntPipe) readerSeq: number) {
+    return this.nfcReaderService.resetTagStatus(readerSeq);
+  }
+
   @Post('readers/:readerSeq/regenerate-key')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'NFC 리더기 API Key 재발급' })

@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Cpu, Search, Plus, Pencil, Trash2, Key, Copy, RefreshCw, Loader2, Settings2 } from 'lucide-react';
+import { Cpu, Search, Plus, Pencil, Trash2, Key, Copy, RefreshCw, RotateCcw, Loader2, Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -50,6 +50,7 @@ import {
   updateReader,
   deleteReader,
   regenerateReaderKey,
+  resetReaderTagStatus,
 } from '@/lib/api/nfc';
 import { getBuildings } from '@/lib/api/buildings';
 import { getSpaces } from '@/lib/api/spaces';
@@ -67,6 +68,8 @@ const readerFormSchema = z.object({
   spaceSeq: z.coerce.number().min(1, '공간을 선택해주세요'),
   readerSerial: z.string().optional(),
   readerStatus: z.string().optional(),
+  readerTagStatus: z.string().nullable().optional(),
+  readerTagCardSeq: z.coerce.number().nullable().optional(),
 });
 
 type ReaderFormData = z.infer<typeof readerFormSchema>;
@@ -129,6 +132,8 @@ function ReaderFormContent({
       spaceSeq: editDetail?.spaceSeq || 0,
       readerSerial: editDetail?.readerSerial || '',
       readerStatus: editDetail?.readerStatus || 'ACTIVE',
+      readerTagStatus: editDetail?.readerTagStatus ?? null,
+      readerTagCardSeq: editDetail?.readerTagCardSeq ?? null,
     },
   });
 
@@ -235,24 +240,64 @@ function ReaderFormContent({
 
         {/* 상태 (edit only) */}
         {isEditMode && (
-          <div>
-            <Label htmlFor="readerStatus">상태</Label>
-            <Controller
-              name="readerStatus"
-              control={form.control}
-              render={({ field }) => (
-                <Select value={field.value || 'ACTIVE'} onValueChange={field.onChange}>
-                  <SelectTrigger id="readerStatus">
-                    <SelectValue placeholder="상태를 선택하세요" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ACTIVE">활성</SelectItem>
-                    <SelectItem value="INACTIVE">비활성</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-            />
-          </div>
+          <>
+            <div>
+              <Label htmlFor="readerStatus">상태</Label>
+              <Controller
+                name="readerStatus"
+                control={form.control}
+                render={({ field }) => (
+                  <Select value={field.value || 'ACTIVE'} onValueChange={field.onChange}>
+                    <SelectTrigger id="readerStatus">
+                      <SelectValue placeholder="상태를 선택하세요" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ACTIVE">활성</SelectItem>
+                      <SelectItem value="INACTIVE">비활성</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="readerTagStatus">태깅상태</Label>
+              <Controller
+                name="readerTagStatus"
+                control={form.control}
+                render={({ field }) => (
+                  <Select
+                    value={field.value || '__none__'}
+                    onValueChange={(v) => {
+                      field.onChange(v === '__none__' ? null : v);
+                      if (v === '__none__') {
+                        form.setValue('readerTagCardSeq', null);
+                      }
+                    }}
+                  >
+                    <SelectTrigger id="readerTagStatus">
+                      <SelectValue placeholder="태깅상태" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">초기화 (없음)</SelectItem>
+                      <SelectItem value="ENTER">입실</SelectItem>
+                      <SelectItem value="EXIT">퇴실</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="readerTagCardSeq">태깅 카드 SEQ</Label>
+              <Input
+                id="readerTagCardSeq"
+                type="number"
+                {...form.register('readerTagCardSeq', { valueAsNumber: true })}
+                placeholder="카드 시퀀스 (비우면 초기화)"
+              />
+            </div>
+          </>
         )}
       </div>
 
@@ -394,6 +439,17 @@ export default function NfcReadersPage() {
     },
   });
 
+  const resetTagStatusMutation = useMutation({
+    mutationFn: (readerSeq: number) => resetReaderTagStatus(readerSeq),
+    onSuccess: () => {
+      showToast.success('태깅 상태가 초기화되었습니다.');
+      queryClient.invalidateQueries({ queryKey: ['nfc-readers'] });
+    },
+    onError: (error: any) => {
+      showToast.apiError(error, '태깅 상태 초기화에 실패했습니다.');
+    },
+  });
+
   // Handlers
   const handleAddReader = () => {
     setEditingReader(null);
@@ -470,6 +526,8 @@ export default function NfcReadersPage() {
         spaceSeq: data.spaceSeq || undefined,
         readerSerial: data.readerSerial || undefined,
         readerStatus: (data.readerStatus as 'ACTIVE' | 'INACTIVE') || undefined,
+        readerTagStatus: data.readerTagStatus as 'ENTER' | 'EXIT' | null ?? undefined,
+        readerTagCardSeq: data.readerTagCardSeq ?? undefined,
       };
       updateReaderMutation.mutate({ readerSeq: editingReader.readerSeq, data: updatePayload });
     } else {
@@ -634,13 +692,27 @@ export default function NfcReadersPage() {
                       </TableCell>
                       <TableCell>{reader.readerTagCardLabel || '-'}</TableCell>
                       <TableCell className="text-center">
-                        {reader.readerTagStatus === 'ENTER' ? (
-                          <Badge className="bg-green-100 text-green-700 hover:bg-green-100">입실</Badge>
-                        ) : reader.readerTagStatus === 'EXIT' ? (
-                          <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-100">퇴실</Badge>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
+                        <div className="flex items-center justify-center gap-1">
+                          {reader.readerTagStatus === 'ENTER' ? (
+                            <Badge className="bg-green-100 text-green-700 hover:bg-green-100">입실</Badge>
+                          ) : reader.readerTagStatus === 'EXIT' ? (
+                            <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-100">퇴실</Badge>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                          {reader.readerTagStatus && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              title="태깅 상태 초기화"
+                              onClick={() => resetTagStatusMutation.mutate(reader.readerSeq)}
+                              disabled={resetTagStatusMutation.isPending}
+                            >
+                              <RotateCcw className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>{new Date(reader.regDate).toLocaleDateString('ko-KR')}</TableCell>
                       <TableCell>

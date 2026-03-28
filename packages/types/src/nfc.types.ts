@@ -84,6 +84,8 @@ export interface UpdateNfcReaderRequest {
   readerName?: string;
   readerSerial?: string;
   readerStatus?: 'ACTIVE' | 'INACTIVE';
+  readerTagStatus?: 'ENTER' | 'EXIT' | null;
+  readerTagCardSeq?: number | null;
 }
 
 // =============================================
@@ -260,6 +262,8 @@ export interface NfcReaderDetail {
   readerSerial: string | null;
   readerApiKey: string;
   readerStatus: 'ACTIVE' | 'INACTIVE';
+  readerTagStatus: 'ENTER' | 'EXIT' | null;
+  readerTagCardSeq: number | null;
   spaceSeq: number;
   spaceName: string;
   spaceFloor: string;

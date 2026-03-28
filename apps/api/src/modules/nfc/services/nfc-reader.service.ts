@@ -254,7 +254,32 @@ export class NfcReaderService {
       reader.readerStatus = dto.readerStatus;
     }
 
+    if (dto.readerTagStatus !== undefined) {
+      reader.readerTagStatus = dto.readerTagStatus;
+    }
+
+    if (dto.readerTagCardSeq !== undefined) {
+      reader.readerTagCardSeq = dto.readerTagCardSeq;
+    }
+
     return this.nfcReaderRepository.save(reader);
+  }
+
+  /**
+   * NFC 리더기 태깅 상태 초기화
+   */
+  async resetTagStatus(readerSeq: number): Promise<{ readerSeq: number; message: string }> {
+    const reader = await this.findOne(readerSeq);
+
+    await this.nfcReaderRepository.update(reader.readerSeq, {
+      readerTagStatus: null,
+      readerTagCardSeq: null,
+    });
+
+    return {
+      readerSeq: reader.readerSeq,
+      message: '태깅 상태가 초기화되었습니다',
+    };
   }
 
   /**

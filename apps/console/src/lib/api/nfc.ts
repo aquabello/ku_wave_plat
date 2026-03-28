@@ -84,6 +84,13 @@ export async function regenerateReaderKey(readerSeq: number): Promise<{ readerSe
   });
 }
 
+/** 태깅 상태 초기화 */
+export async function resetReaderTagStatus(readerSeq: number): Promise<{ readerSeq: number; message: string }> {
+  return await apiClient(`/nfc/readers/${readerSeq}/reset-tag-status`, {
+    method: 'POST',
+  });
+}
+
 // ==================== 카드/태그 ====================
 
 /** 등록된 카드 목록 조회 */

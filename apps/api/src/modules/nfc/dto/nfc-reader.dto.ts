@@ -64,6 +64,27 @@ export class UpdateNfcReaderDto {
     message: '리더기 상태는 ACTIVE 또는 INACTIVE여야 합니다',
   })
   readerStatus?: 'ACTIVE' | 'INACTIVE';
+
+  @ApiPropertyOptional({
+    description: '태깅 상태',
+    enum: ['ENTER', 'EXIT'],
+    nullable: true,
+    example: null,
+  })
+  @IsOptional()
+  @IsIn(['ENTER', 'EXIT', null], {
+    message: '태깅 상태는 ENTER, EXIT 또는 null이어야 합니다',
+  })
+  readerTagStatus?: 'ENTER' | 'EXIT' | null;
+
+  @ApiPropertyOptional({
+    description: '태깅 카드 시퀀스',
+    nullable: true,
+    example: null,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  readerTagCardSeq?: number | null;
 }
 
 export class NfcReaderQueryDto {
