@@ -8,7 +8,33 @@ set -euo pipefail
 # --- 시스템 업데이트 ---
 apt-get update && apt-get upgrade -y
 apt-get install -y curl wget git build-essential ufw fail2ban htop \
-    pcscd libpcsclite-dev   # NFC 리더 (ACR122U) 지원
+    pcscd libpcsclite-dev libccid   # NFC 리더 (ACR122U) 지원
+
+# --- NFC ACR122U: 커널 pn533 모듈 충돌 방지 ---
+if ! grep -q "blacklist pn533_usb" /etc/modprobe.d/blacklist-nfc.conf 2>/dev/null; then
+    cat > /etc/modprobe.d/blacklist-nfc.conf << 'NFCEOF'
+blacklist pn533_usb
+blacklist pn533
+blacklist nfc
+NFCEOF
+    modprobe -r pn533_usb pn533 nfc 2>/dev/null || true
+    echo "✅ pn533 커널 모듈 블랙리스트 등록"
+else
+    echo "✅ pn533 블랙리스트 이미 등록됨"
+fi
+
+# --- NFC ACR122U: pcscd polkit 권한 (일반 사용자 접근 허용) ---
+PCSC_USER="${SUDO_USER:-$(whoami)}"
+cat > /etc/polkit-1/rules.d/99-pcscd.rules << POLKITEOF
+polkit.addRule(function(action, subject) {
+    if (action.id.indexOf("org.debian.pcsc-lite") == 0 &&
+        subject.user == "${PCSC_USER}") {
+        return polkit.Result.YES;
+    }
+});
+POLKITEOF
+systemctl restart polkit pcscd 2>/dev/null || true
+echo "✅ pcscd polkit 권한 설정 (user: ${PCSC_USER})"
 
 # --- 방화벽 ---
 ufw default deny incoming

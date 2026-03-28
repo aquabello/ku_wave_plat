@@ -106,14 +106,59 @@ export class NfcReader {
     }, 5000);
   }
 
+  /** 저수준 pcsclite connect (nfc-pcsc connect 실패 시 fallback) */
+  private rawConnect(reader: any): Promise<number> {
+    return new Promise((resolve, reject) => {
+      const raw = reader.reader; // pcsclite CardReader
+      raw.connect({ share_mode: raw.SCARD_SHARE_SHARED }, (err: any, protocol: number) => {
+        if (err) return reject(err);
+        resolve(protocol);
+      });
+    });
+  }
+
+  /** 저수준 pcsclite transmit */
+  private rawTransmit(reader: any, data: Buffer, resLen: number, protocol: number): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      const raw = reader.reader;
+      raw.transmit(data, resLen, protocol, (err: any, response: Buffer) => {
+        if (err) return reject(err);
+        resolve(response);
+      });
+    });
+  }
+
   private async handleTag(reader: any, card: any): Promise<void> {
     let uid = card.uid || '';
 
-    if (!uid) {
+    // 연결: nfc-pcsc connect 시도 → 실패 시 저수준 fallback
+    let rawProtocol: number | null = null;
+    let connected = false;
+    try {
+      await reader.connect();
+      connected = true;
+    } catch {
       try {
-        await reader.connect(1);
+        rawProtocol = await this.rawConnect(reader);
+        connected = true;
+        logger.debug(`[저수준 연결] protocol=${rawProtocol}`);
+      } catch (err: any) {
+        logger.warn(`[연결 실패] ${err.message}`);
+      }
+    }
+
+    // transmit 래퍼: 연결 방식에 따라 분기
+    const transmit = async (data: Buffer, resLen: number): Promise<Buffer> => {
+      if (rawProtocol !== null) {
+        return this.rawTransmit(reader, data, resLen, rawProtocol);
+      }
+      return reader.transmit(data, resLen);
+    };
+
+    if (!uid && connected) {
+      try {
         const getUidCmd = Buffer.from([0xFF, 0xCA, 0x00, 0x00, 0x00]);
-        const uidResponse = await reader.transmit(getUidCmd, 256);
+        const uidResponse = await transmit(getUidCmd, 256);
         const sw = uidResponse.slice(-2);
         if (sw[0] === 0x90 && sw[1] === 0x00) {
           uid = uidResponse.slice(0, -2).toString('hex').toUpperCase();
@@ -130,7 +175,7 @@ export class NfcReader {
     let aidResults: NfcAidScanResult[] = [];
     let firstMatchedAid: string | null = null;
     for (let attempt = 1; attempt <= 2; attempt++) {
-      const scan = await this.scanAllAids(reader);
+      const scan = await this.scanAllAids(reader, transmit);
       aidResults = scan.aidResults;
       firstMatchedAid = scan.firstMatchedAid;
       if (firstMatchedAid) break;
@@ -199,7 +244,7 @@ export class NfcReader {
     'A00000000401': 'EB 카드',
   };
 
-  private async scanAllAids(reader: any): Promise<{
+  private async scanAllAids(reader: any, transmit: (data: Buffer, resLen: number) => Promise<Buffer>): Promise<{
     aidResults: NfcAidScanResult[];
     firstMatchedAid: string | null;
   }> {
@@ -218,7 +263,7 @@ export class NfcReader {
         ]);
 
         logger.debug(`[AID SCAN] ${aidHex} (${label}) 시도...`);
-        const response = await reader.transmit(selectCmd, 256);
+        const response = await transmit(selectCmd, 256);
         const sw = response.slice(-2);
         const swHex = sw.toString('hex').toUpperCase();
         const responseData = response.length > 2
@@ -230,14 +275,14 @@ export class NfcReader {
           // 태그 모드: FCI만으로 식별, readAppData 생략 (약 5초 단축)
           const appData = this.mode === 'tag'
             ? { serialNumber: responseData, fci: responseData, balance: null, records: [] }
-            : await this.readAppData(reader, aidHex, responseData);
+            : await this.readAppData(transmit, aidHex, responseData);
           aidResults.push({ aid: aidHex, label, status: 'SUCCESS', sw: swHex, responseData, appData });
           if (!firstMatchedAid) firstMatchedAid = aidHex;
         } else if (sw[0] === 0x61) {
           logger.info(`[AID SCAN] ${aidHex} (${label}) ✓ 성공 (SW: ${swHex}, 추가 ${sw[1]}B)`);
           const appData = this.mode === 'tag'
             ? { serialNumber: responseData, fci: responseData, balance: null, records: [] }
-            : await this.readAppData(reader, aidHex, responseData);
+            : await this.readAppData(transmit, aidHex, responseData);
           aidResults.push({ aid: aidHex, label, status: 'SUCCESS', sw: swHex, responseData, appData });
           if (!firstMatchedAid) firstMatchedAid = aidHex;
         } else {
@@ -253,7 +298,7 @@ export class NfcReader {
     return { aidResults, firstMatchedAid };
   }
 
-  private async readAppData(reader: any, aidHex: string, fci: string | null): Promise<NfcAppData> {
+  private async readAppData(transmit: (data: Buffer, resLen: number) => Promise<Buffer>, aidHex: string, fci: string | null): Promise<NfcAppData> {
     const appData: NfcAppData = {
       serialNumber: null,
       fci,
@@ -267,7 +312,7 @@ export class NfcReader {
           try {
             const p2 = (sfi << 3) | 0x04;
             const readCmd = Buffer.from([0x00, 0xB2, rec, p2, 0x00]);
-            const resp = await reader.transmit(readCmd, 256);
+            const resp = await transmit(readCmd, 256);
             const rSw = resp.slice(-2);
 
             if (rSw[0] === 0x90 && rSw[1] === 0x00 && resp.length > 2) {
@@ -283,7 +328,7 @@ export class NfcReader {
 
       try {
         const getSerial = Buffer.from([0x80, 0xCA, 0x00, 0x04, 0x00]);
-        const resp = await reader.transmit(getSerial, 256);
+        const resp = await transmit(getSerial, 256);
         const rSw = resp.slice(-2);
         if (rSw[0] === 0x90 && rSw[1] === 0x00 && resp.length > 2) {
           appData.serialNumber = resp.slice(0, -2).toString('hex').toUpperCase();
@@ -305,7 +350,7 @@ export class NfcReader {
 
       try {
         const getBalance = Buffer.from([0x80, 0x4C, 0x00, 0x00, 0x04]);
-        const resp = await reader.transmit(getBalance, 256);
+        const resp = await transmit(getBalance, 256);
         const rSw = resp.slice(-2);
         if (rSw[0] === 0x90 && rSw[1] === 0x00 && resp.length >= 6) {
           const balBytes = resp.slice(0, 4);
