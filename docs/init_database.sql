@@ -72,8 +72,9 @@ DROP TABLE IF EXISTS `tb_ai_lecture_summary`;
 DROP TABLE IF EXISTS `tb_ai_command_log`;
 DROP TABLE IF EXISTS `tb_activity_log`;
 
+
 -- ----------------------------------------------------------------------------
--- tb_activity_log (시스템/인증)
+-- tb_activity_log
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_activity_log` (
   `log_seq` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '로그 시퀀스',
@@ -97,8 +98,9 @@ CREATE TABLE `tb_activity_log` (
   KEY `idx_log_url` (`request_url`(100))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='활동 로그';
 
+
 -- ----------------------------------------------------------------------------
--- tb_ai_command_log (AI 시스템)
+-- tb_ai_command_log
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_ai_command_log` (
   `command_log_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '명령로그 시퀀스',
@@ -120,8 +122,9 @@ CREATE TABLE `tb_ai_command_log` (
   CONSTRAINT `fk_cl_voice_command` FOREIGN KEY (`voice_command_seq`) REFERENCES `tb_ai_voice_command` (`voice_command_seq`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='음성 명령 실행 로그';
 
+
 -- ----------------------------------------------------------------------------
--- tb_ai_lecture_summary (AI 시스템)
+-- tb_ai_lecture_summary
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_ai_lecture_summary` (
   `summary_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '시퀀스',
@@ -156,8 +159,9 @@ CREATE TABLE `tb_ai_lecture_summary` (
   CONSTRAINT `fk_summary_user` FOREIGN KEY (`tu_seq`) REFERENCES `tb_users` (`tu_seq`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='강의요약 결과';
 
+
 -- ----------------------------------------------------------------------------
--- tb_ai_speech_log (AI 시스템)
+-- tb_ai_speech_log
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_ai_speech_log` (
   `speech_log_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '음성로그 시퀀스',
@@ -175,8 +179,9 @@ CREATE TABLE `tb_ai_speech_log` (
   CONSTRAINT `fk_sl_session` FOREIGN KEY (`session_seq`) REFERENCES `tb_ai_speech_session` (`session_seq`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='음성인식 로그';
 
+
 -- ----------------------------------------------------------------------------
--- tb_ai_speech_session (AI 시스템)
+-- tb_ai_speech_session
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_ai_speech_session` (
   `session_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '세션 시퀀스',
@@ -205,8 +210,9 @@ CREATE TABLE `tb_ai_speech_session` (
   CONSTRAINT `fk_ss_user` FOREIGN KEY (`tu_seq`) REFERENCES `tb_users` (`tu_seq`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='음성인식 세션';
 
+
 -- ----------------------------------------------------------------------------
--- tb_ai_voice_command (AI 시스템)
+-- tb_ai_voice_command
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_ai_voice_command` (
   `voice_command_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '음성명령 시퀀스',
@@ -231,8 +237,9 @@ CREATE TABLE `tb_ai_voice_command` (
   CONSTRAINT `fk_vc_space_device` FOREIGN KEY (`space_device_seq`) REFERENCES `tb_space_device` (`space_device_seq`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='음성 명령어 매핑';
 
+
 -- ----------------------------------------------------------------------------
--- tb_ai_worker_server (AI 시스템)
+-- tb_ai_worker_server
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_ai_worker_server` (
   `worker_server_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT 'Worker 서버 시퀀스',
@@ -253,8 +260,9 @@ CREATE TABLE `tb_ai_worker_server` (
   UNIQUE KEY `server_url` (`server_url`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI Worker 서버 관리';
 
+
 -- ----------------------------------------------------------------------------
--- tb_building (물리 계층)
+-- tb_building
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_building` (
   `building_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '건물 시퀀스',
@@ -276,8 +284,9 @@ CREATE TABLE `tb_building` (
   KEY `idx_building_order` (`building_order`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='건물 마스터';
 
+
 -- ----------------------------------------------------------------------------
--- tb_content (디스플레이/DID)
+-- tb_content
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_content` (
   `content_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '콘텐츠 시퀀스',
@@ -315,8 +324,9 @@ CREATE TABLE `tb_content` (
   KEY `idx_valid_period` (`valid_from`,`valid_to`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='콘텐츠 마스터';
 
+
 -- ----------------------------------------------------------------------------
--- tb_content_approval_log (디스플레이/DID)
+-- tb_content_approval_log
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_content_approval_log` (
   `log_seq` int(11) NOT NULL AUTO_INCREMENT,
@@ -333,8 +343,9 @@ CREATE TABLE `tb_content_approval_log` (
   CONSTRAINT `fk_cal_user` FOREIGN KEY (`actor_seq`) REFERENCES `tb_users` (`tu_seq`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='콘텐츠 승인 이력';
 
+
 -- ----------------------------------------------------------------------------
--- tb_control_log (IoT 컨트롤러)
+-- tb_control_log
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_control_log` (
   `log_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '로그 시퀀스',
@@ -356,8 +367,9 @@ CREATE TABLE `tb_control_log` (
   CONSTRAINT `fk_log_user` FOREIGN KEY (`tu_seq`) REFERENCES `tb_users` (`tu_seq`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='제어 로그';
 
+
 -- ----------------------------------------------------------------------------
--- tb_device_preset (IoT 컨트롤러)
+-- tb_device_preset
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_device_preset` (
   `preset_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '프리셋 시퀀스',
@@ -376,8 +388,9 @@ CREATE TABLE `tb_device_preset` (
   KEY `idx_preset_order` (`preset_order`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='장비 프리셋 마스터';
 
+
 -- ----------------------------------------------------------------------------
--- tb_ftp_config (녹화)
+-- tb_ftp_config
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_ftp_config` (
   `ftp_config_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT 'FTP 설정 시퀀스',
@@ -401,8 +414,9 @@ CREATE TABLE `tb_ftp_config` (
   CONSTRAINT `fk_ftp_recorder` FOREIGN KEY (`recorder_seq`) REFERENCES `tb_recorder` (`recorder_seq`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='FTP 설정';
 
+
 -- ----------------------------------------------------------------------------
--- tb_group_playlist (디스플레이/DID)
+-- tb_group_playlist
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_group_playlist` (
   `gp_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '할당 시퀀스',
@@ -424,8 +438,9 @@ CREATE TABLE `tb_group_playlist` (
   CONSTRAINT `fk_gp_playlist` FOREIGN KEY (`playlist_seq`) REFERENCES `tb_play_list` (`playlist_seq`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='그룹-플레이리스트 할당';
 
+
 -- ----------------------------------------------------------------------------
--- tb_menu (RBAC)
+-- tb_menu
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_menu` (
   `menu_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '메뉴 시퀀스',
@@ -445,8 +460,9 @@ CREATE TABLE `tb_menu` (
   CONSTRAINT `fk_menu_parent` FOREIGN KEY (`parent_seq`) REFERENCES `tb_menu` (`menu_seq`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='메뉴 마스터';
 
+
 -- ----------------------------------------------------------------------------
--- tb_menu_users (RBAC)
+-- tb_menu_users
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_menu_users` (
   `mu_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '시퀀스',
@@ -461,12 +477,13 @@ CREATE TABLE `tb_menu_users` (
   CONSTRAINT `fk_mu_user` FOREIGN KEY (`tu_seq`) REFERENCES `tb_users` (`tu_seq`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='사용자별 메뉴 권한';
 
+
 -- ----------------------------------------------------------------------------
--- tb_nfc_card (NFC/RFID)
+-- tb_nfc_card
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_nfc_card` (
   `card_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '카드 시퀀스',
-  `tu_seq` int(11) DEFAULT NULL,
+  `tu_seq` int(11) DEFAULT NULL COMMENT '사용자 시퀀스',
   `card_identifier` varchar(255) NOT NULL COMMENT '카드 식별값 (raw)',
   `card_aid` varchar(32) DEFAULT NULL COMMENT 'Application Identifier (HEX)',
   `card_label` varchar(100) DEFAULT NULL COMMENT '카드 별칭 (예: 김교수 스마트폰)',
@@ -482,11 +499,12 @@ CREATE TABLE `tb_nfc_card` (
   KEY `idx_card_type` (`card_type`),
   KEY `idx_card_status` (`card_status`),
   KEY `idx_card_isdel` (`card_isdel`),
-  CONSTRAINT `fk_card_user` FOREIGN KEY (`tu_seq`) REFERENCES `tb_users` (`tu_seq`) ON DELETE CASCADE
+  CONSTRAINT `fk_nfc_card_user` FOREIGN KEY (`tu_seq`) REFERENCES `tb_users` (`tu_seq`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='NFC 카드/태그 마스터';
 
+
 -- ----------------------------------------------------------------------------
--- tb_nfc_log (NFC/RFID)
+-- tb_nfc_log
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_nfc_log` (
   `nfc_log_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT 'NFC 로그 시퀀스',
@@ -513,8 +531,9 @@ CREATE TABLE `tb_nfc_log` (
   CONSTRAINT `fk_nfc_log_user` FOREIGN KEY (`tu_seq`) REFERENCES `tb_users` (`tu_seq`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='NFC 태깅 로그';
 
+
 -- ----------------------------------------------------------------------------
--- tb_nfc_reader (NFC/RFID)
+-- tb_nfc_reader
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_nfc_reader` (
   `reader_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '리더기 시퀀스',
@@ -538,8 +557,9 @@ CREATE TABLE `tb_nfc_reader` (
   CONSTRAINT `fk_reader_space` FOREIGN KEY (`space_seq`) REFERENCES `tb_space` (`space_seq`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='NFC 리더기 마스터';
 
+
 -- ----------------------------------------------------------------------------
--- tb_nfc_reader_command (NFC/RFID)
+-- tb_nfc_reader_command
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_nfc_reader_command` (
   `reader_command_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '리더기 명령어 매핑 시퀀스',
@@ -562,8 +582,9 @@ CREATE TABLE `tb_nfc_reader_command` (
   CONSTRAINT `fk_rc_space_device` FOREIGN KEY (`space_device_seq`) REFERENCES `tb_space_device` (`space_device_seq`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='NFC 리더기 명령어 매핑';
 
+
 -- ----------------------------------------------------------------------------
--- tb_play_list (디스플레이/DID)
+-- tb_play_list
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_play_list` (
   `playlist_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '플레이리스트 시퀀스',
@@ -591,8 +612,9 @@ CREATE TABLE `tb_play_list` (
   KEY `idx_playlist_screen_layout` (`playlist_screen_layout`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='플레이리스트 마스터';
 
+
 -- ----------------------------------------------------------------------------
--- tb_play_list_content (디스플레이/DID)
+-- tb_play_list_content
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_play_list_content` (
   `plc_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '매핑 시퀀스',
@@ -628,8 +650,9 @@ CREATE TABLE `tb_play_list_content` (
   CONSTRAINT `fk_plc_reviewer` FOREIGN KEY (`reviewer_seq`) REFERENCES `tb_users` (`tu_seq`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='플레이리스트-콘텐츠 매핑';
 
+
 -- ----------------------------------------------------------------------------
--- tb_play_log (디스플레이/DID)
+-- tb_play_log
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_play_log` (
   `log_seq` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '로그 시퀀스',
@@ -652,8 +675,9 @@ CREATE TABLE `tb_play_log` (
   CONSTRAINT `fk_log_player` FOREIGN KEY (`player_seq`) REFERENCES `tb_player` (`player_seq`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='재생 로그 (통계/분석용)';
 
+
 -- ----------------------------------------------------------------------------
--- tb_player (디스플레이/DID)
+-- tb_player
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_player` (
   `player_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '플레이어 시퀀스',
@@ -704,8 +728,9 @@ CREATE TABLE `tb_player` (
   CONSTRAINT `fk_player_space` FOREIGN KEY (`space_seq`) REFERENCES `tb_space` (`space_seq`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Digital Signage Player (DID) 마스터';
 
+
 -- ----------------------------------------------------------------------------
--- tb_player_group (디스플레이/DID)
+-- tb_player_group
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_player_group` (
   `group_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '그룹 시퀀스',
@@ -724,8 +749,9 @@ CREATE TABLE `tb_player_group` (
   CONSTRAINT `fk_group_building` FOREIGN KEY (`building_seq`) REFERENCES `tb_building` (`building_seq`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='플레이어 그룹';
 
+
 -- ----------------------------------------------------------------------------
--- tb_player_group_member (디스플레이/DID)
+-- tb_player_group_member
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_player_group_member` (
   `pgm_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '멤버 시퀀스',
@@ -741,8 +767,9 @@ CREATE TABLE `tb_player_group_member` (
   CONSTRAINT `fk_pgm_player` FOREIGN KEY (`player_seq`) REFERENCES `tb_player` (`player_seq`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='플레이어 그룹 멤버십';
 
+
 -- ----------------------------------------------------------------------------
--- tb_player_heartbeat_log (디스플레이/DID)
+-- tb_player_heartbeat_log
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_player_heartbeat_log` (
   `heartbeat_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT 'Heartbeat 시퀀스',
@@ -772,8 +799,9 @@ CREATE TABLE `tb_player_heartbeat_log` (
   CONSTRAINT `fk_heartbeat_player` FOREIGN KEY (`player_seq`) REFERENCES `tb_player` (`player_seq`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='플레이어 Health Check 로그';
 
+
 -- ----------------------------------------------------------------------------
--- tb_player_playlist (디스플레이/DID)
+-- tb_player_playlist
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_player_playlist` (
   `pp_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '할당 시퀀스',
@@ -797,8 +825,9 @@ CREATE TABLE `tb_player_playlist` (
   CONSTRAINT `fk_pp_playlist` FOREIGN KEY (`playlist_seq`) REFERENCES `tb_play_list` (`playlist_seq`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='플레이어-플레이리스트 할당';
 
+
 -- ----------------------------------------------------------------------------
--- tb_preset_command (IoT 컨트롤러)
+-- tb_preset_command
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_preset_command` (
   `command_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '명령어 시퀀스',
@@ -818,8 +847,9 @@ CREATE TABLE `tb_preset_command` (
   CONSTRAINT `fk_command_preset` FOREIGN KEY (`preset_seq`) REFERENCES `tb_device_preset` (`preset_seq`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='프리셋 명령어';
 
+
 -- ----------------------------------------------------------------------------
--- tb_recorder (녹화)
+-- tb_recorder
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_recorder` (
   `recorder_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '녹화기 시퀀스',
@@ -849,8 +879,9 @@ CREATE TABLE `tb_recorder` (
   CONSTRAINT `fk_recorder_space` FOREIGN KEY (`space_seq`) REFERENCES `tb_space` (`space_seq`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='녹화기 마스터';
 
+
 -- ----------------------------------------------------------------------------
--- tb_recorder_log (녹화)
+-- tb_recorder_log
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_recorder_log` (
   `rec_log_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '로그 시퀀스',
@@ -871,8 +902,9 @@ CREATE TABLE `tb_recorder_log` (
   CONSTRAINT `fk_rl_user` FOREIGN KEY (`tu_seq`) REFERENCES `tb_users` (`tu_seq`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='녹화기 명령 로그';
 
+
 -- ----------------------------------------------------------------------------
--- tb_recorder_preset (녹화)
+-- tb_recorder_preset
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_recorder_preset` (
   `rec_preset_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '프리셋 시퀀스',
@@ -895,8 +927,9 @@ CREATE TABLE `tb_recorder_preset` (
   CONSTRAINT `fk_rp_recorder` FOREIGN KEY (`recorder_seq`) REFERENCES `tb_recorder` (`recorder_seq`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='녹화기 PTZ 프리셋';
 
+
 -- ----------------------------------------------------------------------------
--- tb_recorder_user (녹화)
+-- tb_recorder_user
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_recorder_user` (
   `recorder_user_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '시퀀스',
@@ -915,8 +948,9 @@ CREATE TABLE `tb_recorder_user` (
   CONSTRAINT `fk_ru_user` FOREIGN KEY (`tu_seq`) REFERENCES `tb_users` (`tu_seq`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='녹화기-사용자 매핑';
 
+
 -- ----------------------------------------------------------------------------
--- tb_recording_file (녹화)
+-- tb_recording_file
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_recording_file` (
   `rec_file_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '파일 시퀀스',
@@ -944,8 +978,9 @@ CREATE TABLE `tb_recording_file` (
   CONSTRAINT `fk_rf_session` FOREIGN KEY (`rec_session_seq`) REFERENCES `tb_recording_session` (`rec_session_seq`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='녹화 파일';
 
+
 -- ----------------------------------------------------------------------------
--- tb_recording_session (녹화)
+-- tb_recording_session
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_recording_session` (
   `rec_session_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '세션 시퀀스',
@@ -970,8 +1005,9 @@ CREATE TABLE `tb_recording_session` (
   CONSTRAINT `fk_rs_user` FOREIGN KEY (`tu_seq`) REFERENCES `tb_users` (`tu_seq`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='녹화 세션';
 
+
 -- ----------------------------------------------------------------------------
--- tb_setting (시스템/인증)
+-- tb_setting
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_setting` (
   `ts_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '시퀀스',
@@ -990,8 +1026,9 @@ CREATE TABLE `tb_setting` (
   PRIMARY KEY (`ts_seq`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='환경설정';
 
+
 -- ----------------------------------------------------------------------------
--- tb_socket_command (IoT 컨트롤러)
+-- tb_socket_command
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_socket_command` (
   `socket_cmd_seq` int(11) NOT NULL AUTO_INCREMENT,
@@ -1006,8 +1043,9 @@ CREATE TABLE `tb_socket_command` (
   PRIMARY KEY (`socket_cmd_seq`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+
 -- ----------------------------------------------------------------------------
--- tb_space (물리 계층)
+-- tb_space
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_space` (
   `space_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '공간 시퀀스',
@@ -1032,8 +1070,9 @@ CREATE TABLE `tb_space` (
   CONSTRAINT `fk_space_building` FOREIGN KEY (`building_seq`) REFERENCES `tb_building` (`building_seq`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='공간 마스터';
 
+
 -- ----------------------------------------------------------------------------
--- tb_space_device (IoT 컨트롤러)
+-- tb_space_device
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_space_device` (
   `space_device_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '공간장비 시퀀스',
@@ -1056,8 +1095,9 @@ CREATE TABLE `tb_space_device` (
   CONSTRAINT `fk_space_device_space` FOREIGN KEY (`space_seq`) REFERENCES `tb_space` (`space_seq`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='공간-장비 매핑';
 
+
 -- ----------------------------------------------------------------------------
--- tb_user_building (물리 계층)
+-- tb_user_building
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_user_building` (
   `tub_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '시퀀스',
@@ -1072,8 +1112,9 @@ CREATE TABLE `tb_user_building` (
   CONSTRAINT `fk_user_building_user` FOREIGN KEY (`tu_seq`) REFERENCES `tb_users` (`tu_seq`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='사용자-건물 권한 매핑';
 
+
 -- ----------------------------------------------------------------------------
--- tb_users (시스템/인증)
+-- tb_users
 -- ----------------------------------------------------------------------------
 CREATE TABLE `tb_users` (
   `tu_seq` int(11) NOT NULL AUTO_INCREMENT COMMENT '시퀀스',
@@ -1103,6 +1144,8 @@ CREATE TABLE `tb_users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='회원 테이블';
 
 
+
+-- ============================================================================
 -- SEED DATA (운영 필수)
 -- ============================================================================
 

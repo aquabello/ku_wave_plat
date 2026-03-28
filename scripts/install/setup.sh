@@ -61,6 +61,7 @@ step0() {
     SCRIPT_DIR="$INSTALL_DIR/scripts/install"
     PROJECT_DIR="$INSTALL_DIR"
     cd "$INSTALL_DIR"
+    chmod +x "$SCRIPT_DIR"/*.sh
     echo "📂 작업 디렉토리: $(pwd)"
 }
 
@@ -325,7 +326,13 @@ step3() {
                         INSERT INTO tb_recorder (recorder_seq, space_seq, recorder_name, recorder_ip, recorder_port, recorder_protocol, recorder_model, recorder_status)
                         VALUES (${SEQ}, ${SEQ}, 'BON 녹화기', '${REC_IP}', ${REC_PORT}, 'HTTP', '${REC_MODEL}', 'OFFLINE');
                     " || true
-                    echo "     녹화기: ${REC_IP}:${REC_PORT}"
+                    run_sql "
+                        INSERT INTO tb_recorder_preset (recorder_seq, preset_name, preset_number, preset_description, preset_order) VALUES
+                        (${SEQ}, 'PC화면', 0, 'PC 화면 프리셋', 1),
+                        (${SEQ}, 'PC+강사화면', 1, 'PC와 강사 화면 동시 프리셋', 2),
+                        (${SEQ}, '강사카메라', 2, '강사 카메라 프리셋', 3);
+                    " || true
+                    echo "     녹화기: ${REC_IP}:${REC_PORT} (프리셋 3개)"
                 fi
 
                 # 장비 연동 (tb_space_device)
