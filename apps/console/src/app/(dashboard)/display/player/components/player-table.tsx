@@ -68,10 +68,25 @@ export function PlayerTable({
     setApiKeyDialogOpen(true);
   };
 
-  const handleCopyApiKey = () => {
+  const handleCopyApiKey = async () => {
     if (!apiKeyPlayer?.player_api_key) return;
-    navigator.clipboard.writeText(apiKeyPlayer.player_api_key);
-    toast({ title: 'API Key가 클립보드에 복사되었습니다.' });
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(apiKeyPlayer.player_api_key);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = apiKeyPlayer.player_api_key;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      toast({ title: 'API Key가 클립보드에 복사되었습니다.' });
+    } catch {
+      toast({ title: '복사 실패', variant: 'destructive' });
+    }
   };
 
   const columns = useMemo<ColumnDef<PlayerListItem>[]>(
