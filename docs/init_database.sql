@@ -1262,6 +1262,14 @@ INSERT INTO `tb_recorder` (`recorder_seq`, `space_seq`, `recorder_name`, `record
 (1, 1, 'BON 녹화기', '192.168.1.2', 6060, 'HTTP', 'BON BR-500', 'OFFLINE');
 
 -- ----------------------------------------------------------------------------
+-- 11-1. tb_recorder_preset — 녹화기 프리셋 초기 데이터
+-- ----------------------------------------------------------------------------
+INSERT INTO `tb_recorder_preset` (`rec_preset_seq`, `recorder_seq`, `preset_name`, `preset_number`, `preset_description`, `preset_order`) VALUES
+(1, 1, 'PC화면', 0, 'PC 화면 프리셋', 1),
+(2, 1, 'PC+강사화면', 1, 'PC와 강사 화면 동시 프리셋', 2),
+(3, 1, '강사카메라', 2, '강사 카메라 프리셋', 3);
+
+-- ----------------------------------------------------------------------------
 -- 12. tb_ftp_config — FTP 설정 (글로벌 기본 1개)
 -- ----------------------------------------------------------------------------
 INSERT INTO `tb_ftp_config` (`ftp_config_seq`, `recorder_seq`, `ftp_name`, `ftp_host`, `ftp_port`, `ftp_username`, `ftp_password`, `ftp_path`, `ftp_protocol`, `ftp_passive_mode`, `is_default`) VALUES
