@@ -25,7 +25,15 @@ fi
 
 # --- NFC ACR122U: pcscd polkit 권한 (일반 사용자 접근 허용) ---
 PCSC_USER="${SUDO_USER:-$(whoami)}"
-cat > /etc/polkit-1/rules.d/99-pcscd.rules << POLKITEOF
+POLKIT_RULES_DIR=""
+if [ -d "/etc/polkit-1/rules.d" ]; then
+    POLKIT_RULES_DIR="/etc/polkit-1/rules.d"
+elif [ -d "/usr/share/polkit-1/rules.d" ]; then
+    POLKIT_RULES_DIR="/usr/share/polkit-1/rules.d"
+fi
+
+if [ -n "$POLKIT_RULES_DIR" ]; then
+    cat > "${POLKIT_RULES_DIR}/99-pcscd.rules" << POLKITEOF
 polkit.addRule(function(action, subject) {
     if (action.id.indexOf("org.debian.pcsc-lite") == 0 &&
         subject.user == "${PCSC_USER}") {
@@ -33,8 +41,16 @@ polkit.addRule(function(action, subject) {
     }
 });
 POLKITEOF
-systemctl restart polkit pcscd 2>/dev/null || true
-echo "✅ pcscd polkit 권한 설정 (user: ${PCSC_USER})"
+    systemctl restart polkit pcscd 2>/dev/null || true
+    echo "✅ pcscd polkit 권한 설정 (user: ${PCSC_USER}, dir: ${POLKIT_RULES_DIR})"
+else
+    echo "⚠️  polkit rules.d 디렉토리 없음. 수동 설정 필요"
+fi
+
+# plugdev 그룹 추가 (polkit 없는 환경 대비)
+if [ -n "$PCSC_USER" ] && [ "$PCSC_USER" != "root" ]; then
+    usermod -aG plugdev "$PCSC_USER" 2>/dev/null || true
+fi
 
 # --- 방화벽 ---
 ufw default deny incoming
