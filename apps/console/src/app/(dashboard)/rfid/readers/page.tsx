@@ -445,7 +445,18 @@ export default function NfcReadersPage() {
 
   const handleCopyApiKey = async () => {
     try {
-      await navigator.clipboard.writeText(apiKeyDisplay);
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(apiKeyDisplay);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = apiKeyDisplay;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
       showToast.success('API Key가 클립보드에 복사되었습니다.');
     } catch {
       showToast.error('복사 실패', '클립보드 복사에 실패했습니다.');

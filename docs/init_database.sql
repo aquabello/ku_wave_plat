@@ -1146,8 +1146,8 @@ INSERT INTO `tb_menu` (`menu_seq`, `menu_name`, `menu_code`, `menu_path`, `menu_
 
 -- LNB: RFID 하위
 INSERT INTO `tb_menu` (`menu_seq`, `menu_name`, `menu_code`, `menu_path`, `menu_type`, `parent_seq`, `menu_order`) VALUES
-(21, '태그 관리', 'rfid-tag', '/rfid/tags', 'LNB', 2, 1),
-(22, '리더기 관리', 'rfid-reader', '/rfid/readers', 'LNB', 2, 2),
+(21, '리더기 관리', 'rfid-reader', '/rfid/readers', 'LNB', 2, 1),
+(22, '태그 관리', 'rfid-tag', '/rfid/tags', 'LNB', 2, 2),
 (23, '로그', 'rfid-log', '/rfid/logs', 'LNB', 2, 3);
 
 -- LNB: 녹화기관리 하위
@@ -1268,7 +1268,13 @@ INSERT INTO `tb_ftp_config` (`ftp_config_seq`, `recorder_seq`, `ftp_name`, `ftp_
 (1, NULL, '기본 FTP', '117.16.145.227', 21, 'kuwave', 'kuwave', '/', 'FTP', 'Y', 'Y');
 
 -- ----------------------------------------------------------------------------
--- 13. tb_ai_worker_server — GPU 서버
+-- 13. tb_nfc_reader — NFC 리더기 초기 데이터
+-- ----------------------------------------------------------------------------
+INSERT INTO `tb_nfc_reader` (`reader_seq`, `space_seq`, `reader_name`, `reader_code`, `reader_api_key`, `reader_status`) VALUES
+(1, 1, 'ACR122U', 'RDR-001', 'rdr_3db60088-be2b-484d-8972-56ac3bbf4aca', 'ACTIVE');
+
+-- ----------------------------------------------------------------------------
+-- 14. tb_ai_worker_server — GPU 서버
 -- ----------------------------------------------------------------------------
 INSERT INTO `tb_ai_worker_server` (`worker_server_seq`, `server_name`, `server_url`, `api_key`, `callback_secret`, `server_status`, `gpu_info`, `max_concurrent_jobs`, `default_stt_model`, `default_llm_model`) VALUES
 (1, '건국대 AI GPU 서버', 'http://203.252.151.52:9000', '4b9a528ac855348e01efee832f64f3d933b57d75f40aaa3b', 'ku-wave-callback-secret-2026', 'ONLINE', 'GPU Server', 1, 'large-v3', 'llama3');
