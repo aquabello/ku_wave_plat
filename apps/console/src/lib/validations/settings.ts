@@ -25,40 +25,10 @@ export const systemSettingsSchema = z
       .int('실행주기는 정수여야 합니다')
       .min(1, '실행주기는 최소 1분이어야 합니다')
       .max(60, '실행주기는 최대 60분이어야 합니다'),
-    blackoutStartTime: z
-      .string({
-        required_error: '블랙 시간 시작은 필수 항목입니다',
-      })
-      .regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/, {
-        message: '블랙 시간 시작은 HH:mm 형식이어야 합니다 (예: 08:00)',
-      }),
-    blackoutEndTime: z
-      .string({
-        required_error: '블랙 시간 종료는 필수 항목입니다',
-      })
-      .regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/, {
-        message: '블랙 시간 종료는 HH:mm 형식이어야 합니다 (예: 20:00)',
-      }),
+    blackoutStartTime: z.string().optional().default(''),
+    blackoutEndTime: z.string().optional().default(''),
     defaultImagePath: z.string().nullable().optional(),
-  })
-  .refine(
-    (data) => {
-      // Validate that start time is before end time
-      const [startHours, startMinutes] = data.blackoutStartTime
-        .split(':')
-        .map(Number);
-      const [endHours, endMinutes] = data.blackoutEndTime.split(':').map(Number);
-
-      const startTimeInMinutes = startHours * 60 + startMinutes;
-      const endTimeInMinutes = endHours * 60 + endMinutes;
-
-      return startTimeInMinutes < endTimeInMinutes;
-    },
-    {
-      message: '블랙 시간 시작은 종료 시간보다 이전이어야 합니다',
-      path: ['blackoutEndTime'],
-    }
-  );
+  });
 
 export type SystemSettingsFormValues = z.infer<typeof systemSettingsSchema>;
 

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TbNfcCard } from '../entities/tb-nfc-card.entity';
 import { TbNfcLog } from '../entities/tb-nfc-log.entity';
+import { TbNfcReader } from '../entities/tb-nfc-reader.entity';
 import { TbNfcReaderCommand } from '../entities/tb-nfc-reader-command.entity';
 import { TbSpace } from '@modules/spaces/entities/tb-space.entity';
 import { TbSpaceDevice } from '@modules/controller/devices/entities/tb-space-device.entity';
@@ -30,6 +31,8 @@ export class NfcTagService {
     private readonly nfcCardRepository: Repository<TbNfcCard>,
     @InjectRepository(TbNfcLog)
     private readonly nfcLogRepository: Repository<TbNfcLog>,
+    @InjectRepository(TbNfcReader)
+    private readonly nfcReaderRepository: Repository<TbNfcReader>,
     @InjectRepository(TbNfcReaderCommand)
     private readonly nfcReaderCommandRepository: Repository<TbNfcReaderCommand>,
     @InjectRepository(TbSpace)
@@ -89,6 +92,7 @@ export class NfcTagService {
     }
 
     // [Step 2] UNKNOWN - Unregistered card
+    let isNewRegistration = false;
     if (!card) {
       const device = await this.spaceDeviceRepository.findOne({
         where: {
@@ -185,27 +189,20 @@ export class NfcTagService {
           }),
         );
 
+        card = newCard;
+        isNewRegistration = true;
+      } else {
+        // NO/TIMEOUT: 로그 저장 없이 반환 (MAIN 페이지 전환은 sendNfcSequence 내부에서 자동 처리)
         return {
-          result: 'REGISTER_SAVE',
-          logType: 'REGISTER_SAVE' as const,
+          result: nfcResult === 'no' ? 'REGISTER_NO' : 'REGISTER_TIMEOUT',
+          logType: nfcResult === 'no' ? 'REGISTER_NO' as const : 'REGISTER_TIMEOUT' as const,
           spaceName,
           userName: null,
           controlResult: null,
           controlSummary: null,
-          message: '카드가 등록되었습니다',
+          message: nfcResult === 'no' ? '등록이 취소되었습니다' : '응답 시간 초과',
         };
       }
-
-      // NO/TIMEOUT: 로그 저장 없이 반환 (MAIN 페이지 전환은 sendNfcSequence 내부에서 자동 처리)
-      return {
-        result: nfcResult === 'no' ? 'REGISTER_NO' : 'REGISTER_TIMEOUT',
-        logType: nfcResult === 'no' ? 'REGISTER_NO' as const : 'REGISTER_TIMEOUT' as const,
-        spaceName,
-        userName: null,
-        controlResult: null,
-        controlSummary: null,
-        message: nfcResult === 'no' ? '등록이 취소되었습니다' : '응답 시간 초과',
-      };
     }
 
     // [Step 3] DENIED - Inactive card
@@ -313,11 +310,11 @@ export class NfcTagService {
       }
     }
 
-    // [Step 5] ENTER/EXIT Toggle (최소 10초 간격 제한)
+    // [Step 5] ENTER/EXIT - 리더기 상태 기반 판단
+    // 쿨다운 체크 (최소 30초 간격)
     const lastLog = await this.nfcLogRepository
       .createQueryBuilder('nl')
       .where('nl.reader_seq = :readerSeq', { readerSeq: reader.readerSeq })
-      .andWhere('nl.card_seq = :cardSeq', { cardSeq: card.cardSeq })
       .andWhere('nl.log_type IN (:...types)', { types: ['ENTER', 'EXIT'] })
       .orderBy('nl.tagged_at', 'DESC')
       .getOne();
@@ -341,7 +338,27 @@ export class NfcTagService {
       }
     }
 
-    const logType = lastLog?.logType === 'ENTER' ? 'EXIT' : 'ENTER';
+    // 리더기 현재 상태 조회
+    const currentReader = await this.nfcReaderRepository.findOne({
+      where: { readerSeq: reader.readerSeq },
+    });
+
+    let logType: 'ENTER' | 'EXIT';
+
+    if (currentReader?.readerTagStatus === 'ENTER' && currentReader.readerTagCardSeq === card.cardSeq) {
+      // 본인이 다시 태깅 → 퇴실
+      logType = 'EXIT';
+    } else {
+      // 퇴실 상태, 초기 상태, 또는 다른 사람이 태깅 → 입실
+      logType = 'ENTER';
+    }
+
+    // 리더기 상태 업데이트
+    await this.nfcReaderRepository.update(reader.readerSeq, {
+      readerTagStatus: logType,
+      readerTagCardSeq: logType === 'ENTER' ? card.cardSeq : null,
+    });
+
     const commandType = logType === 'ENTER' ? 'POWER_ON' : 'POWER_OFF';
 
     // [Step 6] Device Control
@@ -532,8 +549,10 @@ export class NfcTagService {
       controlResult,
       controlSummary,
       aiResult: aiResultDetail,
-      message:
-        logType === 'ENTER'
+      isNewRegistration,
+      message: isNewRegistration && logType === 'ENTER'
+        ? `카드가 등록되었습니다. ${buildingName} ${spaceName} 입실 처리되었습니다`
+        : logType === 'ENTER'
           ? `${buildingName} ${spaceName} 입실 처리되었습니다`
           : `${buildingName} ${spaceName} 퇴실 처리되었습니다`,
     };

@@ -19,14 +19,8 @@ async function bootstrap() {
   app.use(
     helmet({
       crossOriginResourcePolicy: { policy: 'cross-origin' },
-      contentSecurityPolicy: {
-        directives: {
-          defaultSrc: ["'self'"],
-          imgSrc: ["'self'", 'data:', 'http://localhost:3000'],
-          scriptSrc: ["'self'"],
-          styleSrc: ["'self'", 'https:', "'unsafe-inline'"],
-        },
-      },
+      hsts: false,
+      contentSecurityPolicy: false,
     }),
   );
 

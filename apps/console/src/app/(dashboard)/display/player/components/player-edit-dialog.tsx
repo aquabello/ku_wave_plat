@@ -38,7 +38,7 @@ import { Textarea } from '@/components/ui/textarea';
 // Zod 스키마 정의 (등록 폼과 동일)
 const updatePlayerSchema = z.object({
   player_name: z.string().min(1, '플레이어명을 입력하세요').max(100, '플레이어명은 최대 100자입니다'),
-  player_ip: z.string().ip({ version: 'v4', message: '올바른 IPv4 주소를 입력하세요' }),
+  player_ip: z.string().min(1, 'IP 주소를 입력하세요'),
   playlist_seq: z.number().optional(),
   player_did: z.string().max(100).optional().or(z.literal('')),
   player_mac: z
@@ -147,7 +147,7 @@ function PlayerEditForm({
                 <FormControl>
                   <Input placeholder="192.168.1.100" {...field} />
                 </FormControl>
-                <FormDescription>플레이어가 사용할 IPv4 주소를 입력하세요</FormDescription>
+                <FormDescription>플레이어가 사용할 IP 주소를 입력하세요</FormDescription>
                 <FormMessage />
               </FormItem>
             )}

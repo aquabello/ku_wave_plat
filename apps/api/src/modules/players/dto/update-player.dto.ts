@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsInt, IsOptional, IsIP, IsEnum, MaxLength, Matches } from 'class-validator';
+import { IsString, IsInt, IsOptional, IsEnum, MaxLength, Matches } from 'class-validator';
 
 export class UpdatePlayerDto {
   @ApiPropertyOptional({ description: '플레이어명', maxLength: 100 })
@@ -39,7 +39,7 @@ export class UpdatePlayerDto {
 
   @ApiPropertyOptional({ description: 'IP 주소' })
   @IsOptional()
-  @IsIP()
+  @IsString()
   player_ip?: string;
 
   @ApiPropertyOptional({ description: '통신 포트' })

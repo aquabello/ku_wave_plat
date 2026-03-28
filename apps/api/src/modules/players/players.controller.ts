@@ -148,6 +148,7 @@ export class PlayersController {
   @Post('file-list')
   @Public()
   @UseGuards(PlayerApiKeyGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: '플레이어 파일 목록 조회 (레거시 호환)' })
   @ApiResponse({ status: 200, description: '파일 목록 조회 성공' })
   @ApiResponse({ status: 401, description: '유효하지 않은 API Key' })

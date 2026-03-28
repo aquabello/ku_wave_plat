@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsInt, IsOptional, IsIP, IsEnum, MaxLength, Matches } from 'class-validator';
+import { IsString, IsNotEmpty, IsInt, IsOptional, IsEnum, MaxLength, Matches } from 'class-validator';
 
 export class CreatePlayerDto {
   @ApiProperty({ description: '플레이어명', example: '본관 1층 로비 디스플레이', maxLength: 100 })
@@ -44,7 +44,7 @@ export class CreatePlayerDto {
   playlist_seq?: number;
 
   @ApiProperty({ description: 'IP 주소', example: '192.168.1.100' })
-  @IsIP()
+  @IsString()
   @IsNotEmpty()
   player_ip: string;
 

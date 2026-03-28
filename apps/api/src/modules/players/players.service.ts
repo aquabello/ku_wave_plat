@@ -925,7 +925,7 @@ export class PlayersService {
         type: typeMap[content.contentType] || content.contentType,
         play_min: playMin,
         play_sec: playSec,
-        screen_type: 'FULL',
+        screen_type: String(parseInt((playlist.playlistScreenLayout || '1x1').split('x')[1]) || 1),
         fileList,
       };
     });
@@ -936,15 +936,10 @@ export class PlayersService {
       order: { seq: 'ASC' },
     });
 
-    // 7. 같은 건물 내 녹화 중인 녹화기 확인
-    const recordingCount = await this.recordingSessionRepository
-      .createQueryBuilder('session')
-      .innerJoin(TbRecorder, 'recorder', 'recorder.recorderSeq = session.recorderSeq')
-      .innerJoin('recorder.space', 'space', 'space.buildingSeq = :buildingSeq', {
-        buildingSeq: player.buildingSeq,
-      })
-      .where('session.sessionStatus = :status', { status: SessionStatus.RECORDING })
-      .getCount();
+    // 7. 녹화 중인 세션 확인 (녹화기 1대 — 건물 무관)
+    const recordingCount = await this.recordingSessionRepository.count({
+      where: { sessionStatus: SessionStatus.RECORDING },
+    });
 
     const isRecording = recordingCount > 0;
 
@@ -954,7 +949,7 @@ export class PlayersService {
       msg: '정상처리 되었습니다.',
       channel: {
         name: playlist.playlistName,
-        screen_type: playlist.playlistScreenLayout || '1x1',
+        screen_type: String(parseInt((playlist.playlistScreenLayout || '1x1').split('x')[1]) || 1),
         screen_size: player.playerResolution || '1920x1080',
         play_type: playlist.playlistRandom || 'N',
         notice: setting?.noticeLink ? `${domain}/${setting.noticeLink}` : '',
@@ -962,8 +957,8 @@ export class PlayersService {
       },
       contents,
       setting: {
-        screen_start: setting?.screenStart || '',
-        screen_end: setting?.screenEnd || '',
+        screen_start: parseInt(setting?.screenStart || '0') || 0,
+        screen_end: parseInt(setting?.screenEnd || '0') || 0,
         api_time: setting?.apiTime || '',
         player_time: setting?.playerTime || '1',
         player_ver: setting?.playerVer || '1.0.0',

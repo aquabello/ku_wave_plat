@@ -399,6 +399,8 @@ CREATE TABLE IF NOT EXISTS `tb_nfc_reader` (
   `reader_api_key` VARCHAR(100)               NOT NULL COMMENT 'API 키',
   `reader_status`  ENUM('ACTIVE','INACTIVE')  NULL     DEFAULT 'ACTIVE' COMMENT '리더기 상태',
   `reader_isdel`   CHAR(1)                    NULL     DEFAULT 'N' COMMENT '삭제여부',
+  `reader_tag_status`   ENUM('ENTER','EXIT')  NULL     DEFAULT NULL COMMENT '태깅상태 (입실/퇴실)',
+  `reader_tag_card_seq` INT                   NULL     DEFAULT NULL COMMENT '현재 태깅한 카드 seq',
   `reg_date`       DATETIME                   NULL     DEFAULT CURRENT_TIMESTAMP() COMMENT '등록일',
   `upd_date`       DATETIME                   NULL     DEFAULT CURRENT_TIMESTAMP() ON UPDATE CURRENT_TIMESTAMP() COMMENT '수정일',
   PRIMARY KEY (`reader_seq`),

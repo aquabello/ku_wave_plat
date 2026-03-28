@@ -72,6 +72,25 @@ export class TbNfcReader {
   readerIsdel: string;
 
   @Column({
+    name: 'reader_tag_status',
+    type: 'enum',
+    enum: ['ENTER', 'EXIT'],
+    nullable: true,
+    default: null,
+    comment: '태깅상태 (입실/퇴실)',
+  })
+  readerTagStatus: 'ENTER' | 'EXIT' | null;
+
+  @Column({
+    name: 'reader_tag_card_seq',
+    type: 'int',
+    nullable: true,
+    default: null,
+    comment: '현재 태깅한 카드 seq',
+  })
+  readerTagCardSeq: number | null;
+
+  @Column({
     name: 'reg_date',
     type: 'datetime',
     default: () => 'CURRENT_TIMESTAMP',
