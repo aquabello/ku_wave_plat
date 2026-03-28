@@ -62,6 +62,7 @@ step0() {
     PROJECT_DIR="$INSTALL_DIR"
     cd "$INSTALL_DIR"
     chmod +x "$SCRIPT_DIR"/*.sh
+    chown -R konkuk:konkuk "$INSTALL_DIR"
     echo "📂 작업 디렉토리: $(pwd)"
 }
 
@@ -121,6 +122,9 @@ API_PREFIX=api/v1
 # Console
 CONSOLE_PORT=3000
 NEXT_PUBLIC_API_URL=http://${INPUT_SERVER_IP}/api/v1
+
+# API Domain (플레이어 파일 URL 등에 사용)
+API_DOMAIN=http://${INPUT_SERVER_IP}
 
 # CORS
 ALLOWED_ORIGINS=http://${INPUT_SERVER_IP},http://localhost:3000
