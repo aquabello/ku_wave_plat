@@ -599,6 +599,8 @@ export default function NfcReadersPage() {
                   <TableHead className="w-36">설치 공간</TableHead>
                   <TableHead className="w-28">건물명</TableHead>
                   <TableHead className="w-24 text-center">상태</TableHead>
+                  <TableHead className="w-24 text-center">태깅상태</TableHead>
+                  <TableHead className="w-28">태깅인</TableHead>
                   <TableHead className="w-28">등록일</TableHead>
                   <TableHead className="w-44 text-center">관리</TableHead>
                 </TableRow>
@@ -606,13 +608,13 @@ export default function NfcReadersPage() {
               <TableBody>
                 {readersLoading ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center">
+                    <TableCell colSpan={11} className="text-center">
                       <Loader2 className="mx-auto h-6 w-6 animate-spin" />
                     </TableCell>
                   </TableRow>
                 ) : readersData?.items.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center text-muted-foreground">
+                    <TableCell colSpan={11} className="text-center text-muted-foreground">
                       리더기가 없습니다.
                     </TableCell>
                   </TableRow>
@@ -630,6 +632,16 @@ export default function NfcReadersPage() {
                           {getStatusLabel(reader.readerStatus)}
                         </Badge>
                       </TableCell>
+                      <TableCell className="text-center">
+                        {reader.readerTagStatus === 'ENTER' ? (
+                          <Badge className="bg-green-100 text-green-700 hover:bg-green-100">입실</Badge>
+                        ) : reader.readerTagStatus === 'EXIT' ? (
+                          <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-100">퇴실</Badge>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>{reader.readerTagCardLabel || '-'}</TableCell>
                       <TableCell>{new Date(reader.regDate).toLocaleDateString('ko-KR')}</TableCell>
                       <TableCell>
                         <div className="flex items-center justify-center gap-1">

@@ -57,6 +57,7 @@ export class NfcReaderService {
       .createQueryBuilder('reader')
       .leftJoin('reader.space', 'space')
       .leftJoin('space.building', 'building')
+      .leftJoin('tb_nfc_card', 'card', 'card.card_seq = reader.reader_tag_card_seq')
       .where('reader.reader_isdel = :isdel', { isdel: 'N' });
 
     // 검색어 필터 (리더기명, 코드, 시리얼번호)
@@ -97,10 +98,13 @@ export class NfcReaderService {
         'reader.reader_code AS readerCode',
         'reader.reader_serial AS readerSerial',
         'reader.reader_status AS readerStatus',
+        'reader.reader_tag_status AS readerTagStatus',
+        'reader.reader_tag_card_seq AS readerTagCardSeq',
         'reader.space_seq AS spaceSeq',
         'reader.reg_date AS regDate',
         'space.space_name AS spaceName',
         'building.building_name AS buildingName',
+        'card.card_label AS readerTagCardLabel',
       ])
       .orderBy('reader.reg_date', 'DESC')
       .offset(skip)
@@ -114,6 +118,8 @@ export class NfcReaderService {
       readerCode: row.readerCode,
       readerSerial: row.readerSerial,
       readerStatus: row.readerStatus,
+      readerTagStatus: row.readerTagStatus ?? null,
+      readerTagCardLabel: row.readerTagCardLabel ?? null,
       spaceSeq: row.spaceSeq,
       spaceName: row.spaceName ?? '',
       buildingName: row.buildingName ?? '',
