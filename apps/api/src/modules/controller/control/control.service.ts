@@ -150,7 +150,7 @@ export class ControlService {
   // 단일 장비 명령어 실행
   // =============================================
 
-  async execute(dto: ExecuteCommandDto, tuSeq: number) {
+  async execute(dto: ExecuteCommandDto, tuSeq: number | null, triggerType: string = 'MANUAL') {
     const device = await this.spaceDeviceRepository.findOne({
       where: { spaceDeviceSeq: dto.spaceDeviceSeq },
       relations: ['preset'],
@@ -197,8 +197,8 @@ export class ControlService {
     const log = this.logRepository.create({
       spaceDeviceSeq: dto.spaceDeviceSeq,
       commandSeq: dto.commandSeq,
-      tuSeq,
-      triggerType: 'MANUAL',
+      tuSeq: tuSeq || null,
+      triggerType,
       resultStatus,
       resultMessage,
     });

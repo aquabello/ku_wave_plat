@@ -168,5 +168,9 @@
       "Bash(mysql:*)",
       "Bash(sudo mariadb:*)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "playwright"
+  ],
+  "enableAllProjectMcpServers": true
 }

@@ -25,6 +25,7 @@ import { AiCallbackController } from './ai-callback.controller';
 
 // Guards
 import { CallbackGuard } from './guards/callback.guard';
+import { AiPcApiKeyGuard } from './guards/ai-pc-api-key.guard';
 
 // External modules
 import { ControlModule } from '@modules/controller/control/control.module';
@@ -55,6 +56,7 @@ import { ControlModule } from '@modules/controller/control/control.module';
     WorkerServersService,
     AiCallbackService,
     CallbackGuard,
+    AiPcApiKeyGuard,
   ],
 })
 export class AiSystemModule {}

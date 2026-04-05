@@ -22,7 +22,7 @@ export class VoiceCommandsController {
   constructor(private readonly service: VoiceCommandsService) {}
 
   @Get()
-  @ApiOperation({ summary: '음성 명령어 목록 조회' })
+  @ApiOperation({ summary: '음성 명령어 목록 조회 (JWT 또는 X-API-Key)' })
   list(@Query() query: ListVoiceCommandsDto) {
     return this.service.list(query);
   }

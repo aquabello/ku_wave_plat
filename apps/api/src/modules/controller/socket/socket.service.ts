@@ -4,6 +4,8 @@ import {
   OnModuleInit,
   OnModuleDestroy,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import * as net from 'net';
 import { Server } from 'socket.io';
 import {
@@ -11,6 +13,8 @@ import {
   TcpServerStatus,
 } from './interfaces/socket-session.interface';
 import { CommandFormat } from './dto/socket-command.dto';
+import { TbRecorder } from '@modules/recorders/entities/recorder.entity';
+import { RecorderControlService } from '@modules/recorders/recorder-control.service';
 
 @Injectable()
 export class SocketService implements OnModuleInit, OnModuleDestroy {
@@ -30,11 +34,15 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
   };
 
   private readonly RECORDER_COMMANDS: Record<string, string> = {
-    '5245434F524445524F4E': 'RECORDER ON',
-    '5245434F524445524F4646': 'RECORDER OFF',
+    '5245434F444552204F4E': 'RECORDER ON',       // "RECODER ON"
+    '5245434F444552204F4646': 'RECORDER OFF',     // "RECODER OFF"
   };
 
-  constructor() {
+  constructor(
+    @InjectRepository(TbRecorder)
+    private readonly recorderRepo: Repository<TbRecorder>,
+    private readonly recorderControlService: RecorderControlService,
+  ) {
     this.serverPort = parseInt(process.env.SOCKET_SERVER_PORT ?? '9090', 10);
   }
 
@@ -90,6 +98,17 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
             timestamp: new Date().toISOString(),
             hex: '',
             ascii: `Recorder command: ${recorderCmd}`,
+          });
+
+          // RecorderControlService로 녹화 시작/정지 (recorder/control 동일 로직)
+          this.handleRecorderCommand(recorderCmd).catch((err) => {
+            this.logger.error(`Recorder command failed: ${(err as Error).message}`);
+            this.broadcastLog({
+              direction: 'SYS',
+              timestamp: new Date().toISOString(),
+              hex: '',
+              ascii: `녹화 연동 실패: ${(err as Error).message}`,
+            });
           });
         }
       });
@@ -444,6 +463,66 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
 
   private broadcastLog(log: SocketLogEntry) {
     this.ioServer?.to('controller-socket').emit('socket:data', log);
+  }
+
+  /**
+   * 컨트롤러 RECODER ON/OFF → RecorderControlService 녹화 시작/정지
+   * recorder/control 페이지에서 녹화 시작/종료와 동일한 프로세스
+   */
+  private async handleRecorderCommand(command: string) {
+    // space_seq=1 공간의 녹화기 조회
+    const recorder = await this.recorderRepo.findOne({
+      where: { spaceSeq: 1, recorderIsdel: 'N' },
+    });
+
+    if (!recorder) {
+      this.broadcastLog({
+        direction: 'SYS',
+        timestamp: new Date().toISOString(),
+        hex: '',
+        ascii: '녹화 연동 실패: 매핑된 녹화기 없음',
+      });
+      return;
+    }
+
+    if (command === 'RECORDER ON') {
+      this.broadcastLog({
+        direction: 'SYS',
+        timestamp: new Date().toISOString(),
+        hex: '',
+        ascii: `녹화 시작 요청: ${recorder.recorderName}`,
+      });
+
+      const result = await this.recorderControlService.startRecording(
+        recorder.recorderSeq,
+        { sessionTitle: '컨트롤러 자동 녹화' },
+      );
+
+      this.broadcastLog({
+        direction: 'SYS',
+        timestamp: new Date().toISOString(),
+        hex: '',
+        ascii: `녹화 시작 완료: ${result.message} (session: ${result.recSessionSeq})`,
+      });
+    } else if (command === 'RECORDER OFF') {
+      this.broadcastLog({
+        direction: 'SYS',
+        timestamp: new Date().toISOString(),
+        hex: '',
+        ascii: `녹화 정지 요청: ${recorder.recorderName}`,
+      });
+
+      const result = await this.recorderControlService.stopRecording(
+        recorder.recorderSeq,
+      );
+
+      this.broadcastLog({
+        direction: 'SYS',
+        timestamp: new Date().toISOString(),
+        hex: '',
+        ascii: `녹화 정지 완료: ${result.message}`,
+      });
+    }
   }
 
   private tryDecodeAscii(buffer: Buffer): string {

@@ -8,8 +8,11 @@ import {
   Query,
   ParseIntPipe,
   Request,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
+import { Public } from '@common/decorators/public.decorator';
+import { AiPcApiKeyGuard } from './guards/ai-pc-api-key.guard';
 import { SpeechSessionsService } from './speech-sessions.service';
 import { VoiceCommandsService } from './voice-commands.service';
 import { ListSpeechSessionsDto } from './dto/list-speech-sessions.dto';
@@ -41,13 +44,19 @@ export class SpeechSessionsController {
   }
 
   @Post('speech-sessions')
-  @ApiOperation({ summary: '음성인식 세션 생성 (MiniPC)' })
+  @Public()
+  @UseGuards(AiPcApiKeyGuard)
+  @ApiHeader({ name: 'X-API-Key', description: 'AI PC API Key', required: true })
+  @ApiOperation({ summary: '음성인식 세션 생성 (ku_ai_pc → X-API-Key)' })
   createSession(@Body() dto: CreateSpeechSessionDto) {
     return this.sessionsService.create(dto);
   }
 
   @Put('speech-sessions/:sessionSeq/end')
-  @ApiOperation({ summary: '음성인식 세션 종료 (MiniPC)' })
+  @Public()
+  @UseGuards(AiPcApiKeyGuard)
+  @ApiHeader({ name: 'X-API-Key', description: 'AI PC API Key', required: true })
+  @ApiOperation({ summary: '음성인식 세션 종료 (ku_ai_pc → X-API-Key)' })
   endSession(
     @Param('sessionSeq', ParseIntPipe) sessionSeq: number,
     @Body() dto: EndSpeechSessionDto,
@@ -56,20 +65,28 @@ export class SpeechSessionsController {
   }
 
   @Post('speech-logs')
-  @ApiOperation({ summary: 'STT 로그 저장 (MiniPC)' })
+  @Public()
+  @UseGuards(AiPcApiKeyGuard)
+  @ApiHeader({ name: 'X-API-Key', description: 'AI PC API Key', required: true })
+  @ApiOperation({ summary: 'STT 로그 저장 (ku_ai_pc → X-API-Key)' })
   createSpeechLog(@Body() dto: CreateSpeechLogDto) {
     return this.sessionsService.createSpeechLog(dto);
   }
 
   @Post('commands/execute')
-  @ApiOperation({ summary: 'Voice Detect 장비 제어 실행 (MiniPC)' })
-  executeCommand(@Body() dto: ExecuteCommandDto, @Request() req: any) {
-    const tuSeq = req.user?.seq ?? 0;
-    return this.voiceCommandsService.executeCommand(dto, tuSeq);
+  @Public()
+  @UseGuards(AiPcApiKeyGuard)
+  @ApiHeader({ name: 'X-API-Key', description: 'AI PC API Key', required: true })
+  @ApiOperation({ summary: 'Voice Detect 장비 제어 실행 (ku_ai_pc → X-API-Key)' })
+  executeCommand(@Body() dto: ExecuteCommandDto) {
+    return this.voiceCommandsService.executeCommand(dto, null);
   }
 
   @Post('command-logs')
-  @ApiOperation({ summary: '명령 로그 수동 저장 (MiniPC)' })
+  @Public()
+  @UseGuards(AiPcApiKeyGuard)
+  @ApiHeader({ name: 'X-API-Key', description: 'AI PC API Key', required: true })
+  @ApiOperation({ summary: '명령 로그 수동 저장 (ku_ai_pc → X-API-Key)' })
   createCommandLog(@Body() dto: CreateCommandLogDto) {
     return this.sessionsService.createCommandLog(dto);
   }

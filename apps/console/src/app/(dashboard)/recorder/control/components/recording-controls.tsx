@@ -38,7 +38,13 @@ export function RecordingControls({
   presets,
   disabled,
 }: RecordingControlsProps) {
-  const [sessionTitle, setSessionTitle] = useState('');
+  const [sessionTitle, setSessionTitle] = useState(() => {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    return `${yyyy}${mm}${dd}_강의`;
+  });
   const [selectedPresetSeq, setSelectedPresetSeq] = useState<string>('');
 
   const { mutate: startRec, isPending: isStarting } =
@@ -77,7 +83,13 @@ export function RecordingControls({
 
   const handleStop = () => {
     stopRec(recorderSeq, {
-      onSuccess: () => setSessionTitle(''),
+      onSuccess: () => {
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        setSessionTitle(`${yyyy}${mm}${dd}_강의`);
+      },
     });
   };
 

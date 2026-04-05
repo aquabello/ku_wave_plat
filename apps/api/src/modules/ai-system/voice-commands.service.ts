@@ -150,7 +150,7 @@ export class VoiceCommandsService {
     };
   }
 
-  async executeCommand(dto: ExecuteCommandDto, tuSeq: number) {
+  async executeCommand(dto: ExecuteCommandDto, tuSeq: number | null) {
     // 1. Verify session exists
     const session = await this.sessionRepository.findOne({
       where: { sessionSeq: dto.sessionSeq, sessionIsdel: 'N' },
@@ -177,7 +177,7 @@ export class VoiceCommandsService {
       controlDto.spaceDeviceSeq = voiceCommand.spaceDeviceSeq;
       controlDto.commandSeq = voiceCommand.commandSeq;
 
-      const controlResult = await this.controlService.execute(controlDto, tuSeq);
+      const controlResult = await this.controlService.execute(controlDto, tuSeq, 'VOICE');
       executionResult = {
         deviceName: controlResult.resultMessage,
         resultStatus: controlResult.resultStatus,
