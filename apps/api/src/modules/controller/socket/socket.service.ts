@@ -155,6 +155,7 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
           hex: '',
           ascii: `Connected to ${ip}:${port} (상시 연결)`,
         });
+        this.broadcastServerStatus();
         resolve(socket);
       };
 
@@ -252,6 +253,7 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
       }
 
       this.dataWatcher = null;
+      this.broadcastServerStatus();
 
       const closedCb = this.onOutboundClosed;
       this.onOutboundClosed = null;
@@ -575,6 +577,10 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
       listening: this.tcpServer?.listening ?? false,
       port: this.serverPort,
       connectedClients: this.connectedClients,
+      outboundConnected: !!this.outboundSocket && !this.outboundSocket.destroyed,
+      outboundTarget: this.outboundTarget
+        ? `${this.outboundTarget.ip}:${this.outboundTarget.port}`
+        : null,
     };
   }
 

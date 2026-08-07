@@ -42,6 +42,9 @@ export default function ControllerSocketPage() {
           <Badge variant={wsConnected ? 'default' : 'destructive'}>
             WS {wsConnected ? '연결' : '끊김'}
           </Badge>
+          <Badge variant={serverStatus.outboundConnected ? 'default' : 'destructive'}>
+            컨트롤러 소켓 {serverStatus.outboundConnected ? `연결됨 (${serverStatus.outboundTarget})` : '끊김'}
+          </Badge>
           <Badge variant={serverStatus.listening ? 'default' : 'destructive'}>
             TCP Server {serverStatus.listening ? 'ON' : 'OFF'}
           </Badge>

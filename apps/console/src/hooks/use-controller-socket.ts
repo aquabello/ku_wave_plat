@@ -10,6 +10,8 @@ export function useControllerSocket() {
     listening: false,
     port: 9080,
     connectedClients: 0,
+    outboundConnected: false,
+    outboundTarget: null,
   });
   const [logs, setLogs] = useState<SocketLogEntry[]>([]);
   const [wsConnected, setWsConnected] = useState(false);

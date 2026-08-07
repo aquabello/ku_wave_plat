@@ -10,4 +10,6 @@ export interface TcpServerStatus {
   listening: boolean;
   port: number;
   connectedClients: number;
+  outboundConnected: boolean;
+  outboundTarget: string | null;
 }

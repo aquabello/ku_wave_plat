@@ -13,6 +13,8 @@ export interface ServerStatus {
   listening: boolean;
   port: number;
   connectedClients: number;
+  outboundConnected: boolean;
+  outboundTarget: string | null;
 }
 
 export interface SocketLogEntry {
