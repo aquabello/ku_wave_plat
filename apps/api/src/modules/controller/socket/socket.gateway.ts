@@ -108,10 +108,14 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
       const normalizedHex = command.cmdHex.replace(/\s/g, '').toUpperCase();
 
       if (normalizedHex === NFC_PAGE_HEX) {
-        const result = await this.socketService.sendNfcSequence(payload.ip, payload.port);
+        // 응답(SAVE/NO/타임아웃)을 기다리지 않고 바로 반환한다.
+        // 결과는 RX/SYS 로그로 비동기 브로드캐스트된다.
+        this.socketService.sendNfcSequence(payload.ip, payload.port).catch((err) => {
+          this.logger.error(`sendNfcSequence failed: ${(err as Error).message}`);
+        });
         return {
           event: 'socket:send-command',
-          data: { success: true, result },
+          data: { success: true },
         };
       }
 
@@ -148,7 +152,9 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
           const normalizedHex = command.cmdHex.replace(/\s/g, '').toUpperCase();
 
           if (normalizedHex === NFC_PAGE_HEX) {
-            await this.socketService.sendNfcSequence(payload.ip, payload.port);
+            this.socketService.sendNfcSequence(payload.ip, payload.port).catch((err) => {
+              this.logger.error(`sendNfcSequence failed: ${(err as Error).message}`);
+            });
           } else {
             await this.socketService.sendOneShot(
               payload.ip,

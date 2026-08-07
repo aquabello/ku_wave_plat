@@ -8,7 +8,7 @@ export function useControllerSocket() {
   const socketRef = useRef<Socket | null>(null);
   const [serverStatus, setServerStatus] = useState<ServerStatus>({
     listening: false,
-    port: 9090,
+    port: 9080,
     connectedClients: 0,
   });
   const [logs, setLogs] = useState<SocketLogEntry[]>([]);

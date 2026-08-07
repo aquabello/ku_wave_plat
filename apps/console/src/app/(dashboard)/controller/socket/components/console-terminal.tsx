@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -19,49 +19,10 @@ const DIRECTION_CONFIG = {
 
 export function ConsoleTerminal({ logs, onClear }: ConsoleTerminalProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
-  const [countdown, setCountdown] = useState<number | null>(null);
-  const countdownRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [logs]);
-
-  useEffect(() => {
-    if (logs.length === 0) return;
-    const last = logs[logs.length - 1];
-
-    if (last.direction === 'TX' && last.label?.includes('NFC 페이지 전환')) {
-      setCountdown(30);
-      if (countdownRef.current) clearInterval(countdownRef.current);
-      countdownRef.current = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev === null || prev <= 1) {
-            clearInterval(countdownRef.current!);
-            countdownRef.current = null;
-            return null;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-
-    if (
-      (last.direction === 'RX') ||
-      (last.direction === 'SYS' && last.ascii?.includes('Connection closed'))
-    ) {
-      if (countdownRef.current) {
-        clearInterval(countdownRef.current);
-        countdownRef.current = null;
-      }
-      setCountdown(null);
-    }
-  }, [logs]);
-
-  useEffect(() => {
-    return () => {
-      if (countdownRef.current) clearInterval(countdownRef.current);
-    };
-  }, []);
 
   const formatTime = (iso: string) =>
     new Date(iso).toLocaleTimeString('ko-KR', {
@@ -74,11 +35,6 @@ export function ConsoleTerminal({ logs, onClear }: ConsoleTerminalProps) {
         <CardTitle className="text-gray-300 text-sm font-mono">
           Console
           <span className="ml-2 text-gray-500">({logs.length})</span>
-          {countdown !== null && (
-            <span className="ml-3 text-orange-400 animate-pulse">
-              응답 대기 {countdown}초
-            </span>
-          )}
         </CardTitle>
         <Button
           variant="ghost"

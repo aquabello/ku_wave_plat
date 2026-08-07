@@ -49,7 +49,7 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
     private readonly recorderRepo: Repository<TbRecorder>,
     private readonly recorderControlService: RecorderControlService,
   ) {
-    this.serverPort = parseInt(process.env.SOCKET_SERVER_PORT ?? '9090', 10);
+    this.serverPort = parseInt(process.env.SOCKET_SERVER_PORT ?? '9080', 10);
   }
 
   onModuleInit() {
@@ -185,24 +185,22 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
 
   private attachOutboundListeners(socket: net.Socket, ip: string, port: number) {
     socket.on('data', (data: Buffer) => {
-      if (this.dataWatcher) {
-        this.dataWatcher(data);
-        return;
-      }
-
       const rawHex = data.toString('hex').toUpperCase();
-      const hex = rawHex.match(/.{2}/g)?.join(' ') ?? '';
-      const ascii = this.tryDecodeAscii(data);
 
-      this.broadcastLog({
-        direction: 'RX',
-        timestamp: new Date().toISOString(),
-        hex,
-        ascii,
-      });
-
+      // RECODER ON/OFF는 NFC 응답 대기(dataWatcher) 등 다른 상태와 무관하게 항상 최우선으로 인식한다.
+      // (예: NFC 응답을 기다리는 동안 들어온 RECODER ON이 dataWatcher에 먹혀 무시되던 문제 수정)
       const recorderCmd = this.matchRecorderCommand(this.outboundRxBuffer, rawHex);
       if (recorderCmd) {
+        const hex = rawHex.match(/.{2}/g)?.join(' ') ?? '';
+        const ascii = this.tryDecodeAscii(data);
+
+        this.broadcastLog({
+          direction: 'RX',
+          timestamp: new Date().toISOString(),
+          hex,
+          ascii,
+        });
+
         this.logger.log(`Recorder command received (outbound): ${recorderCmd}`);
         this.broadcastLog({
           direction: 'SYS',
@@ -220,7 +218,23 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
             ascii: `녹화 연동 실패: ${(err as Error).message}`,
           });
         });
+        return;
       }
+
+      if (this.dataWatcher) {
+        this.dataWatcher(data);
+        return;
+      }
+
+      const hex = rawHex.match(/.{2}/g)?.join(' ') ?? '';
+      const ascii = this.tryDecodeAscii(data);
+
+      this.broadcastLog({
+        direction: 'RX',
+        timestamp: new Date().toISOString(),
+        hex,
+        ascii,
+      });
     });
 
     socket.on('close', () => {
@@ -377,6 +391,11 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
+  /**
+   * NFC 페이지 전환 명령을 전송하고 SAVE/NO/타임아웃 결과를 기다린다.
+   * nfc-tag.service.ts(실제 카드 등록 흐름)가 이 결과로 등록 여부를 결정하므로 유지한다.
+   * /controller/socket 테스트 페이지에서는 게이트웨이에서 이 호출을 await하지 않고 fire-and-forget으로 사용한다.
+   */
   async sendNfcSequence(ip: string, port: number): Promise<'save' | 'no' | 'timeout'> {
     const NFC_PAGE_HEX = 'EEB111001B03E6100100FFFCFFFF';
     const MAIN_PAGE_HEX = 'EEB111000103E6100100FFFCFFFF';
