@@ -17,12 +17,15 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
   private readonly serverPort: number;
   private activeNfcAbort: (() => void) | null = null;
 
-  // Network 1: 컨트롤러로 나가는 상시 연결 (단일 대상, lazy connect)
+  // Network 1: 컨트롤러 알림/응답 수신 전용 상시 연결 (단일 대상, lazy connect)
+  // RECODER ON/OFF, NFC SAVE/NO 응답 등 컨트롤러→서버 방향 데이터만 받는다.
+  // 명령 전송(TX)은 이제 이 연결을 쓰지 않고 9090 포트로 매번 일회성 TCP 연결한다.
   private outboundSocket: net.Socket | null = null;
   private outboundTarget: { ip: string; port: number } | null = null;
   private outboundConnectPromise: Promise<net.Socket> | null = null;
   private dataWatcher: ((data: Buffer) => void) | null = null;
   private onOutboundClosed: (() => void) | null = null;
+  private persistentTarget: { ip: string; port: number } | null = null;
 
   private readonly NFC_WAIT_TIMEOUT_MS = 30000;
   private readonly BOOT_CONNECT_MAX_ATTEMPTS = 3;
@@ -59,6 +62,7 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
     const controllerHost = process.env.CONTROLLER_SOCKET_HOST;
     const controllerPort = parseInt(process.env.CONTROLLER_SOCKET_PORT ?? '9080', 10);
     if (controllerHost) {
+      this.persistentTarget = { ip: controllerHost, port: controllerPort };
       this.connectOutboundOnBoot(controllerHost, controllerPort);
     }
   }
@@ -258,6 +262,17 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
       const closedCb = this.onOutboundClosed;
       this.onOutboundClosed = null;
       closedCb?.();
+
+      // 수신 전용 상시 연결이 끊기면 이제 TX 트리거로는 재연결되지 않으므로 직접 재시도한다.
+      if (
+        this.persistentTarget &&
+        this.persistentTarget.ip === ip &&
+        this.persistentTarget.port === port
+      ) {
+        setTimeout(() => {
+          this.connectOutboundOnBoot(ip, port);
+        }, this.BOOT_CONNECT_RETRY_DELAY_MS);
+      }
     });
 
     socket.on('error', (err: Error) => {
@@ -362,8 +377,72 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * 명령을 전송하고 바로 반환한다. 상시 연결이므로 응답을 기다리지 않으며,
-   * 실제 응답/데이터는 연결의 'data' 이벤트를 통해 RX 로그로 비동기 브로드캐스트된다.
+   * Network 2: 명령 전송 전용 일회성 TCP (연결 → 전송 → 즉시 종료, 포트 9090).
+   * 응답은 기다리지 않는다 — 컨트롤러 알림/응답은 별도의 9080 상시 연결로 수신된다.
+   */
+  private sendCommandOneShot(
+    ip: string,
+    port: number,
+    hexCommand: string,
+    label: string,
+  ): Promise<void> {
+    const cleaned = hexCommand.replace(/\s+/g, '');
+    const txBuffer = Buffer.from(cleaned, 'hex');
+    const txHex = cleaned.toUpperCase().match(/.{2}/g)?.join(' ') ?? '';
+
+    return new Promise((resolve) => {
+      const socket = new net.Socket();
+      let settled = false;
+
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        socket.removeAllListeners();
+        socket.destroy();
+        resolve();
+      };
+
+      const connectTimeout = setTimeout(() => {
+        this.logger.error(`sendCommandOneShot connect timeout (${ip}:${port})`);
+        this.broadcastLog({
+          direction: 'SYS',
+          timestamp: new Date().toISOString(),
+          hex: '',
+          ascii: `연결 시간 초과 (${ip}:${port})`,
+        });
+        finish();
+      }, 3000);
+
+      socket.connect(port, ip, () => {
+        clearTimeout(connectTimeout);
+        socket.write(txBuffer);
+        this.broadcastLog({
+          direction: 'TX',
+          timestamp: new Date().toISOString(),
+          hex: txHex,
+          ascii: label,
+          label,
+        });
+        // 전송 후 짧게 대기했다가 종료 (컨트롤러가 write를 다 받도록)
+        setTimeout(finish, 150);
+      });
+
+      socket.on('error', (err: Error) => {
+        clearTimeout(connectTimeout);
+        this.logger.error(`sendCommandOneShot error (${ip}:${port}): ${err.message}`);
+        this.broadcastLog({
+          direction: 'SYS',
+          timestamp: new Date().toISOString(),
+          hex: '',
+          ascii: `Error (${ip}:${port}): ${err.message}`,
+        });
+        finish();
+      });
+    });
+  }
+
+  /**
+   * 명령을 9090 포트로 일회성 전송한다 (연결→전송→종료, 응답 대기 없음).
    */
   async sendOneShot(ip: string, port: number, hexCommand: string, label: string): Promise<void> {
     const cleaned = hexCommand.replace(/\s+/g, '');
@@ -373,45 +452,19 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
       this.activeNfcAbort();
       return;
     }
-    const txBuffer = Buffer.from(cleaned, 'hex');
-    const txHex = cleaned.toUpperCase().match(/.{2}/g)?.join(' ') ?? '';
 
-    let socket: net.Socket;
-    try {
-      socket = await this.connectOutbound(ip, port);
-    } catch {
-      return;
-    }
-
-    socket.write(txBuffer);
-    this.broadcastLog({
-      direction: 'TX',
-      timestamp: new Date().toISOString(),
-      hex: txHex,
-      ascii: label,
-      label,
-    });
+    await this.sendCommandOneShot(ip, port, cleaned, label);
   }
 
   /**
-   * NFC 페이지 전환 명령을 전송하고 SAVE/NO/타임아웃 결과를 기다린다.
-   * nfc-tag.service.ts(실제 카드 등록 흐름)가 이 결과로 등록 여부를 결정하므로 유지한다.
+   * NFC 페이지 전환 명령을 9090으로 일회성 전송하고, SAVE/NO/타임아웃 결과는
+   * 9080 상시 연결(RX)로 대기한다. nfc-tag.service.ts(실제 카드 등록 흐름)가 이 결과로
+   * 등록 여부를 결정하므로 유지한다.
    * /controller/socket 테스트 페이지에서는 게이트웨이에서 이 호출을 await하지 않고 fire-and-forget으로 사용한다.
    */
   async sendNfcSequence(ip: string, port: number): Promise<'save' | 'no' | 'timeout'> {
     const NFC_PAGE_HEX = 'EEB111001B03E6100100FFFCFFFF';
     const MAIN_PAGE_HEX = 'EEB111000103E6100100FFFCFFFF';
-
-    const cleaned = NFC_PAGE_HEX.replace(/\s+/g, '');
-    const txBuffer = Buffer.from(cleaned, 'hex');
-    const txHex = cleaned.toUpperCase().match(/.{2}/g)?.join(' ') ?? '';
-
-    let socket: net.Socket;
-    try {
-      socket = await this.connectOutbound(ip, port);
-    } catch {
-      return 'timeout';
-    }
 
     return new Promise((resolve) => {
       let resolved = false;
@@ -429,18 +482,7 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
 
       this.activeNfcAbort = () => {
         clearTimeout(timeout);
-        if (!socket.destroyed && socket.writable) {
-          const mainBuffer = Buffer.from(MAIN_PAGE_HEX, 'hex');
-          const mainHex = MAIN_PAGE_HEX.toUpperCase().match(/.{2}/g)?.join(' ') ?? '';
-          socket.write(mainBuffer);
-          this.broadcastLog({
-            direction: 'TX',
-            timestamp: new Date().toISOString(),
-            hex: mainHex,
-            ascii: 'MAIN 페이지 전환',
-            label: 'MAIN 페이지 전환',
-          });
-        }
+        this.sendCommandOneShot(ip, port, MAIN_PAGE_HEX, 'MAIN 페이지 전환').catch(() => {});
         this.broadcastLog({
           direction: 'SYS',
           timestamp: new Date().toISOString(),
@@ -458,18 +500,9 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
           ascii: `30초 응답 없음 — MAIN 페이지 전환 후 종료`,
         });
 
-        const mainBuffer = Buffer.from(MAIN_PAGE_HEX, 'hex');
-        const mainHex = MAIN_PAGE_HEX.toUpperCase().match(/.{2}/g)?.join(' ') ?? '';
-        if (!socket.destroyed && socket.writable) {
-          socket.write(mainBuffer);
-          this.broadcastLog({
-            direction: 'TX',
-            timestamp: new Date().toISOString(),
-            hex: mainHex,
-            ascii: 'MAIN 페이지 전환 (타임아웃)',
-            label: 'MAIN 페이지 전환 (타임아웃)',
-          });
-        }
+        this.sendCommandOneShot(ip, port, MAIN_PAGE_HEX, 'MAIN 페이지 전환 (타임아웃)').catch(
+          () => {},
+        );
 
         setTimeout(() => finish('timeout'), 300);
       }, this.NFC_WAIT_TIMEOUT_MS);
@@ -511,16 +544,7 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
 
         const autoResponse = this.AUTO_RESPONSE_MAP[normalized];
         if (autoResponse) {
-          const mainBuffer = Buffer.from(autoResponse.hex, 'hex');
-          const mainHex = autoResponse.hex.toUpperCase().match(/.{2}/g)?.join(' ') ?? '';
-          socket.write(mainBuffer);
-          this.broadcastLog({
-            direction: 'TX',
-            timestamp: new Date().toISOString(),
-            hex: mainHex,
-            ascii: autoResponse.label,
-            label: autoResponse.label,
-          });
+          this.sendCommandOneShot(ip, port, autoResponse.hex, autoResponse.label).catch(() => {});
         }
 
         const result: 'save' | 'no' = normalized === '4E66632073617665' ? 'save' : 'no';
@@ -528,13 +552,8 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
         setTimeout(() => finish(result), 300);
       };
 
-      socket.write(txBuffer);
-      this.broadcastLog({
-        direction: 'TX',
-        timestamp: new Date().toISOString(),
-        hex: txHex,
-        ascii: 'NFC 페이지 전환',
-        label: 'NFC 페이지 전환',
+      this.sendCommandOneShot(ip, port, NFC_PAGE_HEX, 'NFC 페이지 전환').catch((err) => {
+        this.logger.error(`NFC TX failed (${ip}:${port}): ${(err as Error).message}`);
       });
     });
   }

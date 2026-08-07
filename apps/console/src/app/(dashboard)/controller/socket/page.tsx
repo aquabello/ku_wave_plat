@@ -18,7 +18,7 @@ export default function ControllerSocketPage() {
   } = useControllerSocket();
 
   const [ip, setIp] = useState('');
-  const port = '9080'; // 소켓 통신은 항상 9080 고정
+  const port = '9090'; // 명령 전송(NFC/MAIN 페이지 전환 등)은 항상 9090 일회성 TCP 고정
 
   const portNum = parseInt(port, 10);
   const canSend = !!ip && !isNaN(portNum);
