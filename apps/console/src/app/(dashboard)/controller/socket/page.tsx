@@ -18,10 +18,12 @@ export default function ControllerSocketPage() {
   } = useControllerSocket();
 
   const [ip, setIp] = useState('');
-  const port = '9090'; // 명령 전송(NFC/MAIN 페이지 전환 등)은 항상 9090 일회성 TCP 고정
+  // 소켓 상시 연결 포트(9080) — '연결 설정' 패널에 표시
+  const socketPort = String(serverStatus.port);
+  // 명령 전송(NFC/MAIN 페이지 전환 등)은 9090 일회성 TCP 고정
+  const commandPort = 9090;
 
-  const portNum = parseInt(port, 10);
-  const canSend = !!ip && !isNaN(portNum);
+  const canSend = !!ip;
 
   const { data: commands = [] } = useQuery({
     queryKey: ['socket-commands'],
@@ -43,7 +45,9 @@ export default function ControllerSocketPage() {
             WS {wsConnected ? '연결' : '끊김'}
           </Badge>
           <Badge variant={serverStatus.outboundConnected ? 'default' : 'destructive'}>
-            컨트롤러 소켓 {serverStatus.outboundConnected ? `연결됨 (${serverStatus.outboundTarget})` : '끊김'}
+            컨트롤러 소켓{' '}
+            {serverStatus.outboundConnected ? '연결됨' : '끊김'}
+            {serverStatus.outboundTarget ? ` (${serverStatus.outboundTarget})` : ''}
           </Badge>
           <Badge variant={serverStatus.listening ? 'default' : 'destructive'}>
             TCP Server {serverStatus.listening ? 'ON' : 'OFF'}
@@ -56,13 +60,13 @@ export default function ControllerSocketPage() {
           <ConnectionPanel
             serverStatus={serverStatus}
             ip={ip}
-            port={port}
+            port={socketPort}
             onIpChange={setIp}
           />
           <CommandPanel
             disabled={!canSend}
             commands={commands}
-            onSend={(cmdSeq, isTest) => sendCommand(ip, portNum, cmdSeq, isTest)}
+            onSend={(cmdSeq, isTest) => sendCommand(ip, commandPort, cmdSeq, isTest)}
           />
         </div>
 
@@ -70,7 +74,7 @@ export default function ControllerSocketPage() {
           <ConsoleTerminal logs={logs} onClear={clearLogs} />
           <ManualInput
             disabled={!canSend}
-            onSend={(cmd, fmt) => sendManual(ip, portNum, cmd, fmt)}
+            onSend={(cmd, fmt) => sendManual(ip, commandPort, cmd, fmt)}
           />
         </div>
       </div>

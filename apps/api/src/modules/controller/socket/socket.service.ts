@@ -612,9 +612,11 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
       port: this.serverPort,
       connectedClients: this.connectedClients,
       outboundConnected: !!this.outboundSocket && !this.outboundSocket.destroyed,
-      outboundTarget: this.outboundTarget
-        ? `${this.outboundTarget.ip}:${this.outboundTarget.port}`
-        : null,
+      // 끊긴 상태에서도 어느 주소로 연결을 시도 중인지 보여준다 (설정값 기준)
+      outboundTarget: (() => {
+        const target = this.outboundTarget ?? this.persistentTarget;
+        return target ? `${target.ip}:${target.port}` : null;
+      })(),
     };
   }
 

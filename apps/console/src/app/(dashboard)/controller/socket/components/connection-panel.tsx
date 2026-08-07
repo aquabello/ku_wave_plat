@@ -132,7 +132,7 @@ export function ConnectionPanel({
             />
           </div>
           <div className="space-y-2">
-            <Label>포트</Label>
+            <Label>소켓 포트</Label>
             <Input value={port} disabled readOnly />
           </div>
         </div>
