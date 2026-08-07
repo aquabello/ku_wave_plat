@@ -26,10 +26,13 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
   private dataWatcher: ((data: Buffer) => void) | null = null;
   private onOutboundClosed: (() => void) | null = null;
   private persistentTarget: { ip: string; port: number } | null = null;
+  private persistentReconnectTimer: NodeJS.Timeout | null = null;
+  private destroyed = false;
 
   private readonly NFC_WAIT_TIMEOUT_MS = 30000;
   private readonly BOOT_CONNECT_MAX_ATTEMPTS = 3;
   private readonly BOOT_CONNECT_RETRY_DELAY_MS = 3000;
+  private readonly PERSISTENT_RECONNECT_DELAY_MS = 15000;
 
   private readonly AUTO_RESPONSE_MAP: Record<string, { hex: string; label: string }> = {
     '4E66632073617665': { hex: 'EEB111000103E6100100FFFCFFFF', label: 'MAIN 페이지 전환 (자동)' },
@@ -68,10 +71,12 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Network 1: 서버 부팅 시 컨트롤러 소켓(포트 9080)에 무조건 연결을 시도한다.
-   * 실패 시 최대 BOOT_CONNECT_MAX_ATTEMPTS회까지 재시도한다.
+   * Network 1: 컨트롤러 소켓(포트 9080)에 무조건 연결을 시도한다. 실패해도 포기하지 않고
+   * BOOT_CONNECT_MAX_ATTEMPTS회씩 묶어서 PERSISTENT_RECONNECT_DELAY_MS 간격으로 계속 재시도한다.
    */
   private async connectOutboundOnBoot(ip: string, port: number) {
+    if (this.destroyed) return;
+
     for (let attempt = 1; attempt <= this.BOOT_CONNECT_MAX_ATTEMPTS; attempt++) {
       try {
         await this.connectOutbound(ip, port);
@@ -88,17 +93,27 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
     }
 
     this.logger.error(
-      `Boot-time outbound connect failed after ${this.BOOT_CONNECT_MAX_ATTEMPTS} attempts (${ip}:${port})`,
+      `Boot-time outbound connect failed after ${this.BOOT_CONNECT_MAX_ATTEMPTS} attempts (${ip}:${port}), retrying in ${this.PERSISTENT_RECONNECT_DELAY_MS}ms`,
     );
     this.broadcastLog({
       direction: 'SYS',
       timestamp: new Date().toISOString(),
       hex: '',
-      ascii: `초기 연결 실패 (${this.BOOT_CONNECT_MAX_ATTEMPTS}회 시도) — ${ip}:${port}`,
+      ascii: `초기 연결 실패 (${this.BOOT_CONNECT_MAX_ATTEMPTS}회 시도) — ${ip}:${port}, 재시도 예약됨`,
     });
+
+    if (this.destroyed) return;
+    this.persistentReconnectTimer = setTimeout(() => {
+      this.connectOutboundOnBoot(ip, port);
+    }, this.PERSISTENT_RECONNECT_DELAY_MS);
   }
 
   onModuleDestroy() {
+    this.destroyed = true;
+    if (this.persistentReconnectTimer) {
+      clearTimeout(this.persistentReconnectTimer);
+      this.persistentReconnectTimer = null;
+    }
     if (this.tcpServer) {
       this.tcpServer.close();
       this.tcpServer = null;

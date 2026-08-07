@@ -28,6 +28,9 @@ export function CommandPanel({ disabled, commands, onSend }: CommandPanelProps) 
     <Card>
       <CardHeader>
         <CardTitle>명령어 패널</CardTitle>
+        <p className="text-xs text-muted-foreground">
+          TCP 통신 (포트 9090, 일회성 연결) — 소켓(9080) 통신 아님
+        </p>
       </CardHeader>
       <CardContent className="space-y-4">
         {Object.entries(categories).map(([category, cmds]) => (
