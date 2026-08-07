@@ -40,6 +40,12 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
     '5245434F444552204F4646': 'RECORDER OFF', // "RECODER OFF"
   };
 
+  // TCP 스트림이 여러 조각으로 나뉘어 들어와도(첫 바이트 유실 등) 인식할 수 있도록
+  // 수신 hex를 누적해두고 패턴을 찾는다 (RECORDER_COMMANDS 매칭용).
+  // 아웃바운드는 대상이 하나뿐이라 인스턴스 필드로 두고, 인바운드는 커넥션별로 로컬 버퍼를 사용한다.
+  private readonly RX_BUFFER_MAX_LEN = 200;
+  private readonly outboundRxBuffer: { value: string } = { value: '' };
+
   constructor(
     @InjectRepository(TbRecorder)
     private readonly recorderRepo: Repository<TbRecorder>,
@@ -197,8 +203,7 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
         ascii,
       });
 
-      const normalized = rawHex.replace(/\s/g, '');
-      const recorderCmd = this.RECORDER_COMMANDS[normalized];
+      const recorderCmd = this.matchRecorderCommand(this.outboundRxBuffer, rawHex);
       if (recorderCmd) {
         this.logger.log(`Recorder command received (outbound): ${recorderCmd}`);
         this.broadcastLog({
@@ -288,6 +293,8 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
       });
       this.broadcastServerStatus();
 
+      const rxBuffer: { value: string } = { value: '' };
+
       socket.on('data', (data: Buffer) => {
         const rawHex = data.toString('hex').toUpperCase();
         const hex = rawHex.match(/.{2}/g)?.join(' ') ?? '';
@@ -301,8 +308,7 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
           label: 'TCP Server',
         });
 
-        const normalized = rawHex.replace(/\s/g, '');
-        const recorderCmd = this.RECORDER_COMMANDS[normalized];
+        const recorderCmd = this.matchRecorderCommand(rxBuffer, rawHex);
         if (recorderCmd) {
           this.logger.log(`Recorder command received: ${recorderCmd}`);
           this.broadcastLog({
@@ -614,6 +620,23 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
 
   private broadcastLog(log: SocketLogEntry) {
     this.ioServer?.to('controller-socket').emit('socket:data', log);
+  }
+
+  /**
+   * 수신 hex를 커넥션별 누적 버퍼에 더한 뒤 RECORDER_COMMANDS 패턴을 찾는다.
+   * TCP 조각화로 명령어가 여러 data 이벤트에 걸쳐 나뉘어 들어와도 인식 가능하도록 함.
+   */
+  private matchRecorderCommand(buffer: { value: string }, rawHex: string): string | null {
+    buffer.value = (buffer.value + rawHex).slice(-this.RX_BUFFER_MAX_LEN);
+
+    for (const [key, command] of Object.entries(this.RECORDER_COMMANDS)) {
+      const idx = buffer.value.indexOf(key);
+      if (idx !== -1) {
+        buffer.value = buffer.value.slice(idx + key.length);
+        return command;
+      }
+    }
+    return null;
   }
 
   /**
