@@ -49,6 +49,25 @@ export class NfcTagService {
     private readonly configService: ConfigService,
   ) {}
 
+  /**
+   * 카드 자동 등록 시 소유자로 지정할 관리자(tu_type='SUPER') 계정을 조회한다.
+   * seq를 하드코딩하지 않고 타입으로 찾아 계정이 바뀌어도 동작하도록 한다.
+   */
+  private async resolveAdminUserSeq(): Promise<number | null> {
+    const admin = await this.userRepository
+      .createQueryBuilder('u')
+      .where('u.tu_type = :type', { type: 'SUPER' })
+      .andWhere('(u.tu_isdel IS NULL OR u.tu_isdel != :deleted)', { deleted: 'Y' })
+      .orderBy('u.tu_seq', 'ASC')
+      .getOne();
+
+    if (!admin) {
+      this.logger.warn('관리자(SUPER) 계정을 찾지 못해 카드 소유자를 지정하지 못했습니다');
+      return null;
+    }
+    return admin.seq;
+  }
+
   async processTag(dto: NfcTagDto, reader: NfcReaderInfo) {
     // Get space information early (needed for all responses)
     const space = await this.spaceRepository.findOne({
@@ -85,6 +104,10 @@ export class NfcTagService {
         deletedCard.cardIsdel = 'N';
         deletedCard.cardStatus = 'ACTIVE';
         deletedCard.cardAid = dto.aid ?? deletedCard.cardAid;
+        // 소유자가 비어 있으면 관리자로 채운다 (기존에 지정된 소유자는 유지)
+        if (!deletedCard.tuSeq) {
+          deletedCard.tuSeq = await this.resolveAdminUserSeq();
+        }
         await this.nfcCardRepository.save(deletedCard);
         this.logger.log(`카드 복구: ${deletedCard.cardLabel ?? deletedCard.cardIdentifier}`);
         card = deletedCard;
@@ -137,17 +160,15 @@ export class NfcTagService {
       // IoT 컨트롤러에 등록 확인 요청 — save 응답만 카드 등록
       let nfcResult: 'save' | 'no' | 'timeout' = 'timeout';
       try {
-        nfcResult = await this.socketService.sendNfcSequence(
-          deviceIp,
-          devicePort,
-        );
+        nfcResult = await this.socketService.sendNfcSequence(deviceIp, devicePort);
       } catch (err) {
         this.logger.warn(`sendNfcSequence failed: ${(err as Error).message}`);
       }
 
       if (nfcResult !== 'save') {
         const resultType = nfcResult === 'no' ? 'REGISTER_NO' : 'REGISTER_TIMEOUT';
-        const message = nfcResult === 'no' ? '등록이 취소되었습니다' : '장비 응답 없음 — 다시 태깅해주세요';
+        const message =
+          nfcResult === 'no' ? '등록이 취소되었습니다' : '장비 응답 없음 — 다시 태깅해주세요';
         return {
           result: resultType,
           logType: resultType as any,
@@ -171,13 +192,16 @@ export class NfcTagService {
         : 0;
       const cardLabel = `NFC-${String(lastNum + 1).padStart(4, '0')}`;
 
+      // 태그 저장 시 소유자는 항상 관리자로 설정한다
+      const adminSeq = await this.resolveAdminUserSeq();
+
       const newCard = this.nfcCardRepository.create({
         cardIdentifier: dto.identifier,
         cardAid: dto.aid ?? null,
         cardLabel,
         cardType: dto.aid ? 'PHONE' : 'CARD',
         cardStatus: 'ACTIVE',
-        tuSeq: null,
+        tuSeq: adminSeq,
         cardIsdel: 'N',
       });
       await this.nfcCardRepository.save(newCard);
@@ -194,7 +218,7 @@ export class NfcTagService {
         this.nfcLogRepository.create({
           readerSeq: reader.readerSeq,
           cardSeq: newCard.cardSeq,
-          tuSeq: null,
+          tuSeq: adminSeq,
           tagIdentifier: dto.identifier,
           tagAid: dto.aid ?? null,
           logType: 'REGISTER_SAVE',
@@ -224,7 +248,9 @@ export class NfcTagService {
         }),
       );
 
-      const user = card.tuSeq ? await this.userRepository.findOne({ where: { seq: card.tuSeq } }) : null;
+      const user = card.tuSeq
+        ? await this.userRepository.findOne({ where: { seq: card.tuSeq } })
+        : null;
       const userName = user?.name ?? null;
 
       return {
@@ -256,7 +282,9 @@ export class NfcTagService {
         }),
       );
 
-      const user = card.tuSeq ? await this.userRepository.findOne({ where: { seq: card.tuSeq } }) : null;
+      const user = card.tuSeq
+        ? await this.userRepository.findOne({ where: { seq: card.tuSeq } })
+        : null;
       const userName = user?.name ?? null;
 
       return {
@@ -319,7 +347,9 @@ export class NfcTagService {
       .createQueryBuilder('nl')
       .where('nl.reader_seq = :readerSeq', { readerSeq: reader.readerSeq })
       .andWhere('nl.log_type IN (:...types)', { types: ['ENTER', 'EXIT'] })
-      .andWhere('nl.control_result IN (:...results)', { results: ['SUCCESS', 'PARTIAL', 'SKIPPED'] })
+      .andWhere('nl.control_result IN (:...results)', {
+        results: ['SUCCESS', 'PARTIAL', 'SKIPPED'],
+      })
       .orderBy('nl.tagged_at', 'DESC')
       .getOne();
 
@@ -400,8 +430,7 @@ export class NfcTagService {
         // Use mapping-based control
         const mappingsToExecute = mappings
           .map((m) => {
-            const commandSeq =
-              logType === 'ENTER' ? m.enterCommandSeq : m.exitCommandSeq;
+            const commandSeq = logType === 'ENTER' ? m.enterCommandSeq : m.exitCommandSeq;
             if (!commandSeq) return null;
             return {
               spaceDeviceSeq: m.spaceDeviceSeq,
@@ -452,7 +481,9 @@ export class NfcTagService {
       };
 
       controlDetailJson = JSON.stringify(controlResponse.results);
-      this.logger.log(`[IoT 제어] ${commandType} → ${controlResult} (${controlResponse.successCount}/${controlResponse.results.length} 성공)`);
+      this.logger.log(
+        `[IoT 제어] ${commandType} → ${controlResult} (${controlResponse.successCount}/${controlResponse.results.length} 성공)`,
+      );
       controlResponse.results.forEach((r) => {
         this.logger.log(`  장비: ${r.deviceName} → ${r.resultStatus} ${r.resultMessage ?? ''}`);
       });
@@ -469,7 +500,9 @@ export class NfcTagService {
         await this.nfcLogRepository.delete({ cardSeq: card.cardSeq });
         this.logger.warn(`[NFC] 장비 제어 실패 → 카드 등록 롤백 (${card.cardLabel})`);
       }
-      this.logger.warn(`[NFC] 장비 제어 실패 → ${logType} 처리 취소 (리더기 상태 유지: ${prevStatus ?? 'NULL'})`);
+      this.logger.warn(
+        `[NFC] 장비 제어 실패 → ${logType} 처리 취소 (리더기 상태 유지: ${prevStatus ?? 'NULL'})`,
+      );
       return {
         result: 'DENIED',
         logType: prevStatus ?? 'UNKNOWN',
@@ -495,21 +528,19 @@ export class NfcTagService {
     let aiResultDetail: Record<string, unknown> | null = null;
     const aiPcUrl = this.configService.get<string>('AI_PC_URL');
     if (aiPcUrl) {
-      const wavePlatUrl = this.configService.get<string>('WAVE_PLAT_SELF_URL')
-        ?? `http://localhost:${this.configService.get<number>('API_PORT', 8000)}/api/v1`;
+      const wavePlatUrl =
+        this.configService.get<string>('WAVE_PLAT_SELF_URL') ??
+        `http://localhost:${this.configService.get<number>('API_PORT', 8000)}/api/v1`;
 
       const callbackUrl = `${wavePlatUrl}/ai-system/ai/callback`;
 
       if (logType === 'ENTER') {
-        const aiResult = await this.aiPcClientService.startRecording(
-          aiPcUrl,
-          {
-            spaceSeq: reader.spaceSeq,
-            tuSeq: card.tuSeq,
-            callbackUrl,
-            wavePlatUrl,
-          },
-        );
+        const aiResult = await this.aiPcClientService.startRecording(aiPcUrl, {
+          spaceSeq: reader.spaceSeq,
+          tuSeq: card.tuSeq,
+          callbackUrl,
+          wavePlatUrl,
+        });
         aiResultDetail = {
           action: 'AI_START',
           success: aiResult.success,
@@ -517,10 +548,9 @@ export class NfcTagService {
           error: aiResult.error ?? null,
         };
       } else {
-        const aiResult = await this.aiPcClientService.stopRecording(
-          aiPcUrl,
-          { spaceSeq: reader.spaceSeq },
-        );
+        const aiResult = await this.aiPcClientService.stopRecording(aiPcUrl, {
+          spaceSeq: reader.spaceSeq,
+        });
         aiResultDetail = {
           action: 'AI_STOP',
           success: aiResult.success,
@@ -566,7 +596,9 @@ export class NfcTagService {
     );
 
     // [Step 8] Get user name for response
-    const user = card.tuSeq ? await this.userRepository.findOne({ where: { seq: card.tuSeq } }) : null;
+    const user = card.tuSeq
+      ? await this.userRepository.findOne({ where: { seq: card.tuSeq } })
+      : null;
     const userName = user?.name ?? null;
 
     // [Step 9] Return response
@@ -588,11 +620,12 @@ export class NfcTagService {
       controlSummary,
       aiResult: aiResultDetail,
       isNewRegistration,
-      message: isNewRegistration && logType === 'ENTER'
-        ? `카드가 등록되었습니다. ${buildingName} ${spaceName} 입실 처리되었습니다`
-        : logType === 'ENTER'
-          ? `${buildingName} ${spaceName} 입실 처리되었습니다`
-          : `${buildingName} ${spaceName} 퇴실 처리되었습니다`,
+      message:
+        isNewRegistration && logType === 'ENTER'
+          ? `카드가 등록되었습니다. ${buildingName} ${spaceName} 입실 처리되었습니다`
+          : logType === 'ENTER'
+            ? `${buildingName} ${spaceName} 입실 처리되었습니다`
+            : `${buildingName} ${spaceName} 퇴실 처리되었습니다`,
     };
   }
 }
