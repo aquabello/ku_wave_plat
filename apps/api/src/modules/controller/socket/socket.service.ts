@@ -1,17 +1,9 @@
-import {
-  Injectable,
-  Logger,
-  OnModuleInit,
-  OnModuleDestroy,
-} from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as net from 'net';
 import { Server } from 'socket.io';
-import {
-  SocketLogEntry,
-  TcpServerStatus,
-} from './interfaces/socket-session.interface';
+import { SocketLogEntry, TcpServerStatus } from './interfaces/socket-session.interface';
 import { CommandFormat } from './dto/socket-command.dto';
 import { TbRecorder } from '@modules/recorders/entities/recorder.entity';
 import { RecorderControlService } from '@modules/recorders/recorder-control.service';
@@ -25,17 +17,27 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
   private readonly serverPort: number;
   private activeNfcAbort: (() => void) | null = null;
 
+  // Network 1: 컨트롤러로 나가는 상시 연결 (단일 대상, lazy connect)
+  private outboundSocket: net.Socket | null = null;
+  private outboundTarget: { ip: string; port: number } | null = null;
+  private outboundConnectPromise: Promise<net.Socket> | null = null;
+  private pendingResolvers: Array<(data: Buffer | null) => void> = [];
+  private dataWatcher: ((data: Buffer) => void) | null = null;
+  private onOutboundClosed: (() => void) | null = null;
+
   private readonly RESPONSE_TIMEOUT_MS = 5000;
   private readonly NFC_WAIT_TIMEOUT_MS = 30000;
+  private readonly BOOT_CONNECT_MAX_ATTEMPTS = 3;
+  private readonly BOOT_CONNECT_RETRY_DELAY_MS = 3000;
 
   private readonly AUTO_RESPONSE_MAP: Record<string, { hex: string; label: string }> = {
     '4E66632073617665': { hex: 'EEB111000103E6100100FFFCFFFF', label: 'MAIN 페이지 전환 (자동)' },
-    '4E6663206E6F':     { hex: 'EEB111000103E6100100FFFCFFFF', label: 'MAIN 페이지 전환 (자동)' },
+    '4E6663206E6F': { hex: 'EEB111000103E6100100FFFCFFFF', label: 'MAIN 페이지 전환 (자동)' },
   };
 
   private readonly RECORDER_COMMANDS: Record<string, string> = {
-    '5245434F444552204F4E': 'RECORDER ON',       // "RECODER ON"
-    '5245434F444552204F4646': 'RECORDER OFF',     // "RECODER OFF"
+    '5245434F444552204F4E': 'RECORDER ON', // "RECODER ON"
+    '5245434F444552204F4646': 'RECORDER OFF', // "RECODER OFF"
   };
 
   constructor(
@@ -49,6 +51,43 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
   onModuleInit() {
     this.startTcpServer();
     this.logger.log('SocketService initialized');
+
+    const controllerHost = process.env.CONTROLLER_SOCKET_HOST;
+    const controllerPort = parseInt(process.env.CONTROLLER_SOCKET_PORT ?? '9080', 10);
+    if (controllerHost) {
+      this.connectOutboundOnBoot(controllerHost, controllerPort);
+    }
+  }
+
+  /**
+   * Network 1: 서버 부팅 시 컨트롤러 소켓(포트 9080)에 무조건 연결을 시도한다.
+   * 실패 시 최대 BOOT_CONNECT_MAX_ATTEMPTS회까지 재시도한다.
+   */
+  private async connectOutboundOnBoot(ip: string, port: number) {
+    for (let attempt = 1; attempt <= this.BOOT_CONNECT_MAX_ATTEMPTS; attempt++) {
+      try {
+        await this.connectOutbound(ip, port);
+        this.logger.log(`Boot-time outbound connect succeeded (${ip}:${port}), attempt ${attempt}`);
+        return;
+      } catch (err) {
+        this.logger.warn(
+          `Boot-time outbound connect failed (${ip}:${port}) attempt ${attempt}/${this.BOOT_CONNECT_MAX_ATTEMPTS}: ${(err as Error).message}`,
+        );
+        if (attempt < this.BOOT_CONNECT_MAX_ATTEMPTS) {
+          await new Promise((resolve) => setTimeout(resolve, this.BOOT_CONNECT_RETRY_DELAY_MS));
+        }
+      }
+    }
+
+    this.logger.error(
+      `Boot-time outbound connect failed after ${this.BOOT_CONNECT_MAX_ATTEMPTS} attempts (${ip}:${port})`,
+    );
+    this.broadcastLog({
+      direction: 'SYS',
+      timestamp: new Date().toISOString(),
+      hex: '',
+      ascii: `초기 연결 실패 (${this.BOOT_CONNECT_MAX_ATTEMPTS}회 시도) — ${ip}:${port}`,
+    });
   }
 
   onModuleDestroy() {
@@ -56,11 +95,184 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
       this.tcpServer.close();
       this.tcpServer = null;
     }
+    this.teardownOutbound();
     this.logger.log('TCP server closed');
   }
 
   setIoServer(server: Server) {
     this.ioServer = server;
+  }
+
+  // =============================================
+  // Network 1: 컨트롤러로 나가는 상시 연결 (lazy connect, 단일 대상)
+  // =============================================
+
+  /**
+   * 요청된 ip:port로 연결을 재사용하거나, 없으면 새로 connect하여 유지한다.
+   * 명령 전송 후 즉시 종료하지 않고 계속 열어둔다 (컨트롤러 포트 점유 이슈 회피).
+   */
+  private connectOutbound(ip: string, port: number): Promise<net.Socket> {
+    if (
+      this.outboundSocket &&
+      !this.outboundSocket.destroyed &&
+      this.outboundTarget?.ip === ip &&
+      this.outboundTarget?.port === port
+    ) {
+      return Promise.resolve(this.outboundSocket);
+    }
+
+    if (
+      this.outboundConnectPromise &&
+      this.outboundTarget?.ip === ip &&
+      this.outboundTarget?.port === port
+    ) {
+      return this.outboundConnectPromise;
+    }
+
+    // 대상이 바뀌었거나 기존 연결이 죽어있으면 정리 후 새로 연결
+    this.teardownOutbound();
+    this.outboundTarget = { ip, port };
+
+    const socket = new net.Socket();
+
+    const connectPromise: Promise<net.Socket> = new Promise<net.Socket>((resolve, reject) => {
+      const cleanupListeners = () => {
+        socket.off('connect', onConnect);
+        socket.off('error', onError);
+      };
+
+      const onConnect = () => {
+        cleanupListeners();
+        this.outboundSocket = socket;
+        this.attachOutboundListeners(socket, ip, port);
+        this.broadcastLog({
+          direction: 'SYS',
+          timestamp: new Date().toISOString(),
+          hex: '',
+          ascii: `Connected to ${ip}:${port} (상시 연결)`,
+        });
+        resolve(socket);
+      };
+
+      const onError = (err: Error) => {
+        cleanupListeners();
+        this.logger.error(`Outbound connect error (${ip}:${port}): ${err.message}`);
+        this.broadcastLog({
+          direction: 'SYS',
+          timestamp: new Date().toISOString(),
+          hex: '',
+          ascii: `Connect error (${ip}:${port}): ${err.message}`,
+        });
+        this.outboundTarget = null;
+        socket.destroy();
+        reject(err);
+      };
+
+      socket.once('connect', onConnect);
+      socket.once('error', onError);
+      socket.connect(port, ip);
+    }).finally(() => {
+      this.outboundConnectPromise = null;
+    });
+
+    this.outboundConnectPromise = connectPromise;
+    return connectPromise;
+  }
+
+  private attachOutboundListeners(socket: net.Socket, ip: string, port: number) {
+    socket.on('data', (data: Buffer) => {
+      if (this.dataWatcher) {
+        this.dataWatcher(data);
+        return;
+      }
+
+      const rawHex = data.toString('hex').toUpperCase();
+      const hex = rawHex.match(/.{2}/g)?.join(' ') ?? '';
+      const ascii = this.tryDecodeAscii(data);
+
+      this.broadcastLog({
+        direction: 'RX',
+        timestamp: new Date().toISOString(),
+        hex,
+        ascii,
+      });
+
+      const normalized = rawHex.replace(/\s/g, '');
+      const recorderCmd = this.RECORDER_COMMANDS[normalized];
+      if (recorderCmd) {
+        this.logger.log(`Recorder command received (outbound): ${recorderCmd}`);
+        this.broadcastLog({
+          direction: 'SYS',
+          timestamp: new Date().toISOString(),
+          hex: '',
+          ascii: `Recorder command: ${recorderCmd}`,
+        });
+
+        this.handleRecorderCommand(recorderCmd).catch((err) => {
+          this.logger.error(`Recorder command failed: ${(err as Error).message}`);
+          this.broadcastLog({
+            direction: 'SYS',
+            timestamp: new Date().toISOString(),
+            hex: '',
+            ascii: `녹화 연동 실패: ${(err as Error).message}`,
+          });
+        });
+      }
+
+      const resolver = this.pendingResolvers.shift();
+      resolver?.(data);
+    });
+
+    socket.on('close', () => {
+      this.logger.log(`Outbound connection closed (${ip}:${port})`);
+      this.broadcastLog({
+        direction: 'SYS',
+        timestamp: new Date().toISOString(),
+        hex: '',
+        ascii: `Disconnected from ${ip}:${port}`,
+      });
+
+      if (this.outboundSocket === socket) {
+        this.outboundSocket = null;
+        this.outboundTarget = null;
+      }
+
+      this.flushPendingResolvers(null);
+      this.dataWatcher = null;
+
+      const closedCb = this.onOutboundClosed;
+      this.onOutboundClosed = null;
+      closedCb?.();
+    });
+
+    socket.on('error', (err: Error) => {
+      this.logger.error(`Outbound socket error (${ip}:${port}): ${err.message}`);
+      this.broadcastLog({
+        direction: 'SYS',
+        timestamp: new Date().toISOString(),
+        hex: '',
+        ascii: `Error: ${err.message}`,
+      });
+    });
+  }
+
+  private flushPendingResolvers(data: Buffer | null) {
+    const resolvers = this.pendingResolvers;
+    this.pendingResolvers = [];
+    resolvers.forEach((resolve) => resolve(data));
+  }
+
+  private teardownOutbound() {
+    if (this.outboundSocket) {
+      this.outboundSocket.removeAllListeners();
+      this.outboundSocket.destroy();
+    }
+    this.outboundSocket = null;
+    this.outboundTarget = null;
+    this.outboundConnectPromise = null;
+    this.dataWatcher = null;
+    this.flushPendingResolvers(null);
+    this.onOutboundClosed = null;
   }
 
   private startTcpServer() {
@@ -157,25 +369,38 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
     const txBuffer = Buffer.from(cleaned, 'hex');
     const txHex = cleaned.toUpperCase().match(/.{2}/g)?.join(' ') ?? '';
 
+    let socket: net.Socket;
+    try {
+      socket = await this.connectOutbound(ip, port);
+    } catch {
+      return null;
+    }
+
+    socket.write(txBuffer);
+    this.broadcastLog({
+      direction: 'TX',
+      timestamp: new Date().toISOString(),
+      hex: txHex,
+      ascii: label,
+      label,
+    });
+
+    if (!waitForResponse) {
+      return null;
+    }
+
     return new Promise((resolve) => {
-      const socket = new net.Socket();
-      let resolved = false;
+      let settled = false;
 
       const finish = (result: { hex: string; ascii: string } | null) => {
-        if (resolved) return;
-        resolved = true;
-        socket.removeAllListeners();
-        socket.destroy();
-        this.broadcastLog({
-          direction: 'SYS',
-          timestamp: new Date().toISOString(),
-          hex: '',
-          ascii: `Connection closed (${ip}:${port})`,
-        });
+        if (settled) return;
+        settled = true;
         resolve(result);
       };
 
       const timeout = setTimeout(() => {
+        const idx = this.pendingResolvers.indexOf(resolver);
+        if (idx !== -1) this.pendingResolvers.splice(idx, 1);
         this.broadcastLog({
           direction: 'SYS',
           timestamp: new Date().toISOString(),
@@ -185,74 +410,22 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
         finish(null);
       }, this.RESPONSE_TIMEOUT_MS);
 
-      socket.connect(port, ip, () => {
-        this.broadcastLog({
-          direction: 'SYS',
-          timestamp: new Date().toISOString(),
-          hex: '',
-          ascii: `Connected to ${ip}:${port}`,
-        });
-
-        socket.write(txBuffer);
-        this.broadcastLog({
-          direction: 'TX',
-          timestamp: new Date().toISOString(),
-          hex: txHex,
-          ascii: label,
-          label,
-        });
-
-        if (!waitForResponse) {
-          clearTimeout(timeout);
-          setTimeout(() => finish(null), 200);
+      const resolver = (data: Buffer | null) => {
+        clearTimeout(timeout);
+        if (!data) {
+          finish(null);
+          return;
         }
-      });
-
-      socket.on('data', (data: Buffer) => {
-        clearTimeout(timeout);
         const rawHex = data.toString('hex').toUpperCase();
-        const hex = rawHex.match(/.{2}/g)?.join(' ') ?? '';
         const ascii = this.tryDecodeAscii(data);
-
-        this.broadcastLog({
-          direction: 'RX',
-          timestamp: new Date().toISOString(),
-          hex,
-          ascii,
-        });
-
         finish({ hex: rawHex, ascii });
-      });
+      };
 
-      socket.on('error', (err: Error) => {
-        clearTimeout(timeout);
-        this.logger.error(`sendOneShot error (${ip}:${port}): ${err.message}`);
-        this.broadcastLog({
-          direction: 'SYS',
-          timestamp: new Date().toISOString(),
-          hex: '',
-          ascii: `Error: ${err.message}`,
-        });
-        finish(null);
-      });
-
-      socket.on('close', () => {
-        clearTimeout(timeout);
-        this.broadcastLog({
-          direction: 'SYS',
-          timestamp: new Date().toISOString(),
-          hex: '',
-          ascii: `Disconnected from ${ip}:${port}`,
-        });
-        finish(null);
-      });
+      this.pendingResolvers.push(resolver);
     });
   }
 
-  async sendNfcSequence(
-    ip: string,
-    port: number,
-  ): Promise<'save' | 'no' | 'timeout'> {
+  async sendNfcSequence(ip: string, port: number): Promise<'save' | 'no' | 'timeout'> {
     const NFC_PAGE_HEX = 'EEB111001B03E6100100FFFCFFFF';
     const MAIN_PAGE_HEX = 'EEB111000103E6100100FFFCFFFF';
 
@@ -260,28 +433,30 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
     const txBuffer = Buffer.from(cleaned, 'hex');
     const txHex = cleaned.toUpperCase().match(/.{2}/g)?.join(' ') ?? '';
 
+    let socket: net.Socket;
+    try {
+      socket = await this.connectOutbound(ip, port);
+    } catch {
+      return 'timeout';
+    }
+
     return new Promise((resolve) => {
-      const socket = new net.Socket();
       let resolved = false;
 
       const finish = (result: 'save' | 'no' | 'timeout') => {
         if (resolved) return;
         resolved = true;
         this.activeNfcAbort = null;
-        socket.removeAllListeners();
-        socket.destroy();
-        this.broadcastLog({
-          direction: 'SYS',
-          timestamp: new Date().toISOString(),
-          hex: '',
-          ascii: `Connection closed (${ip}:${port})`,
-        });
+        this.dataWatcher = null;
+        this.onOutboundClosed = null;
         resolve(result);
       };
 
+      this.onOutboundClosed = () => finish('timeout');
+
       this.activeNfcAbort = () => {
         clearTimeout(timeout);
-        if (socket.writable) {
+        if (!socket.destroyed && socket.writable) {
           const mainBuffer = Buffer.from(MAIN_PAGE_HEX, 'hex');
           const mainHex = MAIN_PAGE_HEX.toUpperCase().match(/.{2}/g)?.join(' ') ?? '';
           socket.write(mainBuffer);
@@ -312,7 +487,7 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
 
         const mainBuffer = Buffer.from(MAIN_PAGE_HEX, 'hex');
         const mainHex = MAIN_PAGE_HEX.toUpperCase().match(/.{2}/g)?.join(' ') ?? '';
-        if (socket.writable) {
+        if (!socket.destroyed && socket.writable) {
           socket.write(mainBuffer);
           this.broadcastLog({
             direction: 'TX',
@@ -326,26 +501,7 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
         setTimeout(() => finish('timeout'), 300);
       }, this.NFC_WAIT_TIMEOUT_MS);
 
-      socket.connect(port, ip, () => {
-        this.broadcastLog({
-          direction: 'SYS',
-          timestamp: new Date().toISOString(),
-          hex: '',
-          ascii: `NFC sequence: connected to ${ip}:${port}`,
-        });
-
-        socket.write(txBuffer);
-        this.broadcastLog({
-          direction: 'TX',
-          timestamp: new Date().toISOString(),
-          hex: txHex,
-          ascii: 'NFC 페이지 전환',
-          label: 'NFC 페이지 전환',
-        });
-      });
-
-      socket.on('data', (data: Buffer) => {
-        clearTimeout(timeout);
+      this.dataWatcher = (data: Buffer) => {
         const rawHex = data.toString('hex').toUpperCase();
         const hex = rawHex.match(/.{2}/g)?.join(' ') ?? '';
         const ascii = this.tryDecodeAscii(data);
@@ -353,10 +509,13 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
         const normalized = rawHex.replace(/\s/g, '');
 
         const rxLabel =
-          normalized === '4E66632073617665' ? 'RX: SAVE' :
-          normalized === '4E6663206E6F'     ? 'RX: NO' :
-          normalized === MAIN_PAGE_HEX      ? 'RX: MAIN 페이지' :
-          undefined;
+          normalized === '4E66632073617665'
+            ? 'RX: SAVE'
+            : normalized === '4E6663206E6F'
+              ? 'RX: NO'
+              : normalized === MAIN_PAGE_HEX
+                ? 'RX: MAIN 페이지'
+                : undefined;
 
         this.broadcastLog({
           direction: 'RX',
@@ -391,26 +550,18 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
           });
         }
 
-        const result: 'save' | 'no' =
-          normalized === '4E66632073617665' ? 'save' : 'no';
+        const result: 'save' | 'no' = normalized === '4E66632073617665' ? 'save' : 'no';
 
         setTimeout(() => finish(result), 300);
-      });
+      };
 
-      socket.on('error', (err: Error) => {
-        clearTimeout(timeout);
-        this.logger.error(`NFC sequence error (${ip}:${port}): ${err.message}`);
-        this.broadcastLog({
-          direction: 'SYS',
-          timestamp: new Date().toISOString(),
-          hex: '',
-          ascii: `NFC Error: ${err.message}`,
-        });
-        finish('timeout');
-      });
-
-      socket.on('close', () => {
-        clearTimeout(timeout);
+      socket.write(txBuffer);
+      this.broadcastLog({
+        direction: 'TX',
+        timestamp: new Date().toISOString(),
+        hex: txHex,
+        ascii: 'NFC 페이지 전환',
+        label: 'NFC 페이지 전환',
       });
     });
   }
@@ -493,10 +644,9 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
         ascii: `녹화 시작 요청: ${recorder.recorderName}`,
       });
 
-      const result = await this.recorderControlService.startRecording(
-        recorder.recorderSeq,
-        { sessionTitle: '컨트롤러 자동 녹화' },
-      );
+      const result = await this.recorderControlService.startRecording(recorder.recorderSeq, {
+        sessionTitle: `${this.formatSessionTimestamp()} 컨트롤러 자동 녹화`,
+      });
 
       this.broadcastLog({
         direction: 'SYS',
@@ -512,9 +662,7 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
         ascii: `녹화 정지 요청: ${recorder.recorderName}`,
       });
 
-      const result = await this.recorderControlService.stopRecording(
-        recorder.recorderSeq,
-      );
+      const result = await this.recorderControlService.stopRecording(recorder.recorderSeq);
 
       this.broadcastLog({
         direction: 'SYS',
@@ -523,6 +671,17 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
         ascii: `녹화 정지 완료: ${result.message}`,
       });
     }
+  }
+
+  private formatSessionTimestamp(): string {
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const y = now.getFullYear();
+    const m = pad(now.getMonth() + 1);
+    const d = pad(now.getDate());
+    const h = pad(now.getHours());
+    const min = pad(now.getMinutes());
+    return `${y}-${m}-${d} ${h}:${min}`;
   }
 
   private tryDecodeAscii(buffer: Buffer): string {
