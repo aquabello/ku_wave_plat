@@ -6,6 +6,7 @@ import { Server } from 'socket.io';
 import { SocketLogEntry, TcpServerStatus } from './interfaces/socket-session.interface';
 import { CommandFormat } from './dto/socket-command.dto';
 import { TbRecorder } from '@modules/recorders/entities/recorder.entity';
+import { TbSpaceDevice } from '@modules/controller/devices/entities/tb-space-device.entity';
 import { RecorderControlService } from '@modules/recorders/recorder-control.service';
 
 @Injectable()
@@ -28,6 +29,7 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
   private persistentTarget: { ip: string; port: number } | null = null;
   private persistentReconnectTimer: NodeJS.Timeout | null = null;
   private destroyed = false;
+  private reconnecting = false;
 
   private readonly NFC_WAIT_TIMEOUT_MS = 30000;
   private readonly BOOT_CONNECT_MAX_ATTEMPTS = 3;
@@ -53,6 +55,8 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
   constructor(
     @InjectRepository(TbRecorder)
     private readonly recorderRepo: Repository<TbRecorder>,
+    @InjectRepository(TbSpaceDevice)
+    private readonly spaceDeviceRepo: Repository<TbSpaceDevice>,
     private readonly recorderControlService: RecorderControlService,
   ) {
     this.serverPort = parseInt(process.env.SOCKET_SERVER_PORT ?? '9080', 10);
@@ -62,12 +66,58 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
     this.startTcpServer();
     this.logger.log('SocketService initialized');
 
-    const controllerHost = process.env.CONTROLLER_SOCKET_HOST;
-    const controllerPort = parseInt(process.env.CONTROLLER_SOCKET_PORT ?? '9080', 10);
-    if (controllerHost) {
-      this.persistentTarget = { ip: controllerHost, port: controllerPort };
-      this.connectOutboundOnBoot(controllerHost, controllerPort);
+    // 부팅 시 컨트롤러 소켓에 연결한다. 실패해도 조용히 넘어가지 않고 계속 재시도한다.
+    this.initPersistentConnection().catch((err) => {
+      this.logger.error(`컨트롤러 소켓 초기 연결 처리 실패: ${(err as Error).message}`);
+    });
+  }
+
+  /**
+   * 연결 대상 결정 순서:
+   *   1) CONTROLLER_SOCKET_HOST 환경변수 (명시적 오버라이드)
+   *   2) DB에 등록된 컨트롤러 장비 IP (관리자가 화면에서 등록한 값 — 기본 경로)
+   * 어느 쪽도 없으면 이유를 로그와 화면에 남긴다 (조용한 실패 금지).
+   */
+  private async initPersistentConnection() {
+    const port = parseInt(
+      process.env.CONTROLLER_SOCKET_PORT?.trim() || String(this.serverPort),
+      10,
+    );
+
+    const envHost = process.env.CONTROLLER_SOCKET_HOST?.trim();
+    let host = envHost;
+    let source = 'CONTROLLER_SOCKET_HOST';
+
+    if (!host) {
+      const device = await this.spaceDeviceRepo.findOne({
+        where: { deviceStatus: 'ACTIVE', deviceIsdel: 'N' },
+        relations: ['preset'],
+        order: { spaceSeq: 'ASC', deviceOrder: 'ASC' },
+      });
+      host = device?.deviceIp ?? device?.preset?.commIp ?? undefined;
+      source = device ? `DB tb_space_device(${device.deviceName})` : 'none';
     }
+
+    if (!host) {
+      this.logger.error(
+        '컨트롤러 소켓 연결 대상을 찾지 못했습니다. ' +
+          'CONTROLLER_SOCKET_HOST 환경변수를 설정하거나 컨트롤러 장비를 등록하세요.',
+      );
+      this.broadcastLog({
+        direction: 'SYS',
+        timestamp: new Date().toISOString(),
+        hex: '',
+        ascii: '컨트롤러 소켓 연결 대상 미설정 — 장비 등록 또는 CONTROLLER_SOCKET_HOST 설정 필요',
+      });
+      this.broadcastServerStatus();
+      return;
+    }
+
+    this.persistentTarget = { ip: host, port };
+    this.logger.log(`Controller socket target ${host}:${port} (source: ${source})`);
+    this.broadcastServerStatus();
+
+    await this.connectOutboundOnBoot(host, port);
   }
 
   /**
@@ -77,6 +127,23 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
   private async connectOutboundOnBoot(ip: string, port: number) {
     if (this.destroyed) return;
 
+    // 이미 재연결 루프가 돌고 있으면 중복 실행하지 않는다 (close 핸들러 + 재시도 타이머 동시 진입 방지)
+    if (this.reconnecting) return;
+    this.reconnecting = true;
+
+    if (this.persistentReconnectTimer) {
+      clearTimeout(this.persistentReconnectTimer);
+      this.persistentReconnectTimer = null;
+    }
+
+    try {
+      await this.runConnectAttempts(ip, port);
+    } finally {
+      this.reconnecting = false;
+    }
+  }
+
+  private async runConnectAttempts(ip: string, port: number) {
     for (let attempt = 1; attempt <= this.BOOT_CONNECT_MAX_ATTEMPTS; attempt++) {
       try {
         await this.connectOutbound(ip, port);
