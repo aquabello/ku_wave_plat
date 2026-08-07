@@ -17,7 +17,6 @@ interface ConnectionPanelProps {
   ip: string;
   port: string;
   onIpChange: (ip: string) => void;
-  onPortChange: (port: string) => void;
 }
 
 interface BuildingItem {
@@ -36,7 +35,7 @@ interface DeviceInfo {
 }
 
 export function ConnectionPanel({
-  serverStatus, ip, port, onIpChange, onPortChange,
+  serverStatus, ip, port, onIpChange,
 }: ConnectionPanelProps) {
   const [selectedBuilding, setSelectedBuilding] = useState('');
 
@@ -70,7 +69,6 @@ export function ConnectionPanel({
       );
       if (res.devices?.length > 0) {
         onIpChange(res.devices[0].deviceIp);
-        onPortChange(String(res.devices[0].devicePort || '9090'));
       }
     } catch {
       // 디바이스 없으면 무시
@@ -135,12 +133,7 @@ export function ConnectionPanel({
           </div>
           <div className="space-y-2">
             <Label>포트</Label>
-            <Input
-              type="number"
-              value={port}
-              onChange={(e) => onPortChange(e.target.value)}
-              placeholder="9090"
-            />
+            <Input value={port} disabled readOnly />
           </div>
         </div>
       </CardContent>

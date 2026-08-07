@@ -21,11 +21,9 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
   private outboundSocket: net.Socket | null = null;
   private outboundTarget: { ip: string; port: number } | null = null;
   private outboundConnectPromise: Promise<net.Socket> | null = null;
-  private pendingResolvers: Array<(data: Buffer | null) => void> = [];
   private dataWatcher: ((data: Buffer) => void) | null = null;
   private onOutboundClosed: (() => void) | null = null;
 
-  private readonly RESPONSE_TIMEOUT_MS = 5000;
   private readonly NFC_WAIT_TIMEOUT_MS = 30000;
   private readonly BOOT_CONNECT_MAX_ATTEMPTS = 3;
   private readonly BOOT_CONNECT_RETRY_DELAY_MS = 3000;
@@ -223,9 +221,6 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
           });
         });
       }
-
-      const resolver = this.pendingResolvers.shift();
-      resolver?.(data);
     });
 
     socket.on('close', () => {
@@ -242,7 +237,6 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
         this.outboundTarget = null;
       }
 
-      this.flushPendingResolvers(null);
       this.dataWatcher = null;
 
       const closedCb = this.onOutboundClosed;
@@ -261,12 +255,6 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
-  private flushPendingResolvers(data: Buffer | null) {
-    const resolvers = this.pendingResolvers;
-    this.pendingResolvers = [];
-    resolvers.forEach((resolve) => resolve(data));
-  }
-
   private teardownOutbound() {
     if (this.outboundSocket) {
       this.outboundSocket.removeAllListeners();
@@ -276,7 +264,6 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
     this.outboundTarget = null;
     this.outboundConnectPromise = null;
     this.dataWatcher = null;
-    this.flushPendingResolvers(null);
     this.onOutboundClosed = null;
   }
 
@@ -358,19 +345,17 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
-  async sendOneShot(
-    ip: string,
-    port: number,
-    hexCommand: string,
-    label: string,
-    waitForResponse = true,
-  ): Promise<{ hex: string; ascii: string } | null> {
+  /**
+   * 명령을 전송하고 바로 반환한다. 상시 연결이므로 응답을 기다리지 않으며,
+   * 실제 응답/데이터는 연결의 'data' 이벤트를 통해 RX 로그로 비동기 브로드캐스트된다.
+   */
+  async sendOneShot(ip: string, port: number, hexCommand: string, label: string): Promise<void> {
     const cleaned = hexCommand.replace(/\s+/g, '');
 
     const MAIN_PAGE_HEX = 'EEB111000103E6100100FFFCFFFF';
     if (cleaned.toUpperCase() === MAIN_PAGE_HEX && this.activeNfcAbort) {
       this.activeNfcAbort();
-      return null;
+      return;
     }
     const txBuffer = Buffer.from(cleaned, 'hex');
     const txHex = cleaned.toUpperCase().match(/.{2}/g)?.join(' ') ?? '';
@@ -379,7 +364,7 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
     try {
       socket = await this.connectOutbound(ip, port);
     } catch {
-      return null;
+      return;
     }
 
     socket.write(txBuffer);
@@ -389,45 +374,6 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
       hex: txHex,
       ascii: label,
       label,
-    });
-
-    if (!waitForResponse) {
-      return null;
-    }
-
-    return new Promise((resolve) => {
-      let settled = false;
-
-      const finish = (result: { hex: string; ascii: string } | null) => {
-        if (settled) return;
-        settled = true;
-        resolve(result);
-      };
-
-      const timeout = setTimeout(() => {
-        const idx = this.pendingResolvers.indexOf(resolver);
-        if (idx !== -1) this.pendingResolvers.splice(idx, 1);
-        this.broadcastLog({
-          direction: 'SYS',
-          timestamp: new Date().toISOString(),
-          hex: '',
-          ascii: `Timeout waiting for response from ${ip}:${port}`,
-        });
-        finish(null);
-      }, this.RESPONSE_TIMEOUT_MS);
-
-      const resolver = (data: Buffer | null) => {
-        clearTimeout(timeout);
-        if (!data) {
-          finish(null);
-          return;
-        }
-        const rawHex = data.toString('hex').toUpperCase();
-        const ascii = this.tryDecodeAscii(data);
-        finish({ hex: rawHex, ascii });
-      };
-
-      this.pendingResolvers.push(resolver);
     });
   }
 
@@ -577,7 +523,7 @@ export class SocketService implements OnModuleInit, OnModuleDestroy {
     port: number,
     command: string,
     format: CommandFormat,
-  ): Promise<{ hex: string; ascii: string } | null> {
+  ): Promise<void> {
     let hexCommand: string;
     let label: string;
 

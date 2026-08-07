@@ -18,7 +18,7 @@ export default function ControllerSocketPage() {
   } = useControllerSocket();
 
   const [ip, setIp] = useState('');
-  const [port, setPort] = useState('9090');
+  const port = '9080'; // 소켓 통신은 항상 9080 고정
 
   const portNum = parseInt(port, 10);
   const canSend = !!ip && !isNaN(portNum);
@@ -55,7 +55,6 @@ export default function ControllerSocketPage() {
             ip={ip}
             port={port}
             onIpChange={setIp}
-            onPortChange={setPort}
           />
           <CommandPanel
             disabled={!canSend}

@@ -45,9 +45,7 @@ interface SendManualPayload {
   },
 })
 @UseGuards(WsJwtGuard)
-export class SocketGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
-{
+export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   private server: Server;
 
@@ -84,9 +82,7 @@ export class SocketGateway
 
       this.logger.log(`WS client connected: ${client.id} (${payload.username})`);
     } catch (err) {
-      this.logger.warn(
-        `WS connection rejected: ${(err as Error).message}`,
-      );
+      this.logger.warn(`WS connection rejected: ${(err as Error).message}`);
       client.disconnect(true);
     }
   }
@@ -119,16 +115,15 @@ export class SocketGateway
         };
       }
 
-      const response = await this.socketService.sendOneShot(
+      await this.socketService.sendOneShot(
         payload.ip,
         payload.port,
         command.cmdHex,
         command.cmdLabel,
-        false,
       );
       return {
         event: 'socket:send-command',
-        data: { success: true, response },
+        data: { success: true },
       };
     } catch (err) {
       return {
@@ -160,7 +155,6 @@ export class SocketGateway
               payload.port,
               command.cmdHex,
               command.cmdLabel,
-              false,
             );
           }
         }
